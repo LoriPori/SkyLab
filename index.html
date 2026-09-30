@@ -279,10 +279,7 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
    NOTE: this key is visible to anyone who views the page source. */
 /* ============ CONFIG: Atmospore (https://pollenapi.com) ============
    NOTE: this key is visible to anyone who views the page source. */
-const ATMO={
- key:'atmo_43d5d76734e56961d44f4e6b023198fa',
- base:'https://pollenapi.com/v1'
-};
+const ATMO={ base:'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/' };
 let atmoDead=false;
 
 /* ============ basics ============ */
@@ -727,7 +724,7 @@ async function pollenAtmospore(){
  try{
   const dt=data.current.time.slice(0,10);
   const[j,meta]=await Promise.all([
-   fetchJSON(`${ATMO.base}/pollen?lat=${place.lat}&lon=${place.lon}&dt=${dt}&forecast_days=1`,{'x-api-key':ATMO.key}),
+   fetchJSON(`${ATMO.base}/pollen?lat=${place.lat}&lon=${place.lon}&dt=${dt}&forecast_days=1`),
    getSpeciesMeta()
   ]);
   console.info('[Atmospore]',j);
@@ -745,7 +742,7 @@ async function pollenAtmospore(){
   return rows;
  }catch(e){
   console.warn('[Atmospore] failed:',e.message);
-  if(/HTTP (401|403)/.test(e.message))atmoDead=true;   // bad key: stop retrying
+  atmoDead=true;   // don't retry (and spam the console) on every city change
   return null;
  }
 }
