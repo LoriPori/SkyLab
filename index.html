@@ -1321,7 +1321,7 @@ async function radarLoadKind(k){
  radarShow(0);radarBtn();radarTick();
 }
 
-/* ============ PWA install ============ */
+/* ============ PWA install -- now it is working ============ */
 let installEv=null;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e;$('#inst').hidden=false});
 $('#inst').onclick=async()=>{
