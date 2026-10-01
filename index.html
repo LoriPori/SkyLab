@@ -1207,7 +1207,7 @@ async function radarInit(){
 }
 /* NASA IMERG: find the newest available times, then build an animation */
 const nasaISO=t=>new Date(t).toISOString().slice(0,19)+'Z';
-const NASA_URL=t=>`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate/default/${nasaISO(t)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`;
+const NASA_URL=t=>`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate_30min/default/${nasaISO(t)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`;
 const NASA_PROBE=t=>NASA_URL(t).replace('{z}','0').replace('{y}','0').replace('{x}','0');
 let nasaCache=null;
 function imgOK(url){
