@@ -1132,8 +1132,16 @@ addEventListener('pointerdown',askNotif,{once:true});
 addEventListener('keydown',askNotif,{once:true});
 
 /* ============ Radar tab ============ */
-const RADAR_KINDS=[['rain','Rain radar'],['cloud','Clouds'],['nasa','Global rain']];
+const RADAR_KINDS=[['rain','Rain radar'],['cloud','Clouds'],['sat','Satellite'],['nasa','Global rain']];
 let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='rain',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
+const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+/* layers are created but NOT added to the map; radarShow adds only the visible one */
+const mkLayer=(url,opts)=>L.tileLayer(url,{pane:'radar',className:'rlayer',opacity:0,
+  errorTileUrl:BLANK,updateWhenZooming:false,updateWhenIdle:true,keepBuffer:1,...opts});
+const SAT_LAYERS={
+  sat:{id:'GOES-East_ABI_GeoColor',tms:'GoogleMapsCompatible_Level7',ext:'jpeg'},
+  cloud:{id:'GOES-East_ABI_Band13_Clean_Infrared',tms:'GoogleMapsCompatible_Level6',ext:'png'}
+};
 
 function loadLeaflet(){
  if(window.L)return Promise.resolve();
@@ -1162,14 +1170,28 @@ function radarStop(){
 }
 function radarBtn(){const b=$('#rplay');if(b){b.textContent=radarPlay?'❚❚':'▶';b.setAttribute('aria-label',radarPlay?'Pause':'Play')}}
 function radarShow(i){
- if(!radarLayers.length||!$('#rtime'))return;
- radarIdx=i;
- radarLayers.forEach((l,j)=>l.setOpacity(j==i?.8:0));
- const f=radarFrames[i];$('#rsl').value=i;
- if(f.time){
-  const d=new Date(f.time*1000),m=Math.round((d-Date.now())/6e4),t=d.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});
-  $('#rtime').innerHTML=`${t} · ${f.fc?`<em>forecast</em> +${Math.max(m,0)} min`:m>-3?'now':m<-90?`${(-m/60).toFixed(1)} h ago`:`${-m} min ago`}`;
- }
+  if(!radarMap||!radarLayers.length||!$('#rtime'))return;
+  radarIdx=i;
+  const cur=radarLayers[i],op=(radarKind=='sat'||radarKind=='cloud')?.95:.8;
+  if(!radarMap.hasLayer(cur))cur.addTo(radarMap);
+  cur.setOpacity(op);
+  // keep the previous frame visible until the new one has loaded, then drop the others
+  const swap=()=>{
+    if(radarIdx!==i||!radarMap)return;
+    radarLayers.forEach((l,j)=>{
+      if(j!==i&&radarMap.hasLayer(l)){
+        l.setOpacity(0);
+        setTimeout(()=>{if(radarMap&&radarIdx!==j&&radarMap.hasLayer(l))radarMap.removeLayer(l)},450);
+      }
+    });
+  };
+  if(cur._loading)cur.once('load',swap);else swap();
+
+  const f=radarFrames[i];$('#rsl').value=i;
+  if(f.time){
+    const d=new Date(f.time*1000),m=Math.round((d-Date.now())/6e4),t=d.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});
+    $('#rtime').innerHTML=`${t} · ${f.fc?`<em>forecast</em> +${Math.max(m,0)} min`:m>-3?'now':m<-90?`${(-m/60).toFixed(1)} h ago`:`${-m} min ago`}`;
+  }
 }
 function radarTick(){
  clearTimeout(radarTimer);
@@ -1196,13 +1218,6 @@ async function radarInit(){
  $('#rplay').onclick=()=>{radarPlay=!radarPlay;radarBtn();radarTick()};
  $('#rsl').oninput=e=>{radarPlay=false;radarBtn();clearTimeout(radarTimer);radarShow(+e.target.value)};
  radarBtn();
-
- try{
-  const meta=await radarGetMeta();
-  if(tok!==radarTok||!$('#rsw'))return;
-  const hasSat=meta.satellite&&meta.satellite.infrared&&meta.satellite.infrared.length;
-  if(!hasSat){$('[data-rk=cloud]').hidden=true;if(radarKind=='cloud')radarKind='rain'}
- }catch(e){}
  radarLoadKind(radarKind);
 }
 /* NASA IMERG: find the newest available times, then build an animation */
@@ -1249,79 +1264,139 @@ async function nasaTimes(){
   nasaCache={at:Date.now(),times};return times;
  }catch(e){console.warn('[NASA IMERG] latest lookup failed:',e.message);return[]}
 }
+const satCache={};
+const satURL=(id,j,t)=>`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${id}/default/${nasaISO(t)}/${j.tms}/{z}/{y}/{x}.${j.ext}`;
+
+async function satProbe(cfg){            // fallback if the Worker has no /gibs-latest
+  const step=10*60e3;
+  let t=Math.floor(Date.now()/step)*step;
+  for(let n=0;n<36;n++,t-=step){
+    const u=`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.id}/default/${nasaISO(t)}/${cfg.tms}/3/3/2.${cfg.ext}`;
+    try{
+      const r=await fetch(u);
+      if(r.ok&&(await r.blob()).size>1500)
+        return{found:true,end:new Date(t).toISOString(),start:new Date(t-24*36e5).toISOString(),stepMs:step,tms:cfg.tms,ext:cfg.ext};
+    }catch(e){}
+  }
+  throw new Error('no recent frames found');
+}
+async function satInfo(kind){
+  const cfg=SAT_LAYERS[kind],c=satCache[kind];
+  if(c&&Date.now()-c.at<6e5)return c.v;
+  let v;
+  try{
+    const r=await fetch(ATMO.base.replace('/v1','')+'/gibs-latest?id='+cfg.id);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    v=await r.json();
+    if(!v.found||!v.end||!v.stepMs||!v.tms)throw new Error('layer not found');
+  }catch(e){
+    console.warn('[SAT] worker lookup failed, probing GIBS directly:',e.message);
+    v=await satProbe(cfg);
+  }
+  satCache[kind]={at:Date.now(),v};return v;
+}
 
 let nasaLeg=null;
 async function nasaLegend(){
- if(!nasaLeg){
-  try{
-   const r=await fetch('https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/colormap');
-   if(!r.ok)throw new Error('HTTP '+r.status);
-   const x=new DOMParser().parseFromString(await r.text(),'text/xml'),lg=x.querySelector('Legend');
-   let cols=[...x.querySelectorAll('LegendEntry')].map(e=>e.getAttribute('rgb')).filter(Boolean);
-   if(cols.length<2)cols=[...x.querySelectorAll('ColorMapEntry')].filter(e=>e.getAttribute('transparent')!='true').map(e=>e.getAttribute('rgb')).filter(Boolean);
-   if(cols.length<2)throw new Error('no colours');
-   const n=Math.min(24,cols.length);
-   cols=Array.from({length:n},(_,i)=>cols[Math.round(i*(cols.length-1)/(n-1))]);
-   nasaLeg={cols,min:lg&&lg.getAttribute('minLabel'),max:lg&&lg.getAttribute('maxLabel')};
-  }catch(e){console.warn('[NASA legend] failed:',e.message);nasaLeg={cols:null}}
- }
- const bar=$('#rlbar');if(!bar)return;
- if(nasaLeg.cols)bar.style.background=`linear-gradient(90deg,${nasaLeg.cols.map(c=>`rgb(${c})`).join(',')})`;
- $('#rlmin').textContent=nasaLeg.min||'light';
- $('#rlmax').textContent=nasaLeg.max||'heavy';
+  if(!nasaLeg){
+    const urls=['https://gibs.earthdata.nasa.gov/colormaps/v1.3/IMERG_Precipitation_Rate.xml',
+                ATMO.base.replace('/v1','')+'/colormap'];
+    for(const u of urls){
+      try{
+        const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);
+        const x=new DOMParser().parseFromString(await r.text(),'text/xml'),lg=x.querySelector('Legend');
+        let cols=[...x.querySelectorAll('LegendEntry')].map(e=>e.getAttribute('rgb')).filter(Boolean);
+        if(cols.length<2)cols=[...x.querySelectorAll('ColorMapEntry')].filter(e=>e.getAttribute('transparent')!='true').map(e=>e.getAttribute('rgb')).filter(Boolean);
+        if(cols.length<2)throw new Error('no colours');
+        const n=Math.min(24,cols.length);
+        cols=Array.from({length:n},(_,i)=>cols[Math.round(i*(cols.length-1)/(n-1))]);
+        nasaLeg={cols,min:lg&&lg.getAttribute('minLabel'),max:lg&&lg.getAttribute('maxLabel')};
+        break;
+      }catch(e){console.warn('[NASA legend] failed:',u,e.message)}
+    }
+    if(!nasaLeg)nasaLeg={cols:null};   // keeps the default CSS gradient
+  }
+  const bar=$('#rlbar');if(!bar)return;
+  if(nasaLeg.cols)bar.style.background=`linear-gradient(90deg,${nasaLeg.cols.map(c=>`rgb(${c})`).join(',')})`;
+  $('#rlmin').textContent=nasaLeg.min||'light';
+  $('#rlmax').textContent=nasaLeg.max||'heavy';
 }
 
 async function radarLoadKind(k){
- if(!radarMap)return;
- const tok=radarTok,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
- clearTimeout(radarTimer);
- radarLayers.forEach(l=>radarMap.removeLayer(l));radarLayers=[];radarFrames=[];
- radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
- $('#rleg').hidden=k!='rain';
- $('#rleg2').hidden=k!='nasa';
- if(k=='nasa')nasaLegend();
- note.textContent='';$('#rtime').textContent='';
+  if(!radarMap)return;
+  const tok=radarTok,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  clearTimeout(radarTimer);
+  radarLayers.forEach(l=>radarMap.removeLayer(l));radarLayers=[];radarFrames=[];
+  radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
+  $('#rleg').hidden=k!='rain';
+  $('#rleg2').hidden=k!='nasa';
+  if(k=='nasa')nasaLegend();
+  note.textContent='';$('#rtime').textContent='';
 
-  if(k=='nasa'){
-  sl.disabled=true;pl.disabled=true;
-  note.textContent='Checking the latest satellite frames…';
-  const times=await nasaTimes();
-  if(tok!==radarTok||!radarMap)return;
-  if(times.length<2){
-   // fallback: one still image, as before
-   radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate_30min/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',{pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9}).addTo(radarMap)];
-   radarFrames=[{}];sl.max=0;
-      note.textContent='Satellite rain estimate · worldwide · latest image (no distinct frames to animate)';
-   $('#rtime').textContent='Latest available';
-   return;
+  /* ---- Satellite (true colour) and Clouds (infrared), both from NASA GIBS ---- */
+  if(k=='sat'||k=='cloud'){
+    const cfg=SAT_LAYERS[k];
+    sl.disabled=true;pl.disabled=true;
+    note.textContent='Loading satellite frames…';
+    let j;
+    try{j=await satInfo(k)}catch(e){
+      console.warn('[SAT]',e.message);
+      if(tok===radarTok&&note)note.textContent='Satellite imagery unavailable right now.';
+      return;
+    }
+    if(tok!==radarTok||!radarMap)return;
+    const end=Date.parse(j.end),start=Date.parse(j.start),N=12;
+    const times=Array.from({length:N},(_,i)=>end-(N-1-i)*j.stepMs).filter(t=>t>=start);
+    const nz=+((j.tms.match(/Level(\d+)/)||[0,7])[1]);
+    console.info('[SAT]',k,'newest frame:',nasaISO(end),'=',((Date.now()-end)/36e5).toFixed(1),'h ago');
+    radarFrames=times.map(t=>({time:t/1000,fc:false}));
+    radarLayers=times.map(t=>mkLayer(satURL(cfg.id,j,t),{maxNativeZoom:nz,maxZoom:9}));
+    sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
+    const out=place.lon>10||place.lon<-150;
+    note.textContent=(k=='sat'?'True-colour satellite':'Infrared satellite (clouds)')+' · GOES-East · last ~2 h'
+      +(out?' · GOES-East only covers the Americas and the Atlantic':'');
+    radarShow(0);radarBtn();radarTick();
+    return;
   }
-  radarFrames=times.map(t=>({time:t/1000,fc:false}));
-  radarLayers=times.map(t=>L.tileLayer(NASA_URL(t),{pane:'radar',className:'rlayer',opacity:0,maxNativeZoom:6,maxZoom:9}).addTo(radarMap));
-  sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
-  note.textContent='Satellite rain estimate · worldwide · last ~6 h';
+
+  /* ---- NASA IMERG ---- */
+  if(k=='nasa'){
+    sl.disabled=true;pl.disabled=true;
+    note.textContent='Checking the latest satellite frames…';
+    const times=await nasaTimes();
+    if(tok!==radarTok||!radarMap)return;
+    if(times.length<2){
+      radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate_30min/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',
+        {pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9,errorTileUrl:BLANK}).addTo(radarMap)];
+      radarFrames=[{}];sl.max=0;
+      note.textContent='Satellite rain estimate · worldwide · latest image (no distinct frames to animate)';
+      $('#rtime').textContent='Latest available';
+      return;
+    }
+    radarFrames=times.map(t=>({time:t/1000,fc:false}));
+    radarLayers=times.map(t=>mkLayer(NASA_URL(t),{maxNativeZoom:6,maxZoom:9}));
+    sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
+    note.textContent='Satellite rain estimate · worldwide · last ~6 h';
+    radarShow(0);radarBtn();radarTick();
+    return;
+  }
+
+  /* ---- RainViewer radar ---- */
+  sl.disabled=false;pl.disabled=false;
+  let meta;
+  try{meta=await radarGetMeta()}catch(e){if(tok===radarTok&&note)note.textContent='Radar service unavailable right now.';return}
+  if(tok!==radarTok||!radarMap)return;
+  const host=meta.host||'https://tilecache.rainviewer.com',rad=meta.radar||{};
+  const frames=[...(rad.past||[]).slice(-8).map(f=>({...f,fc:false})),...(rad.nowcast||[]).map(f=>({...f,fc:true}))];
+  if(!frames.length){note.textContent='No radar frames available right now.';return}
+  radarFrames=frames;
+  radarLayers=frames.map(f=>mkLayer(host+f.path+'/256/{z}/{x}/{y}/2/1_1.png',{tileSize:256,maxNativeZoom:7,maxZoom:9}));
+  sl.max=frames.length-1;
+  note.textContent=frames.some(f=>f.fc)?'Recent radar + short forecast':'Recent radar · updates every 10 min';
   radarShow(0);radarBtn();radarTick();
-  return;
- }
- sl.disabled=false;pl.disabled=false;
- let meta;
- try{meta=await radarGetMeta()}catch(e){if(tok===radarTok&&note)note.textContent='Radar service unavailable right now.';return}
- if(tok!==radarTok||!radarMap)return;
-
- const host=meta.host||'https://tilecache.rainviewer.com',rad=meta.radar||{};
- let frames;
- if(k=='rain')frames=[...(rad.past||[]).slice(-8).map(f=>({...f,fc:false})),...(rad.nowcast||[]).map(f=>({...f,fc:true}))];
- else frames=((meta.satellite&&meta.satellite.infrared)||[]).slice(-8).map(f=>({...f,fc:false}));
- if(!frames.length){note.textContent=k=='cloud'?'Cloud imagery isn’t available right now.':'No radar frames available right now.';return}
-
- const suffix=k=='rain'?'/256/{z}/{x}/{y}/2/1_1.png':'/256/{z}/{x}/{y}/0/0_0.png';
- radarFrames=frames;
- radarLayers=frames.map(f=>L.tileLayer(host+f.path+suffix,{pane:'radar',className:'rlayer',opacity:0,tileSize:256,maxNativeZoom:7,maxZoom:9}).addTo(radarMap));
- sl.max=frames.length-1;
- note.textContent=frames.some(f=>f.fc)?'Recent radar + short forecast':'Recent radar · updates every 10 min';
- radarShow(0);radarBtn();radarTick();
 }
 
-/* ============ PWA install -- now it is working ============ */
+/* ============ PWA install ============ */
 let installEv=null;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e;$('#inst').hidden=false});
 $('#inst').onclick=async()=>{
