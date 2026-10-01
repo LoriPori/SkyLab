@@ -178,8 +178,10 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)
 .aq small{font-family:var(--sans);font-size:16px;margin-left:10px}
 .pl{display:grid;gap:11px;margin-top:12px}
 .pr{display:grid;grid-template-columns:92px 1fr 78px;align-items:center;gap:12px;font-size:14px}
-.pb{height:8px;border-radius:9px;background:rgba(20,49,79,.1);overflow:hidden}
-.pb i{display:block;height:100%;width:var(--w);border-radius:9px;animation:gw 1.1s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*80ms)}
+.pb{height:16px;border-radius:9px;background:rgba(20,49,79,.1);overflow:hidden}
+.pb i{position:relative;display:block;height:100%;width:var(--w);border-radius:9px;overflow:hidden;animation:gw 1.1s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*80ms)}
+.pb i::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:220% 100%;animation:shim 2.8s linear infinite}
+@keyframes shim{from{background-position:120% 0}to{background-position:-120% 0}}
 .pb i.lv0{background:#4fd18b}.pb i.lv1{background:#f0cf45}.pb i.lv2{background:#f59a3a}.pb i.lv3{background:#e5652e}
 .pr b{text-align:right;font-weight:600;font-size:13px}
 .src{display:inline-block;margin-top:12px;font-size:12px;color:var(--mut);border:1px solid rgba(20,49,79,.16);border-radius:99px;padding:3px 10px}
@@ -728,17 +730,29 @@ async function pollenAtmospore(){
   console.info('[Atmospore]',j);
   const day=(j.data||[])[0];
   if(!day||!day.species)return null;
+
+  // cada nível de risco ocupa a sua faixa da barra
+  const BAR_BASE=[12,38,62,85], BAR_SPAN=[24,24,23,15];
+
   let rows=Object.entries(day.species).map(([id,s])=>{
-   const m=meta[id]||{},th=Array.isArray(m.risk_thresholds)?m.risk_thresholds:[15,90,500,1500];
+   const risk=String(s.risk_level||'low').toLowerCase();
+   const lvl=RISK[risk]??0;
    const v=+s.value||0;
-   const lvl=RISK[String(s.risk_level||'low').toLowerCase()]??0;
-   const top=Math.max(...th);
-   const pct=Math.max(5,Math.min(100,top?v/top*100:[12,40,70,95][lvl]));
-   const lab=String(s.risk_level||'low');
-   return{n:s.display_name||m.display_name||id,v,lvl,pct,label:v===0?'None':lab[0].toUpperCase()+lab.slice(1)};
+   const lims=(meta[id]&&meta[id].risk_thresholds)||[];
+   const lowEdge=lvl>0?(lims[lvl-1]||0):0;
+   const highEdge=lims[lvl]||lims[lims.length-1]||1;
+   const frac=lvl>=3
+     ? Math.min(1,v/highEdge)
+     : Math.max(0,Math.min(1,(v-lowEdge)/((highEdge-lowEdge)||1)));
+   const pct=v===0?5:BAR_BASE[lvl]+BAR_SPAN[lvl]*frac;
+   return{
+    n:s.display_name||(meta[id]&&meta[id].display_name)||id,
+    v,lvl,pct,
+    label:v===0?'None':risk[0].toUpperCase()+risk.slice(1)
+   };
   }).sort((a,b)=>b.lvl-a.lvl||b.v-a.v);
-  const nonZero=rows.filter(r=>r.v>0);
-  if(nonZero.length)rows=nonZero;
+
+  if(rows.some(r=>r.v>0))rows=rows.filter(r=>r.v>0);
   sig.pollen={risk:String(day.overall_risk||'low').toLowerCase(),top:rows[0]&&rows[0].n};
   return rows;
  }catch(e){
