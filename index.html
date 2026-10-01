@@ -293,6 +293,10 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .rpin i{display:block;position:relative;width:18px;height:18px;border-radius:50%;background:var(--acc);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .rpin i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--acc);animation:haloP 2.2s ease-out infinite}
 @media(max-width:860px){.rtime{min-width:0;font-size:12px}}
+
+.rleg2{flex-wrap:wrap}
+.rleg2 img{height:44px;max-width:100%;padding:4px 8px;border-radius:10px;background:#fff;border:1px solid rgba(20,49,79,.12)}
+.rleg2 img[hidden],.rlegfb[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -1148,6 +1152,7 @@ function radarPane(){
  <div id="rmap" role="application" aria-label="Weather radar map">Loading map…</div>
  <div class="rctl"><button class="pill dk" id="rplay" aria-label="Pause">❚❚</button><input type="range" id="rsl" min="0" max="0" value="0" aria-label="Radar time"><span class="rtime" id="rtime"></span></div>
  <div class="rleg" id="rleg"><span>Light</span><i></i><span>Heavy</span></div>
+ <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate (mm/h)</span><img id="rlegimg" alt="Colour scale for rain rate, in millimetres per hour"><span class="rlegfb" hidden>Cool colours mean lighter rain, warm colours heavier rain.</span></div>
  </section></div>`;
 }
 function radarStop(){
@@ -1203,6 +1208,8 @@ async function radarInit(){
 /* NASA IMERG: find the newest available times, then build an animation */
 const nasaISO=t=>new Date(t).toISOString().slice(0,19)+'Z';
 const NASA_URL=t=>`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate/default/${nasaISO(t)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`;
+const NASA_PROBE=t=>NASA_URL(t).replace('{z}','0').replace('{y}','0').replace('{x}','0');
+let nasaCache=null;
 function imgOK(url){
  return new Promise(res=>{
   const im=new Image(),to=setTimeout(()=>{im.src='';res(false)},6000);
@@ -1212,13 +1219,22 @@ function imgOK(url){
  });
 }
 async function nasaTimes(){
+ if(nasaCache&&Date.now()-nasaCache.at<9e5)return nasaCache.times;   // reuse for 15 min
  const step=30*60e3,base=Math.floor(Date.now()/step)*step;
- // test every slot from 1h to 9h ago, in parallel, using one small tile
- const cand=[];for(let k=2;k<=18;k++)cand.push(base-k*step);
- const ok=await Promise.all(cand.map(t=>imgOK(NASA_URL(t).replace('{z}','2').replace('{y}','1').replace('{x}','2'))));
- const latest=cand.find((t,i)=>ok[i]);          // cand is newest-first
- if(!latest)return[];
- return Array.from({length:12},(_,i)=>latest-(11-i)*step);
+ // search newest to oldest, 8 slots at a time, up to 48 h back
+ for(let start=1;start<=96;start+=8){
+  const cand=[];for(let k=start;k<start+8;k++)cand.push(base-k*step);
+  const ok=await Promise.all(cand.map(t=>imgOK(NASA_PROBE(t))));
+  const i=ok.indexOf(true);
+  if(i>=0){
+   const latest=cand[i];
+   console.info('[NASA IMERG] newest frame:',nasaISO(latest),'=',((Date.now()-latest)/36e5).toFixed(1),'h ago');
+   const times=Array.from({length:12},(_,j)=>latest-(11-j)*step);
+   nasaCache={at:Date.now(),times};return times;
+  }
+ }
+ console.warn('[NASA IMERG] no frame found in the last 48 h. Probe URL example:',NASA_PROBE(base-step));
+ return[];
 }
 
 async function radarLoadKind(k){
@@ -1227,7 +1243,13 @@ async function radarLoadKind(k){
  clearTimeout(radarTimer);
  radarLayers.forEach(l=>radarMap.removeLayer(l));radarLayers=[];radarFrames=[];
  radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
- $('#rleg').hidden=k!='rain';
+  $('#rleg').hidden=k!='rain';
+  const l2=$('#rleg2'),li=$('#rlegimg');
+  l2.hidden=k!='nasa';
+  if(k=='nasa'&&!li.src){
+ li.onerror=()=>{li.hidden=true;l2.querySelector('.rlegfb').hidden=false};
+ li.src='https://gibs.earthdata.nasa.gov/legends/IMERG_Precipitation_Rate_H.png';
+  }
  note.textContent='';$('#rtime').textContent='';
 
   if(k=='nasa'){
