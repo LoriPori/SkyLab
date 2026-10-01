@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#33b0ea">
 <title>Skylab — Weather & Science</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Schibsted+Grotesk:wght@400;500;600&display=swap">
@@ -267,6 +269,30 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .pcol{position:relative;width:20px;height:74px;border-radius:10px;background:rgba(20,49,79,.1);overflow:hidden}
 .pcol i{position:absolute;left:0;right:0;bottom:0;height:var(--h);border-radius:10px;transform-origin:bottom;animation:gy 1s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*90ms + 400ms)}
 .pcol i.lv0{background:#4fd18b}.pcol i.lv1{background:#f0cf45}.pcol i.lv2{background:#f59a3a}.pcol i.lv3{background:#e5652e}
+
+/* install button */
+#inst{animation:pop .6s cubic-bezier(.3,1.5,.4,1) both}
+
+/* radar */
+.radar{padding:16px}
+.card.radar:hover{transform:none}
+.rtop{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.rtop .sw{margin-bottom:0}
+.rnow{font-size:13px;color:var(--mut)}
+#rmap{height:clamp(300px,52vh,500px);border-radius:18px;overflow:hidden;isolation:isolate;background:#dfe9ef;display:grid;place-items:center;color:var(--mut);font-size:14px}
+#rmap.leaflet-container{display:block}
+.rlayer{transition:opacity .35s linear}
+.rctl{display:flex;align-items:center;gap:12px;margin-top:12px}
+.rctl .pill{width:42px;height:42px;padding:0;display:grid;place-items:center;font-size:13px}
+.rctl input{flex:1;accent-color:var(--acc);cursor:pointer}
+.rtime{min-width:170px;text-align:right;font-size:13px;font-weight:600}
+.rtime em{font-style:normal;color:var(--acc)}
+.rleg{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mut)}
+.rleg[hidden]{display:none}
+.rleg i{flex:1;max-width:260px;height:6px;border-radius:9px;background:linear-gradient(90deg,#9ad7ff,#2f7ee0,#2fb34a,#f2d23a,#f08a2c,#d6342c)}
+.rpin i{display:block;position:relative;width:18px;height:18px;border-radius:50%;background:var(--acc);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.rpin i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--acc);animation:haloP 2.2s ease-out infinite}
+@media(max-width:860px){.rtime{min-width:0;font-size:12px}}
 </style>
 </head>
 <body>
@@ -282,6 +308,7 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
   <kbd>/</kbd>
   <div class="sugg" id="sg" role="listbox"></div>
  </div>
+ <button class="pill solid" id="inst" hidden>Install app</button>
  <button class="pill" id="loc">Locate</button>
  <button class="pill" id="sur" title="Jump to a place with interesting weather">Surprise</button>
  <button class="pill sndb" id="snd" aria-pressed="false" title="Ambient weather sound">Sound</button>
@@ -558,7 +585,7 @@ function paintFav(){
 }
 
 /* ============ tabs ============ */
-const TABS=[['today','Today'],['week','Week'],['air','Air & pollen'],['sci','Science']];
+const TABS=[['today','Today'],['week','Week'],['radar','Radar'],['air','Air & pollen'],['sci','Science']];
 function shell(){
  return`<div class="tabs" role="tablist" id="tabs"><i class="ind" id="ind"></i>${TABS.map(([k,n])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${k==tab}">${n}</button>`).join('')}</div><div id="pane"></div>`;
 }
@@ -566,9 +593,10 @@ function moveInd(){
  const b=$('.tab[aria-selected=true]'),i=$('#ind');if(!b||!i)return;
  i.style.left=b.offsetLeft+'px';i.style.width=b.offsetWidth+'px';
 }
-const PANES={today:todayPane,week:weekPane,air:airPane,sci:sciPane};
-const INIT={today:scrub};
+const PANES={today:todayPane,week:weekPane,radar:radarPane,air:airPane,sci:sciPane};
+const INIT={today:scrub,radar:radarInit};
 function setTab(k){
+ radarStop();
  tab=k;$$('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t==k));moveInd();
  const pane=$('#pane');pane.innerHTML=PANES[k]();
  if(INIT[k])INIT[k]();
@@ -1051,7 +1079,7 @@ document.addEventListener('keydown',e=>{
  if(e.key=='r'&&place){toast('Refreshing…');show(place.lat,place.lon,place.name,place.sub)}
  if(e.key=='l')locate();
  if(e.key=='h'){lsSet('place',null);landing()}
- if(data&&'1234'.includes(e.key)&&e.key)setTab(TABS[+e.key-1][0]);
+ if(data&&'12345'.includes(e.key)&&e.key)setTab(TABS[+e.key-1][0]);
 });
 addEventListener('load',moveInd);
 setInterval(()=>{if(place&&!document.hidden)show(place.lat,place.lon,place.name,place.sub)},6e5);
@@ -1098,6 +1126,127 @@ function askNotif(){
 }
 addEventListener('pointerdown',askNotif,{once:true});
 addEventListener('keydown',askNotif,{once:true});
+
+/* ============ Radar tab ============ */
+const RADAR_KINDS=[['rain','Rain radar'],['cloud','Clouds'],['nasa','Global rain']];
+let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='rain',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
+
+function loadLeaflet(){
+ if(window.L)return Promise.resolve();
+ return leafletP||(leafletP=Promise.all([
+  new Promise((res,rej)=>{const c=document.createElement('link');c.rel='stylesheet';c.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';c.onload=res;c.onerror=rej;document.head.appendChild(c)}),
+  new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})
+ ]).catch(e=>{leafletP=null;throw e}));
+}
+async function radarGetMeta(){
+ if(radarMeta&&Date.now()-radarMetaT<3e5)return radarMeta;
+ radarMeta=await fetchJSON('https://api.rainviewer.com/public/weather-maps.json');radarMetaT=Date.now();return radarMeta;
+}
+function radarPane(){
+ return`<div class="pane"><section class="card radar">
+ <div class="rtop"><div class="sw" id="rsw">${RADAR_KINDS.map(([k,n])=>`<button data-rk="${k}" aria-pressed="${k==radarKind}">${n}</button>`).join('')}</div><span class="rnow" id="rnote"></span></div>
+ <div id="rmap" role="application" aria-label="Weather radar map">Loading map…</div>
+ <div class="rctl"><button class="pill dk" id="rplay" aria-label="Pause">❚❚</button><input type="range" id="rsl" min="0" max="0" value="0" aria-label="Radar time"><span class="rtime" id="rtime"></span></div>
+ <div class="rleg" id="rleg"><span>Light</span><i></i><span>Heavy</span></div>
+ </section></div>`;
+}
+function radarStop(){
+ radarTok++;clearTimeout(radarTimer);
+ if(radarMap){try{radarMap.remove()}catch(e){}radarMap=null}
+ radarLayers=[];radarFrames=[];
+}
+function radarBtn(){const b=$('#rplay');if(b){b.textContent=radarPlay?'❚❚':'▶';b.setAttribute('aria-label',radarPlay?'Pause':'Play')}}
+function radarShow(i){
+ if(!radarLayers.length||!$('#rtime'))return;
+ radarIdx=i;
+ radarLayers.forEach((l,j)=>l.setOpacity(j==i?.8:0));
+ const f=radarFrames[i];$('#rsl').value=i;
+ if(f.time){
+  const d=new Date(f.time*1000),m=Math.round((d-Date.now())/6e4),t=d.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});
+  $('#rtime').innerHTML=`${t} · ${f.fc?`<em>forecast</em> +${Math.max(m,0)} min`:m>-3?'now':`${-m} min ago`}`;
+ }
+}
+function radarTick(){
+ clearTimeout(radarTimer);
+ if(!radarPlay||radarFrames.length<2)return;
+ radarTimer=setTimeout(()=>{radarShow((radarIdx+1)%radarFrames.length);radarTick()},radarIdx==radarFrames.length-1?1800:650);
+}
+async function radarInit(){
+ const tok=++radarTok;
+ try{await loadLeaflet()}catch(e){const m=$('#rmap');if(m)m.textContent='The map library couldn’t load. Check your connection.';return}
+ if(tok!==radarTok||!$('#rmap'))return;
+ $('#rmap').textContent='';
+ radarMap=L.map('rmap',{center:[place.lat,place.lon],zoom:6,minZoom:3,maxZoom:9,scrollWheelZoom:false});
+ radarMap.createPane('radar').style.zIndex=250;
+ const lp=radarMap.createPane('labels');lp.style.zIndex=260;lp.style.pointerEvents='none';
+ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(radarMap);
+ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,pane:'labels'}).addTo(radarMap);
+ radarMap.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · radar <a href="https://www.rainviewer.com/">RainViewer</a> · <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>');
+ L.marker([place.lat,place.lon],{keyboard:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(radarMap);
+ radarMap.on('click focus',()=>radarMap.scrollWheelZoom.enable());
+ radarMap.on('mouseout',()=>radarMap.scrollWheelZoom.disable());
+ setTimeout(()=>radarMap&&radarMap.invalidateSize(),250);
+
+ $('#rsw').onclick=e=>{const b=e.target.closest('[data-rk]');if(b&&b.dataset.rk!=radarKind)radarLoadKind(b.dataset.rk)};
+ $('#rplay').onclick=()=>{radarPlay=!radarPlay;radarBtn();radarTick()};
+ $('#rsl').oninput=e=>{radarPlay=false;radarBtn();clearTimeout(radarTimer);radarShow(+e.target.value)};
+ radarBtn();
+
+ try{
+  const meta=await radarGetMeta();
+  if(tok!==radarTok||!$('#rsw'))return;
+  const hasSat=meta.satellite&&meta.satellite.infrared&&meta.satellite.infrared.length;
+  if(!hasSat){$('[data-rk=cloud]').hidden=true;if(radarKind=='cloud')radarKind='rain'}
+ }catch(e){}
+ radarLoadKind(radarKind);
+}
+async function radarLoadKind(k){
+ if(!radarMap)return;
+ const tok=radarTok,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+ clearTimeout(radarTimer);
+ radarLayers.forEach(l=>radarMap.removeLayer(l));radarLayers=[];radarFrames=[];
+ radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
+ $('#rleg').hidden=k!='rain';
+ note.textContent='';$('#rtime').textContent='';
+
+ if(k=='nasa'){
+  radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',{pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9}).addTo(radarMap)];
+  radarFrames=[{}];sl.max=0;sl.value=0;sl.disabled=true;pl.disabled=true;
+  note.textContent='Satellite rain estimate · worldwide';
+  $('#rtime').textContent='Latest available (a few hours old)';
+  return;
+ }
+ sl.disabled=false;pl.disabled=false;
+ let meta;
+ try{meta=await radarGetMeta()}catch(e){if(tok===radarTok&&note)note.textContent='Radar service unavailable right now.';return}
+ if(tok!==radarTok||!radarMap)return;
+
+ const host=meta.host||'https://tilecache.rainviewer.com',rad=meta.radar||{};
+ let frames;
+ if(k=='rain')frames=[...(rad.past||[]).slice(-8).map(f=>({...f,fc:false})),...(rad.nowcast||[]).map(f=>({...f,fc:true}))];
+ else frames=((meta.satellite&&meta.satellite.infrared)||[]).slice(-8).map(f=>({...f,fc:false}));
+ if(!frames.length){note.textContent=k=='cloud'?'Cloud imagery isn’t available right now.':'No radar frames available right now.';return}
+
+ const suffix=k=='rain'?'/256/{z}/{x}/{y}/2/1_1.png':'/256/{z}/{x}/{y}/0/0_0.png';
+ radarFrames=frames;
+ radarLayers=frames.map(f=>L.tileLayer(host+f.path+suffix,{pane:'radar',className:'rlayer',opacity:0,tileSize:256,maxNativeZoom:7,maxZoom:9}).addTo(radarMap));
+ sl.max=frames.length-1;
+ note.textContent=frames.some(f=>f.fc)?'Recent radar + short forecast':'Recent radar · updates every 10 min';
+ radarShow(0);radarBtn();radarTick();
+}
+
+/* ============ PWA install ============ */
+let installEv=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e;$('#inst').hidden=false});
+$('#inst').onclick=async()=>{
+ if(!installEv)return;
+ installEv.prompt();
+ const r=await installEv.userChoice;
+ installEv=null;$('#inst').hidden=true;
+ toast(r.outcome=='accepted'?'Installing Skylab…':'No problem, maybe later');
+};
+addEventListener('appinstalled',()=>{installEv=null;$('#inst').hidden=true;toast('Skylab installed')});
+if('serviceWorker' in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 /* ============ boot ============ */
 const saved=lsGet('place');
