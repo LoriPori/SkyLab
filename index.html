@@ -1135,13 +1135,57 @@ addEventListener('keydown',askNotif,{once:true});
 const RADAR_KINDS=[['rain','Rain radar'],['cloud','Clouds'],['sat','Satellite'],['nasa','Global rain']];
 let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='rain',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-/* layers are created but NOT added to the map; radarShow adds only the visible one */
-const mkLayer=(url,opts)=>L.tileLayer(url,{pane:'radar',className:'rlayer',opacity:0,
-  errorTileUrl:BLANK,updateWhenZooming:false,updateWhenIdle:true,keepBuffer:1,...opts});
-const SAT_LAYERS={
-  sat:{id:'GOES-East_ABI_GeoColor',tms:'GoogleMapsCompatible_Level7',ext:'jpeg'},
-  cloud:{id:'GOES-East_ABI_Band13_Clean_Infrared',tms:'GoogleMapsCompatible_Level6',ext:'png'}
+
+/* ---- tile cache: every tile is downloaded once per session ---- */
+const tileCache=new Map(),tilePending=new Map(),noCors=new Set(),tileQ=[];
+const TILE_MAX=900;let tileActive=0;
+const tileSlot=()=>new Promise(res=>{const go=()=>{tileActive++;res()};tileActive<6?go():tileQ.push(go)});
+const tileDone=()=>{tileActive--;const n=tileQ.shift();if(n)n()};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function tileBlob(url){
+  if(tileCache.has(url)){const v=tileCache.get(url);tileCache.delete(url);tileCache.set(url,v);return Promise.resolve(v)}
+  if(tilePending.has(url))return tilePending.get(url);
+  const p=(async()=>{
+    const host=new URL(url).origin;
+    if(noCors.has(host))return url;                 // server has no CORS: plain <img>, browser cache
+    await tileSlot();
+    try{
+      for(let a=0;a<3;a++){
+        let r;
+        try{r=await fetch(url)}catch(e){noCors.add(host);return url}
+        if(r.status==429){await sleep(900*(a+1));continue}
+        if(!r.ok)throw new Error('HTTP '+r.status);
+        const u=URL.createObjectURL(await r.blob());
+        tileCache.set(url,u);
+        if(tileCache.size>TILE_MAX){const k=tileCache.keys().next().value;URL.revokeObjectURL(tileCache.get(k));tileCache.delete(k)}
+        return u;
+      }
+      throw new Error('429');
+    }finally{tileDone()}
+  })();
+  tilePending.set(url,p);
+  p.then(()=>tilePending.delete(url),()=>tilePending.delete(url));
+  return p;
+}
+
+let CachedTiles;
+const mkLayer=(url,opts)=>{
+  CachedTiles=CachedTiles||L.TileLayer.extend({
+    createTile(coords,done){
+      const img=document.createElement('img');
+      img.alt='';img.setAttribute('role','presentation');
+      const set=src=>{img.onload=()=>done(null,img);img.onerror=()=>done(null,img);img.src=src};
+      tileBlob(this.getTileUrl(coords)).then(set).catch(()=>set(BLANK));
+      return img;
+    }
+  });
+  return new CachedTiles(url,{pane:'radar',className:'rlayer',opacity:0,
+    updateWhenZooming:false,updateWhenIdle:true,keepBuffer:2,...opts});
 };
+
+const WORKER=ATMO.base.replace('/v1','');
+const SAT_ID='VIIRS_SNPP_CorrectedReflectance_TrueColor';
 
 function loadLeaflet(){
  if(window.L)return Promise.resolve();
@@ -1175,7 +1219,6 @@ function radarShow(i){
   const cur=radarLayers[i],op=(radarKind=='sat'||radarKind=='cloud')?.95:.8;
   if(!radarMap.hasLayer(cur))cur.addTo(radarMap);
   cur.setOpacity(op);
-  // keep the previous frame visible until the new one has loaded, then drop the others
   const swap=()=>{
     if(radarIdx!==i||!radarMap)return;
     radarLayers.forEach((l,j)=>{
@@ -1189,8 +1232,13 @@ function radarShow(i){
 
   const f=radarFrames[i];$('#rsl').value=i;
   if(f.time){
-    const d=new Date(f.time*1000),m=Math.round((d-Date.now())/6e4),t=d.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});
-    $('#rtime').innerHTML=`${t} · ${f.fc?`<em>forecast</em> +${Math.max(m,0)} min`:m>-3?'now':m<-90?`${(-m/60).toFixed(1)} h ago`:`${-m} min ago`}`;
+    const d=new Date(f.time*1000);
+    if(f.day){
+      $('#rtime').innerHTML=`${d.toLocaleDateString('en',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'})} · <em>daily</em>`;
+    }else{
+      const m=Math.round((d-Date.now())/6e4),t=d.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});
+      $('#rtime').innerHTML=`${t} · ${f.fc?`<em>forecast</em> +${Math.max(m,0)} min`:m>-3?'now':m<-90?`${(-m/60).toFixed(1)} h ago`:`${-m} min ago`}`;
+    }
   }
 }
 function radarTick(){
@@ -1265,35 +1313,25 @@ async function nasaTimes(){
  }catch(e){console.warn('[NASA IMERG] latest lookup failed:',e.message);return[]}
 }
 const satCache={};
-const satURL=(id,j,t)=>`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${id}/default/${nasaISO(t)}/${j.tms}/{z}/{y}/{x}.${j.ext}`;
-
-async function satProbe(cfg){            // fallback if the Worker has no /gibs-latest
-  const step=10*60e3;
-  let t=Math.floor(Date.now()/step)*step;
-  for(let n=0;n<36;n++,t-=step){
-    const u=`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.id}/default/${nasaISO(t)}/${cfg.tms}/3/3/2.${cfg.ext}`;
-    try{
-      const r=await fetch(u);
-      if(r.ok&&(await r.blob()).size>1500)
-        return{found:true,end:new Date(t).toISOString(),start:new Date(t-24*36e5).toISOString(),stepMs:step,tms:cfg.tms,ext:cfg.ext};
-    }catch(e){}
-  }
-  throw new Error('no recent frames found');
-}
-async function satInfo(kind){
-  const cfg=SAT_LAYERS[kind],c=satCache[kind];
+const satURL=(id,j,t)=>{
+  const ts=j.stepMs>=864e5?new Date(t).toISOString().slice(0,10):nasaISO(t);   // daily layers use YYYY-MM-DD
+  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${id}/default/${ts}/${j.tms}/{z}/{y}/{x}.${j.ext}`;
+};
+async function satInfo(id){
+  const c=satCache[id];
   if(c&&Date.now()-c.at<6e5)return c.v;
   let v;
   try{
-    const r=await fetch(ATMO.base.replace('/v1','')+'/gibs-latest?id='+cfg.id);
+    const r=await fetch(WORKER+'/gibs-latest?id='+id);
     if(!r.ok)throw new Error('HTTP '+r.status);
     v=await r.json();
     if(!v.found||!v.end||!v.stepMs||!v.tms)throw new Error('layer not found');
   }catch(e){
-    console.warn('[SAT] worker lookup failed, probing GIBS directly:',e.message);
-    v=await satProbe(cfg);
+    console.warn('[SAT] worker lookup failed, using defaults:',e.message);
+    v={found:true,end:new Date().toISOString(),start:new Date(Date.now()-30*864e5).toISOString(),
+       stepMs:864e5,tms:'GoogleMapsCompatible_Level9',ext:'jpg'};
   }
-  satCache[kind]={at:Date.now(),v};return v;
+  satCache[id]={at:Date.now(),v};return v;
 }
 
 let nasaLeg=null;
@@ -1333,29 +1371,48 @@ async function radarLoadKind(k){
   if(k=='nasa')nasaLegend();
   note.textContent='';$('#rtime').textContent='';
 
-  /* ---- Satellite (true colour) and Clouds (infrared), both from NASA GIBS ---- */
-  if(k=='sat'||k=='cloud'){
-    const cfg=SAT_LAYERS[k];
+  /* ---- Clouds (OpenWeatherMap via worker): global, single layer ---- */
+  let asSat=(k=='sat'),fbNote='';
+  if(k=='cloud'){
+    sl.disabled=true;pl.disabled=true;
+    note.textContent='Loading cloud layer…';
+    let ok=false;
+    try{ok=(await fetch(WORKER+'/clouds/0/0/0.png')).ok}catch(e){}
+    if(tok!==radarTok||!radarMap)return;
+    if(ok){
+      radarLayers=[mkLayer(WORKER+'/clouds/{z}/{x}/{y}.png',{maxNativeZoom:6,maxZoom:9})];
+      radarFrames=[{}];sl.max=0;
+      note.textContent='Global cloud cover · OpenWeatherMap · updated regularly';
+      $('#rtime').textContent='Current';
+      radarShow(0);radarBtn();
+      return;
+    }
+    asSat=true;fbNote=' · cloud layer needs OWM_KEY in the worker, showing satellite instead';
+  }
+
+  /* ---- Satellite: NASA VIIRS true colour, global daily composites ---- */
+  if(asSat){
     sl.disabled=true;pl.disabled=true;
     note.textContent='Loading satellite frames…';
     let j;
-    try{j=await satInfo(k)}catch(e){
+    try{j=await satInfo(SAT_ID)}catch(e){
       console.warn('[SAT]',e.message);
       if(tok===radarTok&&note)note.textContent='Satellite imagery unavailable right now.';
       return;
     }
     if(tok!==radarTok||!radarMap)return;
-    const end=Date.parse(j.end),start=Date.parse(j.start),N=12;
+    const daily=j.stepMs>=864e5;
+    let end=Date.parse(j.end);const start=Date.parse(j.start),N=daily?7:12;
+    if(daily)end-=j.stepMs;                       // today's mosaic is still incomplete: start at yesterday
     const times=Array.from({length:N},(_,i)=>end-(N-1-i)*j.stepMs).filter(t=>t>=start);
-    const nz=+((j.tms.match(/Level(\d+)/)||[0,7])[1]);
-    console.info('[SAT]',k,'newest frame:',nasaISO(end),'=',((Date.now()-end)/36e5).toFixed(1),'h ago');
-    radarFrames=times.map(t=>({time:t/1000,fc:false}));
-    radarLayers=times.map(t=>mkLayer(satURL(cfg.id,j,t),{maxNativeZoom:nz,maxZoom:9}));
+    const nz=+((j.tms.match(/Level(\d+)/)||[0,9])[1]);
+    console.info('[SAT] newest frame:',new Date(end).toISOString().slice(0,10));
+    radarFrames=times.map(t=>({time:t/1000,fc:false,day:daily}));
+    radarLayers=times.map(t=>mkLayer(satURL(SAT_ID,j,t),{maxNativeZoom:nz,maxZoom:9}));
     sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
-    const out=place.lon>10||place.lon<-150;
-    note.textContent=(k=='sat'?'True-colour satellite':'Infrared satellite (clouds)')+' · GOES-East · last ~2 h'
-      +(out?' · GOES-East only covers the Americas and the Atlantic':'');
-    radarShow(0);radarBtn();radarTick();
+    sl.value=times.length-1;
+    note.textContent='True-colour satellite · NASA VIIRS · global daily composite'+fbNote;
+    radarShow(times.length-1);radarPlay=false;radarBtn();   // start on the newest day, paused
     return;
   }
 
