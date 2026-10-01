@@ -287,6 +287,7 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .rctl input{flex:1;accent-color:var(--acc);cursor:pointer}
 .rtime{min-width:170px;text-align:right;font-size:13px;font-weight:600}
 .rtime em{font-style:normal;color:var(--acc)}
+.rtime.buf::after{content:' · loading…';font-weight:400;opacity:.7}
 .rleg{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mut)}
 .rleg[hidden]{display:none}
 .rleg i{flex:1;max-width:260px;height:6px;border-radius:9px;background:linear-gradient(90deg,#9ad7ff,#2f7ee0,#2fb34a,#f2d23a,#f08a2c,#d6342c)}
@@ -1139,7 +1140,7 @@ const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABA
 /* ---- tile cache: every tile is downloaded once per session ---- */
 const tileCache=new Map(),tilePending=new Map(),noCors=new Set(),tileQ=[];
 const TILE_MAX=900;let tileActive=0;
-const tileSlot=()=>new Promise(res=>{const go=()=>{tileActive++;res()};tileActive<6?go():tileQ.push(go)});
+const tileSlot=()=>new Promise(res=>{const go=()=>{tileActive++;res()};tileActive<8?go():tileQ.push(go)});
 const tileDone=()=>{tileActive--;const n=tileQ.shift();if(n)n()};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
@@ -1219,16 +1220,9 @@ function radarShow(i){
   const cur=radarLayers[i],op=(radarKind=='sat'||radarKind=='cloud')?.95:.8;
   if(!radarMap.hasLayer(cur))cur.addTo(radarMap);
   cur.setOpacity(op);
-  const swap=()=>{
-    if(radarIdx!==i||!radarMap)return;
-    radarLayers.forEach((l,j)=>{
-      if(j!==i&&radarMap.hasLayer(l)){
-        l.setOpacity(0);
-        setTimeout(()=>{if(radarMap&&radarIdx!==j&&radarMap.hasLayer(l))radarMap.removeLayer(l)},450);
-      }
-    });
-  };
-  if(cur._loading)cur.once('load',swap);else swap();
+  /* as outras frames ficam no mapa (tiles já carregados), só ficam invisíveis */
+  const hide=()=>{if(radarIdx!==i||!radarMap)return;radarLayers.forEach((l,j)=>{if(j!==i)l.setOpacity(0)})};
+  if(cur._loading)cur.once('load',hide);else hide();
 
   const f=radarFrames[i];$('#rsl').value=i;
   if(f.time){
@@ -1241,10 +1235,41 @@ function radarShow(i){
     }
   }
 }
+function radarBuffering(b){const t=$('#rtime');if(t)t.classList.toggle('buf',b)}
+
 function radarTick(){
- clearTimeout(radarTimer);
- if(!radarPlay||radarFrames.length<2)return;
- radarTimer=setTimeout(()=>{radarShow((radarIdx+1)%radarFrames.length);radarTick()},radarIdx==radarFrames.length-1?1800:650);
+  clearTimeout(radarTimer);radarBuffering(false);
+  if(!radarPlay||radarFrames.length<2)return;
+  const n=radarFrames.length,layers=radarLayers,step=radarKind=='sat'?900:650;
+  const advance=t0=>{
+    if(layers!==radarLayers||!radarPlay)return;
+    const nx=(radarIdx+1)%n,l=layers[nx];
+    if(l&&l._loading&&performance.now()-t0<5000){      // frame seguinte ainda a carregar: espera (máx. 5 s)
+      radarBuffering(true);
+      radarTimer=setTimeout(()=>advance(t0),150);
+      return;
+    }
+    radarShow(nx);radarTick();
+  };
+  radarTimer=setTimeout(()=>advance(performance.now()),radarIdx==n-1?1800:step);
+}
+
+/* pré-carrega todas as frames: ficam no mapa com opacidade 0 */
+function radarWarm(){
+  const layers=radarLayers,n=layers.length,note=$('#rnote');
+  if(!radarMap||n<2||!note)return;
+  const base=note.textContent;
+  const upd=()=>{
+    if(layers!==radarLayers||!note.isConnected)return;
+    const rdy=layers.filter(l=>!l._loading).length;
+    note.textContent=rdy<n?`Loading frames ${rdy}/${n}…`:base;
+  };
+  for(let k=0;k<n;k++){
+    const l=layers[(radarIdx+k)%n];                     // começa na frame atual
+    if(!radarMap.hasLayer(l)){l.setOpacity(0);l.addTo(radarMap)}
+    l.on('load',upd);
+  }
+  upd();
 }
 async function radarInit(){
  const tok=++radarTok;
@@ -1413,6 +1438,7 @@ async function radarLoadKind(k){
     sl.value=times.length-1;
     note.textContent='True-colour satellite · NASA VIIRS · global daily composite'+fbNote;
     radarShow(times.length-1);radarPlay=false;radarBtn();   // start on the newest day, paused
+    radarShow(times.length-1);radarPlay=false;radarBtn();radarWarm();   // start on the newest day, paused
     return;
   }
 
@@ -1434,7 +1460,7 @@ async function radarLoadKind(k){
     radarLayers=times.map(t=>mkLayer(NASA_URL(t),{maxNativeZoom:6,maxZoom:9}));
     sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
     note.textContent='Satellite rain estimate · worldwide · last ~6 h';
-    radarShow(0);radarBtn();radarTick();
+    radarShow(0);radarWarm();radarBtn();radarTick();
     return;
   }
 
@@ -1450,7 +1476,7 @@ async function radarLoadKind(k){
   radarLayers=frames.map(f=>mkLayer(host+f.path+'/256/{z}/{x}/{y}/2/1_1.png',{tileSize:256,maxNativeZoom:7,maxZoom:9}));
   sl.max=frames.length-1;
   note.textContent=frames.some(f=>f.fc)?'Recent radar + short forecast':'Recent radar · updates every 10 min';
-  radarShow(0);radarBtn();radarTick();
+  radarShow(0);radarWarm();radarBtn();radarTick();
 }
 
 /* ============ PWA install ============ */
