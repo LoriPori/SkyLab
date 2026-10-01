@@ -708,12 +708,12 @@ async function fetchJSON(url,headers){
 }
 let speciesMeta=lsGet('speciesMeta');
 const RISK={low:0,moderate:1,high:2,'very high':3};
-const sig={aqi:null,pollen:null};   // read by the silent alerts below
+const sig={aqi:null,pollen:null};
 
 async function getSpeciesMeta(){
  if(speciesMeta&&speciesMeta.t>Date.now()-6048e5)return speciesMeta.d;
  try{
-  const j=await fetchJSON(ATMO.base+'/species');   // public endpoint, cached for 7 days
+  const j=await fetchJSON(ATMO.base+'/species');
   speciesMeta={t:Date.now(),d:j.data||{}};lsSet('speciesMeta',speciesMeta);return speciesMeta.d;
  }catch(e){return{}}
 }
@@ -729,18 +729,21 @@ async function pollenAtmospore(){
   const day=(j.data||[])[0];
   if(!day||!day.species)return null;
   let rows=Object.entries(day.species).map(([id,s])=>{
-   const lvl=RISK[String(s.risk_level||'low').toLowerCase()]??0,v=+s.value||0;
-   const th=meta[id]&&meta[id].risk_thresholds,top=Array.isArray(th)&&th.length?Math.max(...th):0;
+   const m=meta[id]||{},th=Array.isArray(m.risk_thresholds)?m.risk_thresholds:[15,90,500,1500];
+   const v=+s.value||0;
+   const lvl=RISK[String(s.risk_level||'low').toLowerCase()]??0;
+   const top=Math.max(...th);
    const pct=Math.max(5,Math.min(100,top?v/top*100:[12,40,70,95][lvl]));
    const lab=String(s.risk_level||'low');
-   return{n:s.display_name||id,v,lvl,pct,label:v===0?'None':lab[0].toUpperCase()+lab.slice(1)};
+   return{n:s.display_name||m.display_name||id,v,lvl,pct,label:v===0?'None':lab[0].toUpperCase()+lab.slice(1)};
   }).sort((a,b)=>b.lvl-a.lvl||b.v-a.v);
-  if(rows.some(r=>r.v>0))rows=rows.filter(r=>r.v>0);
+  const nonZero=rows.filter(r=>r.v>0);
+  if(nonZero.length)rows=nonZero;
   sig.pollen={risk:String(day.overall_risk||'low').toLowerCase(),top:rows[0]&&rows[0].n};
   return rows;
  }catch(e){
   console.warn('[Atmospore] failed:',e.message);
-  atmoDead=true;   // don't retry (and spam the console) on every city change
+  atmoDead=true;
   return null;
  }
 }
