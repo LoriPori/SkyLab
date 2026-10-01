@@ -1179,8 +1179,8 @@ async function radarInit(){
  radarMap=L.map('rmap',{center:[place.lat,place.lon],zoom:6,minZoom:3,maxZoom:9,scrollWheelZoom:false});
  radarMap.createPane('radar').style.zIndex=250;
  const lp=radarMap.createPane('labels');lp.style.zIndex=260;lp.style.pointerEvents='none';
- L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(radarMap);
- L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,pane:'labels'}).addTo(radarMap);
+ const MAP_KEY='cb1_4644_2_e1ddc0590e0bf3595329dba5';
+ L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${MAP_KEY}`,{maxZoom:19}).addTo(radarMap);
  radarMap.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · radar <a href="https://www.rainviewer.com/">RainViewer</a> · <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>');
  L.marker([place.lat,place.lon],{keyboard:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(radarMap);
  radarMap.on('click focus',()=>radarMap.scrollWheelZoom.enable());
