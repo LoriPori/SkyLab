@@ -1237,22 +1237,17 @@ async function nasaDistinct(times){
 }
 
 async function nasaTimes(){
- if(nasaCache&&Date.now()-nasaCache.at<9e5)return nasaCache.times;   // reuse for 15 min
- const step=30*60e3,base=Math.floor(Date.now()/step)*step;
- // search newest to oldest, 8 slots at a time, up to 48 h back
- for(let start=1;start<=96;start+=8){
-  const cand=[];for(let k=start;k<start+8;k++)cand.push(base-k*step);
-  const ok=await Promise.all(cand.map(t=>imgOK(NASA_PROBE(t))));
-  const i=ok.indexOf(true);
-  if(i>=0){
-   const latest=cand[i];
-   console.info('[NASA IMERG] newest frame:',nasaISO(latest),'=',((Date.now()-latest)/36e5).toFixed(1),'h ago');
-   const times=await nasaDistinct(Array.from({length:12},(_,j)=>latest-(11-j)*step));
-   nasaCache={at:Date.now(),times};return times;
-  }
- }
- console.warn('[NASA IMERG] no frame found in the last 48 h. Probe URL example:',NASA_PROBE(base-step));
- return[];
+ if(nasaCache&&Date.now()-nasaCache.at<9e5)return nasaCache.times;
+ const step=30*60e3;
+ try{
+  const r=await fetch(ATMO.base.replace('/v1','')+'/imerg-latest');
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const latest=Date.parse((await r.json()).latest);
+  if(!isFinite(latest))throw new Error('bad date');
+  console.info('[NASA IMERG] newest frame:',nasaISO(latest),'=',((Date.now()-latest)/36e5).toFixed(1),'h ago');
+  const times=await nasaDistinct(Array.from({length:12},(_,k)=>latest-(11-k)*step));
+  nasaCache={at:Date.now(),times};return times;
+ }catch(e){console.warn('[NASA IMERG] latest lookup failed:',e.message);return[]}
 }
 
 let nasaLeg=null;
@@ -1294,7 +1289,7 @@ async function radarLoadKind(k){
   if(tok!==radarTok||!radarMap)return;
   if(times.length<2){
    // fallback: one still image, as before
-   radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',{pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9}).addTo(radarMap)];
+   radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate_30min/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',{pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9}).addTo(radarMap)];
    radarFrames=[{}];sl.max=0;
       note.textContent='Satellite rain estimate · worldwide · latest image (no distinct frames to animate)';
    $('#rtime').textContent='Latest available';
