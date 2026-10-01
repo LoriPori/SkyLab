@@ -1152,7 +1152,7 @@ function radarPane(){
  <div id="rmap" role="application" aria-label="Weather radar map">Loading map…</div>
  <div class="rctl"><button class="pill dk" id="rplay" aria-label="Pause">❚❚</button><input type="range" id="rsl" min="0" max="0" value="0" aria-label="Radar time"><span class="rtime" id="rtime"></span></div>
  <div class="rleg" id="rleg"><span>Light</span><i></i><span>Heavy</span></div>
- <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate (mm/h)</span><img id="rlegimg" alt="Colour scale for rain rate, in millimetres per hour"><span class="rlegfb" hidden>Cool colours mean lighter rain, warm colours heavier rain.</span></div>
+ <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">light</span><i id="rlbar"></i><span id="rlmax">heavy</span><span>mm/h</span></div>
  </section></div>`;
 }
 function radarStop(){
@@ -1218,6 +1218,24 @@ function imgOK(url){
   im.src=url;
  });
 }
+/* keep only frames whose image content is really different */
+async function nasaDistinct(times){
+ const sig=await Promise.all(times.map(async t=>{
+  try{
+   const r=await fetch(NASA_PROBE(t));
+   if(!r.ok)return null;
+   const b=new Uint8Array(await r.arrayBuffer());
+   let h=2166136261;for(let i=0;i<b.length;i++){h^=b[i];h=Math.imul(h,16777619)}
+   return(h>>>0)+':'+b.length;
+  }catch(e){return undefined}   // undefined = couldn't check (e.g. CORS)
+ }));
+ if(sig.every(s=>s===undefined)){console.warn('[NASA IMERG] could not compare frames, keeping all');return times}
+ const seen=new Set(),out=[];
+ times.forEach((t,i)=>{if(sig[i]&&!seen.has(sig[i])){seen.add(sig[i]);out.push(t)}});
+ console.info('[NASA IMERG] distinct frames:',out.length,'of',times.length);
+ return out;
+}
+
 async function nasaTimes(){
  if(nasaCache&&Date.now()-nasaCache.at<9e5)return nasaCache.times;   // reuse for 15 min
  const step=30*60e3,base=Math.floor(Date.now()/step)*step;
@@ -1229,12 +1247,33 @@ async function nasaTimes(){
   if(i>=0){
    const latest=cand[i];
    console.info('[NASA IMERG] newest frame:',nasaISO(latest),'=',((Date.now()-latest)/36e5).toFixed(1),'h ago');
-   const times=Array.from({length:12},(_,j)=>latest-(11-j)*step);
+   const times=await nasaDistinct(Array.from({length:12},(_,j)=>latest-(11-j)*step));
    nasaCache={at:Date.now(),times};return times;
   }
  }
  console.warn('[NASA IMERG] no frame found in the last 48 h. Probe URL example:',NASA_PROBE(base-step));
  return[];
+}
+
+let nasaLeg=null;
+async function nasaLegend(){
+ if(!nasaLeg){
+  try{
+   const r=await fetch('https://gibs.earthdata.nasa.gov/colormaps/v1.3/IMERG_Precipitation_Rate.xml');
+   if(!r.ok)throw new Error('HTTP '+r.status);
+   const x=new DOMParser().parseFromString(await r.text(),'text/xml'),lg=x.querySelector('Legend');
+   let cols=[...x.querySelectorAll('LegendEntry')].map(e=>e.getAttribute('rgb')).filter(Boolean);
+   if(cols.length<2)cols=[...x.querySelectorAll('ColorMapEntry')].filter(e=>e.getAttribute('transparent')!='true').map(e=>e.getAttribute('rgb')).filter(Boolean);
+   if(cols.length<2)throw new Error('no colours');
+   const n=Math.min(24,cols.length);
+   cols=Array.from({length:n},(_,i)=>cols[Math.round(i*(cols.length-1)/(n-1))]);
+   nasaLeg={cols,min:lg&&lg.getAttribute('minLabel'),max:lg&&lg.getAttribute('maxLabel')};
+  }catch(e){console.warn('[NASA legend] failed:',e.message);nasaLeg={cols:null}}
+ }
+ const bar=$('#rlbar');if(!bar)return;
+ if(nasaLeg.cols)bar.style.background=`linear-gradient(90deg,${nasaLeg.cols.map(c=>`rgb(${c})`).join(',')})`;
+ $('#rlmin').textContent=nasaLeg.min||'light';
+ $('#rlmax').textContent=nasaLeg.max||'heavy';
 }
 
 async function radarLoadKind(k){
@@ -1243,13 +1282,9 @@ async function radarLoadKind(k){
  clearTimeout(radarTimer);
  radarLayers.forEach(l=>radarMap.removeLayer(l));radarLayers=[];radarFrames=[];
  radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
-  $('#rleg').hidden=k!='rain';
-  const l2=$('#rleg2'),li=$('#rlegimg');
-  l2.hidden=k!='nasa';
-  if(k=='nasa'&&!li.src){
- li.onerror=()=>{li.hidden=true;l2.querySelector('.rlegfb').hidden=false};
- li.src='https://gibs.earthdata.nasa.gov/legends/IMERG_Precipitation_Rate_H.png';
-  }
+ $('#rleg').hidden=k!='rain';
+ $('#rleg2').hidden=k!='nasa';
+ if(k=='nasa')nasaLegend();
  note.textContent='';$('#rtime').textContent='';
 
   if(k=='nasa'){
@@ -1257,11 +1292,11 @@ async function radarLoadKind(k){
   note.textContent='Checking the latest satellite frames…';
   const times=await nasaTimes();
   if(tok!==radarTok||!radarMap)return;
-  if(!times.length){
+  if(times.length<2){
    // fallback: one still image, as before
    radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',{pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9}).addTo(radarMap)];
    radarFrames=[{}];sl.max=0;
-   note.textContent='Satellite rain estimate · worldwide (still image)';
+      note.textContent='Satellite rain estimate · worldwide · latest image (no distinct frames to animate)';
    $('#rtime').textContent='Latest available';
    return;
   }
