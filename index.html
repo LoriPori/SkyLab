@@ -248,6 +248,7 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 
 @media(max-width:860px){
  .hero{grid-template-columns:1fr}.scene{flex-direction:row;justify-content:space-between;width:100%}.bigwrap{font-size:110px}
+ .gwrap{width:min(100%,380px);margin:0 auto}
  .g2,.g2e{grid-template-columns:1fr}.strip{grid-template-columns:repeat(3,1fr)}
  .wk{grid-template-columns:repeat(7,minmax(54px,1fr));overflow-x:auto}.logo{width:100%}
 }
@@ -298,6 +299,45 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .rleg2{flex-wrap:wrap}
 .rleg2 img{height:44px;max-width:100%;padding:4px 8px;border-radius:10px;background:#fff;border:1px solid rgba(20,49,79,.12)}
 .rleg2 img[hidden],.rlegfb[hidden]{display:none}
+
+/* ---- globo ---- */
+.gwrap{position:relative;width:min(100%,470px);aspect-ratio:1;animation:pop .9s cubic-bezier(.3,1.5,.4,1) backwards}
+.gwrap[hidden]{display:none}
+#globe{display:block;width:100%;height:100%;cursor:grab;touch-action:pan-y;filter:drop-shadow(0 30px 40px rgba(10,40,90,.28))}
+#globe:active{cursor:grabbing}
+.gpin{position:absolute;left:0;top:0;z-index:2;color:var(--ink);white-space:nowrap;transition:opacity .35s;will-change:transform}
+.gpin[hidden]{display:none}
+.gpin.off{opacity:0;pointer-events:none}
+.gpc{position:relative;display:flex;flex-direction:column;align-items:center;padding:8px 14px 9px;border-radius:16px;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);box-shadow:0 10px 26px rgba(10,40,90,.25);line-height:1.15;animation:pop .7s .15s cubic-bezier(.3,1.5,.4,1) backwards;transition:background .2s}
+.gpc::after{content:"";position:absolute;left:50%;bottom:-5px;width:11px;height:11px;background:inherit;border-radius:2px;transform:translateX(-50%) rotate(45deg)}
+.gpin:hover .gpc{background:#fff}
+.gpc small{font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:#e0463c}
+.gpc b{font-family:var(--serif);font-weight:400;font-size:22px}
+
+/* ---- radar de nuvens: mapa escuro para as nuvens brancas se destacarem ---- */
+#rmap{transition:background .6s}
+#rmap .leaflet-tile-pane{transition:filter .8s ease}
+#rmap.cloudy{background:#0e2438}
+#rmap.cloudy .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.78) contrast(.95) saturate(.9)}
+.rcloud{filter:drop-shadow(0 0 4px rgba(150,205,255,.55)) contrast(1.2) brightness(1.08)}
+
+/* ---- avisos IPMA ---- */
+.pill.warn{display:inline-flex;align-items:center;gap:8px;animation:pop .6s cubic-bezier(.3,1.5,.4,1) backwards}
+.pill.warn.hot{animation:pop .6s cubic-bezier(.3,1.5,.4,1) backwards,wping 2.2s .6s infinite}
+@keyframes wping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--wc) 60%,transparent)}70%,100%{box-shadow:0 0 0 12px transparent}}
+.wdot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--wc,#2fb34a);box-shadow:0 0 0 2px rgba(255,255,255,.75)}
+.wpop{position:absolute;right:20px;top:calc(100% + 10px);width:min(390px,calc(100vw - 32px));max-height:min(70vh,520px);overflow:auto;padding:14px;border-radius:20px;background:rgba(255,255,255,.97);color:var(--ink);text-shadow:none;box-shadow:0 24px 60px rgba(10,40,90,.28);z-index:6;animation:rise .3s both}
+.wpop[hidden]{display:none}
+.wh{display:flex;justify-content:space-between;align-items:baseline;padding:2px 4px 8px;font-size:15px}
+.wh span{font-size:13px;color:var(--mut)}
+.wi{display:flex;gap:12px;margin-top:8px;padding:12px;border-radius:14px;border-left:4px solid var(--wc);background:color-mix(in srgb,var(--wc) 12%,#fff);animation:rise .45s both;animation-delay:calc(var(--n)*70ms)}
+.wi .wdot{margin-top:5px}
+.wi b{font-size:14px}.wi em{font-style:normal;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-left:6px}
+.wi p{margin:4px 0 6px;font-size:13.5px;line-height:1.45}
+.wi small{font-size:12px;color:var(--mut)}
+.wnone{margin:10px 4px 6px;font-size:14px;color:var(--mut)}
+.wsrc{display:inline-block;margin:10px 4px 0;font-size:12px;color:var(--acc)}
+
 </style>
 </head>
 <body>
@@ -314,10 +354,12 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
   <div class="sugg" id="sg" role="listbox"></div>
  </div>
  <button class="pill solid" id="inst" hidden>Install app</button>
+ <button class="pill warn" id="wrn" hidden aria-expanded="false" aria-controls="wpop"></button>
  <button class="pill" id="loc">Locate</button>
  <button class="pill" id="sur" title="Jump to a place with interesting weather">Surprise</button>
  <button class="pill sndb" id="snd" aria-pressed="false" title="Ambient weather sound">Sound</button>
  <div class="seg" role="group" aria-label="Units"><button data-u="c">°C</button><button data-u="f">°F</button></div>
+ <div class="wpop" id="wpop" hidden role="dialog" aria-label="IPMA warnings"></div>
 </header>
 <main id="main"></main>
 <footer>Weather by Open-Meteo · Places by BigDataCloud · Pollen by Atmospore</footer>
@@ -463,7 +505,7 @@ async function show(lat,lon,name,sub){
  document.body.classList.add('busy');
  try{
   const[d,rev]=await Promise.all([getWeather(lat,lon),name?{name,sub}:reverse(lat,lon)]);
-  data=d;place={lat,lon,name:rev.name,sub:rev.sub};lsSet('place',place);render();
+  data=d;place={lat,lon,name:rev.name,sub:rev.sub};lsSet('place',place);render();ipmaUpdate(place);
  }catch(e){error('Could not load the forecast',(navigator.onLine?e.message:'You appear to be offline.')+' Check your connection and try again.')}
  document.body.classList.remove('busy');
 }
@@ -903,7 +945,7 @@ function render(){
 /* ============ landing ============ */
 const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-74.01],['Sydney','Australia',-33.87,151.21],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Rio de Janeiro','Brazil',-22.91,-43.17],['Cape Town','South Africa',-33.92,18.42],['Mumbai','India',19.08,72.88]];
 function landing(){
- clearInterval(tickT);lastKey='';data=null;place=null;
+ clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);
  const hr=new Date().getHours(),night=hr<6||hr>=20,k=night?'night':'clear';
  theme(night?10:24,k);if(mode!==k)fxSet(k);
  setOrb(night?'moon':'sun',78,28,.9);
@@ -912,9 +954,10 @@ function landing(){
  main.innerHTML=`<section class="hero land" id="hero"><div class="now"><h1>The sky, explained.</h1><p class="lp">Live weather for anywhere on Earth, with the science behind what you’re looking at.</p>
  <div class="cta"><button class="pill big solid" id="lc">Use my location</button><button class="pill big" id="ls">Surprise me</button></div>
  <div class="ticker" id="tk"></div></div>
- <div class="scene"><div class="bigwrap"><i class="halo"></i><div class="bigic">${ic(night?'moon':'sun')}</div></div></div></section>
+ <div class="scene"><div class="gwrap" id="gwrap" hidden><canvas id="globe" role="img" aria-label="Interactive globe. Drag to rotate."></canvas><button class="gpin" id="gpin" hidden></button></div><div class="bigwrap" id="bw"><i class="halo"></i><div class="bigic">${ic(night?'moon':'sun')}</div></div></div></section>
  <section class="marq" id="marq"><div class="track">${CITIES.map(c=>`<div class="cityc sk">${c[0]}</div>`).join('')}</div></section>`;
  $('#lc').onclick=locate;$('#ls').onclick=surprise;startTicker();
+ globeStart();
  const u=`https://api.open-meteo.com/v1/forecast?latitude=${CITIES.map(c=>c[2]).join(',')}&longitude=${CITIES.map(c=>c[3]).join(',')}&current=temperature_2m,weather_code,is_day&timezone=auto`;
  fetch(u).then(r=>r.json()).then(j=>{
   const el=$('#marq');if(!el)return;
@@ -926,6 +969,153 @@ function landing(){
 const EXTREMES=[['Oymyakon','Sakha, Russia',63.46,142.79],['Cherrapunji','Meghalaya, India',25.27,91.72],['Ushuaia','Tierra del Fuego, Argentina',-54.8,-68.3],['Singapore','Singapore',1.35,103.82],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Quito','Ecuador',-.18,-78.47],['Cairo','Egypt',30.04,31.24],['Vancouver','Canada',49.28,-123.12],['Nairobi','Kenya',-1.29,36.82]];
 function surprise(){const p=EXTREMES[Math.floor(Math.random()*EXTREMES.length)];show(p[2],p[3],p[0],p[1])}
 
+/* ============ landing globe ============ */
+const GLOBE_JS=['https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js','https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/dist/d3-geo.min.js','https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js'];
+let globeP=null,landGeo=null;
+const addScript=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('script '+src));document.head.appendChild(s)});
+function globeLoad(){
+ return globeP||(globeP=(async()=>{
+  for(const s of GLOBE_JS)await addScript(s);            // por ordem: o d3-geo precisa do d3-array
+  const t=await fetchJSON('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/land-110m.json');
+  landGeo=topojson.feature(t,t.objects.land);
+ })().catch(e=>{globeP=null;throw e}));
+}
+/* onde estás: GPS se já deste permissão; senão cidade deduzida do fuso horário */
+async function guessHome(){
+ try{
+  if(navigator.permissions&&navigator.geolocation){
+   const st=await navigator.permissions.query({name:'geolocation'});
+   if(st.state=='granted'){
+    const p=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:6000,maximumAge:6e5}));
+    const lat=+p.coords.latitude.toFixed(3),lon=+p.coords.longitude.toFixed(3),r=await reverse(lat,lon);
+    return{lat,lon,name:r.name,sub:r.sub};
+   }
+  }
+ }catch(e){}
+ try{
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';
+  if(tz.includes('/')){const r=await geo(tz.split('/').pop().replace(/_/g,' '),1);if(r[0])return{...r[0],approx:true}}
+ }catch(e){}
+ return null;
+}
+function subsolar(d=new Date()){                          // ponto onde o Sol está a pino
+ const n=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5,h=d.getUTCHours()+d.getUTCMinutes()/60+d.getUTCSeconds()/3600;
+ return[(12-h)*15,-23.44*Math.cos(2*Math.PI/365*(n+10))];
+}
+async function globeStart(){
+ const homeP=guessHome();
+ try{await globeLoad()}catch(e){console.warn('[globe]',e.message);return}   // sem rede: fica o ícone
+ const cv=$('#globe'),wrap=$('#gwrap'),pinEl=$('#gpin');
+ if(!cv||!wrap)return;                                    // saiu da landing entretanto
+ const bw=$('#bw');if(bw)bw.remove();wrap.hidden=false;
+ const ctx=cv.getContext('2d'),proj=d3.geoOrthographic().clipAngle(90).precision(.5),path=d3.geoPath(proj,ctx),
+  grat=d3.geoGraticule10(),circ=d3.geoCircle(),FONT='600 13px "Schibsted Grotesk",system-ui,sans-serif';
+ let rot=[Math.random()*360-180,-15],base=rot.slice(),fly=null,state='spin',home=null,drag=null,vel=0,backAt=0,
+  hover=-1,W=0,dpr=1,last=performance.now(),holdT=0,zoomK=1,pts=[];
+ const ease=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+ const vis=(lon,lat)=>d3.geoDistance([lon,lat],[-rot[0],-rot[1]])<1.45;
+
+ function flyTo(lon,lat){
+  const to=[-lon,Math.max(-70,Math.min(70,-lat*.85))];
+  base=to.slice();
+  if(still){rot=to.slice();state='hold';holdT=performance.now();return}
+  fly={t0:performance.now(),dur:2800,from:rot.slice(),dl:(((to[0]-rot[0]+180)%360)+360)%360-180,dp:to[1]-rot[1]};
+  state='fly';
+ }
+ function step(now,dt){
+  if(state=='fly'){
+   const k=Math.min(1,(now-fly.t0)/fly.dur),e=ease(k);
+   rot=[fly.from[0]+fly.dl*e,fly.from[1]+fly.dp*e];zoomK=1-.08*Math.sin(Math.PI*e);   // afasta a meio do voo
+   if(k>=1){state='hold';holdT=now;fly=null;zoomK=1}
+  }else if(state=='hold'){
+   if(!still){const t=now-holdT,a=Math.min(1,t/1500);rot=[base[0]+Math.sin(t/2600)*3.5*a,base[1]+Math.sin(t/3300)*1.4*a]}
+  }else if(state=='coast'){
+   rot[0]+=vel*dt;vel*=Math.pow(.94,dt/16);if(Math.abs(vel)<.004)state='spin';
+  }else if(state=='spin'&&!still)rot[0]+=dt*.005;
+  if((state=='spin'||state=='coast')&&home&&backAt&&now>backAt){backAt=0;flyTo(home.lon,home.lat)}   // volta a casa
+ }
+ function draw(now){
+  const w=wrap.clientWidth;if(!w)return;
+  if(w!==W){W=w;dpr=Math.min(devicePixelRatio||1,2);cv.width=cv.height=Math.round(W*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,W);
+  const c=W/2,R=W/2*.82*zoomK;
+  proj.translate([c,c]).scale(R).rotate([rot[0],rot[1],0]);
+  let g=ctx.createRadialGradient(c,c,R*.97,c,c,R*1.25);                     // atmosfera
+  g.addColorStop(0,'rgba(200,235,255,.6)');g.addColorStop(1,'rgba(200,235,255,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(c,c,R*1.25,0,7);ctx.fill();
+  g=ctx.createRadialGradient(c-R*.35,c-R*.4,R*.1,c,c,R);                    // oceano
+  g.addColorStop(0,'#5fbdf3');g.addColorStop(.6,'#2b86c8');g.addColorStop(1,'#14558f');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(c,c,R,0,7);ctx.fill();
+  ctx.lineWidth=.7;ctx.strokeStyle='rgba(255,255,255,.14)';ctx.beginPath();path(grat);ctx.stroke();
+  ctx.beginPath();path(landGeo);ctx.fillStyle='#e3f4e6';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=.6;ctx.stroke();
+  const ss=subsolar(),anti=[ss[0]+180,-ss[1]];                              // noite em tempo real
+  for(const[r,a]of[[100,.1],[90,.24]]){ctx.beginPath();path(circ.center(anti).radius(r)());ctx.fillStyle=`rgba(4,16,44,${a})`;ctx.fill()}
+  ctx.save();ctx.beginPath();ctx.arc(c,c,R,0,7);ctx.clip();                 // sombra nas bordas + brilho
+  g=ctx.createRadialGradient(c,c,R*.55,c,c,R);g.addColorStop(0,'rgba(0,25,60,0)');g.addColorStop(1,'rgba(0,25,60,.4)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,W);
+  g=ctx.createRadialGradient(c-R*.4,c-R*.45,0,c-R*.4,c-R*.45,R*.75);g.addColorStop(0,'rgba(255,255,255,.3)');g.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,W);ctx.restore();
+
+  pts=CITIES.map(ct=>vis(ct[3],ct[2])?proj([ct[3],ct[2]]):null);           // cidades clicáveis
+  pts.forEach((p,i)=>{if(!p)return;const h=i==hover;
+   ctx.beginPath();ctx.arc(p[0],p[1],h?5.5:3,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle='rgba(20,49,79,.35)';ctx.stroke()});
+  if(hover>=0&&pts[hover]){
+   const p=pts[hover],t=CITIES[hover][0];ctx.font=FONT;const tw=ctx.measureText(t).width+20;
+   ctx.fillStyle='rgba(255,255,255,.95)';ctx.beginPath();ctx.roundRect(p[0]-tw/2,p[1]-36,tw,24,12);ctx.fill();
+   ctx.fillStyle='#14314f';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t,p[0],p[1]-24);
+  }
+  if(home){                                                                   // marcador avermelhado
+   const p=proj([home.lon,home.lat]),on=!!p&&vis(home.lon,home.lat);
+   if(on){
+    if(!still){const ph=(now/1700)%1;for(const o of[0,.5]){const k=(ph+o)%1;
+     ctx.beginPath();ctx.arc(p[0],p[1],5+k*24,0,7);ctx.strokeStyle=`rgba(255,82,70,${.7*(1-k)})`;ctx.lineWidth=2;ctx.stroke()}}
+    g=ctx.createRadialGradient(p[0],p[1],0,p[0],p[1],18);g.addColorStop(0,'rgba(255,82,70,.6)');g.addColorStop(1,'rgba(255,82,70,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(p[0],p[1],18,0,7);ctx.fill();
+    ctx.beginPath();ctx.arc(p[0],p[1],6,0,7);ctx.fillStyle='#ff5246';ctx.fill();ctx.lineWidth=2.4;ctx.strokeStyle='#fff';ctx.stroke();
+    pinEl.style.transform=`translate(${p[0]}px,${p[1]}px) translate(-50%,-100%) translateY(-14px)`;
+   }
+   pinEl.classList.toggle('off',!on);
+  }
+ }
+ function loop(now){
+  if(!cv.isConnected)return;                                                  // saiu da landing: pára
+  const dt=Math.min(64,now-last);last=now;step(now,dt);draw(now);requestAnimationFrame(loop);
+ }
+ const pos=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+ cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);const[x,y]=pos(e);drag={x,y,sx:x,sy:y,t:performance.now(),moved:false}});
+ cv.addEventListener('pointermove',e=>{
+  const[x,y]=pos(e);
+  if(drag){
+   if(!drag.moved&&Math.hypot(x-drag.sx,y-drag.sy)>5){drag.moved=true;state='drag';fly=null;zoomK=1;vel=0;backAt=0}
+   if(drag.moved){
+    const t=performance.now(),dtm=Math.max(8,t-drag.t),dx=x-drag.x,dy=y-drag.y;
+    rot[0]+=dx*.4;rot[1]=Math.max(-75,Math.min(75,rot[1]-dy*.4));vel=dx*.4/dtm;
+    drag.x=x;drag.y=y;drag.t=t;
+   }
+  }else{
+   let best=-1,bd=144;pts.forEach((p,i)=>{if(!p)return;const d=(p[0]-x)**2+(p[1]-y)**2;if(d<bd){bd=d;best=i}});
+   hover=best;cv.style.cursor=best>=0?'pointer':'';
+  }
+ });
+ const end=()=>{
+  if(!drag)return;const d=drag;drag=null;
+  if(!d.moved){if(hover>=0){const c=CITIES[hover];show(c[2],c[3],c[0],c[1])}return}
+  state=Math.abs(vel)>.01?'coast':'spin';backAt=performance.now()+6000;
+ };
+ cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+ cv.addEventListener('pointerleave',()=>{if(!drag)hover=-1});
+
+ homeP.then(h=>{
+  if(!h||!cv.isConnected)return;
+  home=h;
+  pinEl.innerHTML=`<span class="gpc"><small>${h.approx?'Near you':'You’re here'}</small><b></b></span>`;
+  pinEl.querySelector('b').textContent=h.name;
+  pinEl.title=h.approx?'Approximate, from your time zone. Use “Use my location” for the exact spot.':'Open the forecast for '+h.name;
+  pinEl.hidden=false;pinEl.onclick=()=>show(h.lat,h.lon,h.name,h.sub);
+  flyTo(h.lon,h.lat);ipmaUpdate(h);
+ });
+ requestAnimationFrame(loop);
+}
 /* ============ sky canvas: rain, snow, stars, drifting clouds, motes, lightning ============ */
 const fx=$('#fx'),cx=fx.getContext('2d');
 let parts=[],splashes=[],shoot=null,mode='',flash=0;
@@ -1391,6 +1581,7 @@ async function radarLoadKind(k){
   clearTimeout(radarTimer);
   radarLayers.forEach(l=>radarMap.removeLayer(l));radarLayers=[];radarFrames=[];
   radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
+  $('#rmap').classList.toggle('cloudy',k=='cloud');           // mapa escuro só na vista Clouds
   $('#rleg').hidden=k!='rain';
   $('#rleg2').hidden=k!='nasa';
   if(k=='nasa')nasaLegend();
@@ -1405,7 +1596,7 @@ async function radarLoadKind(k){
     try{ok=(await fetch(WORKER+'/clouds/0/0/0.png')).ok}catch(e){}
     if(tok!==radarTok||!radarMap)return;
     if(ok){
-      radarLayers=[mkLayer(WORKER+'/clouds/{z}/{x}/{y}.png',{maxNativeZoom:6,maxZoom:9})];
+      radarLayers=[mkLayer(WORKER+'/clouds/{z}/{x}/{y}.png',{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
       radarFrames=[{}];sl.max=0;
       note.textContent='Global cloud cover · OpenWeatherMap · updated regularly';
       $('#rtime').textContent='Current';
@@ -1413,6 +1604,7 @@ async function radarLoadKind(k){
       return;
     }
     asSat=true;fbNote=' · cloud layer needs OWM_KEY in the worker, showing satellite instead';
+    $('#rmap').classList.remove('cloudy');
   }
 
   /* ---- Satellite: NASA VIIRS true colour, global daily composites ---- */
@@ -1478,6 +1670,59 @@ async function radarLoadKind(k){
   note.textContent=frames.some(f=>f.fc)?'Recent radar + short forecast':'Recent radar · updates every 10 min';
   radarShow(0);radarWarm();radarBtn();radarTick();
 }
+
+/* ============ IPMA warnings (topbar) ============ */
+const IPMA_LV={red:3,orange:2,yellow:1},IPMA_COL={red:'#e0352b',orange:'#f28c1f',yellow:'#f5c400',green:'#2fb34a'};
+let ipmaAreas=null,ipmaWarn=null,ipmaT=0,ipmaTok=0,ipmaCur=null,ipmaPl=null;
+const hav=(a,b,c,d)=>{const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742*Math.asin(Math.sqrt(x))};
+const escH=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function ipmaLoad(){
+ if(!ipmaAreas){
+  const j=await fetchJSON(WORKER+'/ipma-areas');
+  ipmaAreas=(j.data||j).map(a=>({id:a.idAreaAviso,name:a.local,lat:+a.latitude,lon:+a.longitude})).filter(a=>a.id&&isFinite(a.lat)&&isFinite(a.lon));
+ }
+ if(!ipmaWarn||Date.now()-ipmaT>6e5){ipmaWarn=await fetchJSON(WORKER+'/ipma-warnings');ipmaT=Date.now()}
+}
+function ipmaClose(){const p=$('#wpop'),b=$('#wrn');if(p)p.hidden=true;if(b)b.setAttribute('aria-expanded','false')}
+function ipmaPaint(){
+ const p=$('#wpop');if(!p||!ipmaCur)return;
+ const fmt=s=>new Date(s).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'});
+ const L=ipmaCur.list;
+ p.innerHTML=`<div class="wh"><b>IPMA warnings</b><span>${escH(ipmaCur.area)}</span></div>`+
+  (L.length?L.map((w,i)=>`<div class="wi" style="--wc:${IPMA_COL[w.awarenessLevelID]||'#999'};--n:${i}"><i class="wdot"></i><div><b>${escH(w.awarenessTypeName)}</b><em>${escH(w.awarenessLevelID)}</em><p>${escH(w.text)}</p><small>${fmt(w.startTime)} → ${fmt(w.endTime)}</small></div></div>`).join(''):'<p class="wnone">No active warnings for this area. ☀️</p>')+
+  '<a class="wsrc" href="https://www.ipma.pt/pt/otempo/prev.significativa/" target="_blank" rel="noopener">Source: IPMA ↗</a>';
+}
+async function ipmaUpdate(pl){
+ const btn=$('#wrn'),tok=++ipmaTok;if(!btn)return;
+ ipmaPl=pl;
+ if(!pl||!/portugal/i.test(pl.sub||'')){btn.hidden=true;ipmaClose();return}   // só para locais em Portugal
+ try{
+  await ipmaLoad();
+  if(tok!==ipmaTok)return;
+  const a=ipmaAreas.reduce((m,x)=>{const d=hav(pl.lat,pl.lon,x.lat,x.lon);return d<m.d?{d,a:x}:m},{d:1e9,a:null}).a;
+  if(!a)throw new Error('no area');
+  const now=Date.now();
+  const list=(Array.isArray(ipmaWarn)?ipmaWarn:[]).filter(w=>w.idAreaAviso==a.id&&w.awarenessLevelID&&w.awarenessLevelID!='green'&&Date.parse(w.endTime)>now)
+   .sort((x,y)=>(IPMA_LV[y.awarenessLevelID]||0)-(IPMA_LV[x.awarenessLevelID]||0)||Date.parse(x.startTime)-Date.parse(y.startTime));
+  ipmaCur={area:a.name,list};
+  const top=list.length?list[0].awarenessLevelID:'green';
+  btn.style.setProperty('--wc',IPMA_COL[top]||IPMA_COL.green);
+  btn.className='pill warn'+(top=='red'||top=='orange'?' hot':'');
+  btn.innerHTML=`<i class="wdot"></i>${list.length?`${list.length} warning${list.length>1?'s':''}`:'No warnings'}`;
+  btn.hidden=false;
+  if(!$('#wpop').hidden)ipmaPaint();
+ }catch(e){btn.hidden=true;console.warn('[IPMA]',e.message)}
+}
+$('#wrn').onclick=e=>{
+ e.stopPropagation();
+ const p=$('#wpop'),open=p.hidden;
+ if(open)ipmaPaint();
+ p.hidden=!open;$('#wrn').setAttribute('aria-expanded',open);
+};
+addEventListener('click',e=>{if(!e.target.closest('#wpop,#wrn'))ipmaClose()});
+addEventListener('keydown',e=>{if(e.key=='Escape')ipmaClose()});
+setInterval(()=>{if(ipmaPl)ipmaUpdate(ipmaPl)},6e5);
 
 /* ============ PWA install ============ */
 let installEv=null;
