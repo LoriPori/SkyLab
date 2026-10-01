@@ -177,11 +177,12 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)
 .aq{text-align:center;font-family:var(--serif);font-size:54px;line-height:1;margin-top:-4px}
 .aq small{font-family:var(--sans);font-size:16px;margin-left:10px}
 .pl{display:grid;gap:11px;margin-top:12px}
-.pr{display:grid;grid-template-columns:92px 1fr 78px;align-items:center;gap:12px;font-size:14px}
+.pr{display:grid;grid-template-columns:120px 1fr 86px;align-items:center;gap:12px;font-size:14px}
+.pr span{white-space:nowrap}
 .pb{height:16px;border-radius:9px;background:rgba(20,49,79,.1);overflow:hidden}
 .pb i{position:relative;display:block;height:100%;width:var(--w);border-radius:9px;overflow:hidden;animation:gw 1.1s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*80ms)}
-.pb i::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:220% 100%;animation:shim 2.8s linear infinite}
-@keyframes shim{from{background-position:120% 0}to{background-position:-120% 0}}
+.pb i::after{content:"";position:absolute;top:0;bottom:0;left:0;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:translateX(-120%);animation:shim 3.2s ease-in-out infinite}
+@keyframes shim{0%{transform:translateX(-120%)}55%,100%{transform:translateX(320%)}}
 .pb i.lv0{background:#4fd18b}.pb i.lv1{background:#f0cf45}.pb i.lv2{background:#f59a3a}.pb i.lv3{background:#e5652e}
 .pr b{text-align:right;font-weight:600;font-size:13px}
 .src{display:inline-block;margin-top:12px;font-size:12px;color:var(--mut);border:1px solid rgba(20,49,79,.16);border-radius:99px;padding:3px 10px}
@@ -249,6 +250,23 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
  .wk{grid-template-columns:repeat(7,minmax(54px,1fr));overflow-x:auto}.logo{width:100%}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+#pol{display:flex;flex-direction:column}
+.pdrift{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.pdrift i{position:absolute;bottom:-12px;left:var(--x);width:var(--s);height:var(--s);border-radius:50%;background:var(--pc);opacity:0;animation:drift var(--d) linear infinite;animation-delay:var(--dl)}
+@keyframes drift{0%{transform:translate(0,0);opacity:0}15%{opacity:.5}85%{opacity:.35}100%{transform:translate(40px,-330px);opacity:0}}
+.card>.pdrift{position:absolute}
+.pins{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.65);margin-top:14px;font-size:14px;line-height:1.5;animation:rise .6s .2s both}
+.pins .ic{font-size:22px;flex:none;margin-top:1px}
+.pout{margin-top:auto;padding-top:16px}
+.pout h4{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:10px;font-weight:600}
+.pdays{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.pd{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:16px;font-size:13px;animation:rise .6s both;animation-delay:calc(var(--n)*90ms + 300ms);transition:background .25s,transform .25s}
+.pd:hover{background:rgba(255,255,255,.8);transform:translateY(-4px)}
+.pd small{font-size:11px;color:var(--mut);white-space:nowrap}
+.pcol{position:relative;width:20px;height:74px;border-radius:10px;background:rgba(20,49,79,.1);overflow:hidden}
+.pcol i{position:absolute;left:0;right:0;bottom:0;height:var(--h);border-radius:10px;transform-origin:bottom;animation:gy 1s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*90ms + 400ms)}
+.pcol i.lv0{background:#4fd18b}.pcol i.lv1{background:#f0cf45}.pcol i.lv2{background:#f59a3a}.pcol i.lv3{background:#e5652e}
 </style>
 </head>
 <body>
@@ -719,40 +737,45 @@ async function getSpeciesMeta(){
   speciesMeta={t:Date.now(),d:j.data||{}};lsSet('speciesMeta',speciesMeta);return speciesMeta.d;
  }catch(e){return{}}
 }
+let pollenOutlook=null;
+const BAR_BASE=[12,38,62,85],BAR_SPAN=[24,24,23,15];
+function speciesBar(s,lims){
+ const risk=String(s.risk_level||'low').toLowerCase(),lvl=RISK[risk]??0,v=+s.value||0;
+ const lowEdge=lvl>0?(lims[lvl-1]||0):0,highEdge=lims[lvl]||lims[lims.length-1]||1;
+ const frac=lvl>=3?Math.min(1,v/highEdge):Math.max(0,Math.min(1,(v-lowEdge)/((highEdge-lowEdge)||1)));
+ return{risk,lvl,v,pct:v===0?5:BAR_BASE[lvl]+BAR_SPAN[lvl]*frac};
+}
 async function pollenAtmospore(){
  if(atmoDead)return null;
  try{
   const dt=data.current.time.slice(0,10);
   const[j,meta]=await Promise.all([
-   fetchJSON(`${ATMO.base}/pollen?lat=${place.lat}&lon=${place.lon}&dt=${dt}&forecast_days=1`),
+   fetchJSON(`${ATMO.base}/pollen?lat=${place.lat}&lon=${place.lon}&dt=${dt}&forecast_days=5`),
    getSpeciesMeta()
   ]);
   console.info('[Atmospore]',j);
-  const day=(j.data||[])[0];
+  const days=j.data||[],day=days[0];
   if(!day||!day.species)return null;
-
-  // cada nível de risco ocupa a sua faixa da barra
-  const BAR_BASE=[12,38,62,85], BAR_SPAN=[24,24,23,15];
+  const limsOf=id=>(meta[id]&&meta[id].risk_thresholds)||[];
+  const nameOf=(id,s)=>s.display_name||(meta[id]&&meta[id].display_name)||id;
 
   let rows=Object.entries(day.species).map(([id,s])=>{
-   const risk=String(s.risk_level||'low').toLowerCase();
-   const lvl=RISK[risk]??0;
-   const v=+s.value||0;
-   const lims=(meta[id]&&meta[id].risk_thresholds)||[];
-   const lowEdge=lvl>0?(lims[lvl-1]||0):0;
-   const highEdge=lims[lvl]||lims[lims.length-1]||1;
-   const frac=lvl>=3
-     ? Math.min(1,v/highEdge)
-     : Math.max(0,Math.min(1,(v-lowEdge)/((highEdge-lowEdge)||1)));
-   const pct=v===0?5:BAR_BASE[lvl]+BAR_SPAN[lvl]*frac;
-   return{
-    n:s.display_name||(meta[id]&&meta[id].display_name)||id,
-    v,lvl,pct,
-    label:v===0?'None':risk[0].toUpperCase()+risk.slice(1)
-   };
+   const b=speciesBar(s,limsOf(id));
+   return{n:nameOf(id,s),v:b.v,lvl:b.lvl,pct:b.pct,label:b.v===0?'None':b.risk[0].toUpperCase()+b.risk.slice(1)};
   }).sort((a,b)=>b.lvl-a.lvl||b.v-a.v);
-
   if(rows.some(r=>r.v>0))rows=rows.filter(r=>r.v>0);
+
+  pollenOutlook=days.slice(0,5).map((d,i)=>{
+   const list=Object.entries(d.species||{}).map(([id,s])=>({id,s,b:speciesBar(s,limsOf(id))})).sort((a,b)=>b.b.lvl-a.b.lvl||b.b.v-a.b.v);
+   const top=list[0],ov=RISK[String(d.overall_risk||'low').toLowerCase()]??0;
+   const lvl=Math.max(ov,top?top.b.lvl:0),none=!top||top.b.v===0;
+   return{
+    day:i?new Date(d.date+'T12:00').toLocaleDateString('en',{weekday:'short'}):'Today',
+    lvl,pct:none?8:Math.max(top.b.pct,BAR_BASE[lvl]),
+    label:none?'None':['Low','Moderate','High','Very high'][lvl]
+   };
+  });
+
   sig.pollen={risk:String(day.overall_risk||'low').toLowerCase(),top:rows[0]&&rows[0].n};
   return rows;
  }catch(e){
@@ -767,12 +790,25 @@ async function pollenOpenMeteo(){
  const cur=(await r.json()).current||{};
  return keys.map(([k,n])=>{const v=cur[k];if(v==null)return null;const l=pLevel(v);return{n,label:v===0?'None':LVL[l],lvl:l,pct:Math.max(5,Math.min(100,v/1.2))}}).filter(Boolean).sort((a,b)=>b.lvl-a.lvl||b.pct-a.pct);
 }
+function pollenInsight(){
+ const c=data.current,h=data.hourly,i0=idx0();
+ const rain=Math.max(...h.precipitation_probability.slice(i0,i0+8)),v=c.wind_speed_10m,rh=c.relative_humidity_2m;
+ if(rain>=60)return['drop','Rain is likely soon. It often rinses pollen out of the air, so levels can drop afterwards.'];
+ if(v>=20&&rh<60)return['wind','Dry and windy: pollen travels far today, and levels can peak around midday.'];
+ if(rh>=80)return['drop','Humid air makes pollen grains heavier, so they tend to settle closer to the ground.'];
+ return['sun','Calm, dry weather: pollen usually peaks from late morning to the afternoon. Mornings are gentler.'];
+}
 function pollenHTML(rows,source,note){
  const w=rows[0],nm=w.n.toLowerCase();
- const adv=w.lvl>=2?`${w[0]?'':''}${nm} pollen is running high. Keep windows closed, consider an antihistamine before symptoms start, and shower after time outdoors.`:w.lvl==1?`Pollen is moderate, led by ${nm}. Sensitive people may notice mild symptoms.`:'Pollen is low across the board. A good day for allergy sufferers to be outside.';
- return`<h3>Pollen & allergies</h3><p class="note" style="margin:0 0 4px;font-size:15px">${adv}</p><div class="pl">${rows.slice(0,6).map((r,i)=>`<div class="pr"><span>${r.n}</span><div class="pb"><i class="lv${r.lvl}" style="--w:${r.pct}%;--n:${i}"></i></div><b>${r.label}</b></div>`).join('')}</div><span class="src">${source}</span>${note?`<p class="note" style="font-size:12px">${note}</p>`:''}`;
+ const adv=w.lvl>=2?`${nm[0].toUpperCase()+nm.slice(1)} pollen is running high. Keep windows closed, consider an antihistamine before symptoms start, and shower after time outdoors.`:w.lvl==1?`Pollen is moderate, led by ${nm}. Sensitive people may notice mild symptoms.`:'Pollen is low across the board. A good day for allergy sufferers to be outside.';
+ const colors=['#4fd18b','#f0cf45','#f59a3a','#e5652e'];
+ const grains=Array.from({length:6+w.lvl*6},()=>`<i style="--x:${Math.round(Math.random()*96)}%;--s:${(3+Math.random()*5).toFixed(1)}px;--d:${(7+Math.random()*7).toFixed(1)}s;--dl:-${(Math.random()*12).toFixed(1)}s;--pc:${colors[w.lvl]}"></i>`).join('');
+ const[ii,it]=pollenInsight();
+ const out=pollenOutlook&&pollenOutlook.length?`<div class="pout"><h4>Next ${pollenOutlook.length} days</h4><div class="pdays">${pollenOutlook.map((d,i)=>`<div class="pd" style="--n:${i}"><div class="pcol"><i class="lv${d.lvl}" style="--h:${d.pct}%"></i></div><b>${d.day}</b><small>${d.label}</small></div>`).join('')}</div></div>`:'';
+ return`<div class="pdrift" aria-hidden="true">${grains}</div><h3>Pollen & allergies</h3><p class="note" style="margin:0 0 6px;font-size:15px">${adv}</p><div class="pl">${rows.slice(0,6).map((r,i)=>`<div class="pr"><span>${r.n}</span><div class="pb"><i class="lv${r.lvl}" style="--w:${r.pct}%;--n:${i}"></i></div><b>${r.label}</b></div>`).join('')}</div><div class="pins">${ic(ii)}<span>${it}</span></div>${out}<span class="src" style="align-self:flex-start;margin-top:14px">${source}</span>${note?`<p class="note" style="font-size:12px">${note}</p>`:''}`;
 }
 async function loadPollen(){
+  pollenOutlook=null;
  try{
   const a=await pollenAtmospore();
   if(a&&a.length)return pollenHTML(a,'Atmospore');
