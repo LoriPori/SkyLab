@@ -1259,7 +1259,7 @@ let nasaLeg=null;
 async function nasaLegend(){
  if(!nasaLeg){
   try{
-   const r=await fetch('https://gibs.earthdata.nasa.gov/colormaps/v1.3/IMERG_Precipitation_Rate.xml');
+   const r=await fetch('https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/colormap');
    if(!r.ok)throw new Error('HTTP '+r.status);
    const x=new DOMParser().parseFromString(await r.text(),'text/xml'),lg=x.querySelector('Legend');
    let cols=[...x.querySelectorAll('LegendEntry')].map(e=>e.getAttribute('rgb')).filter(Boolean);
