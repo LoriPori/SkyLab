@@ -1163,7 +1163,7 @@ function radarShow(i){
  const f=radarFrames[i];$('#rsl').value=i;
  if(f.time){
   const d=new Date(f.time*1000),m=Math.round((d-Date.now())/6e4),t=d.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});
-  $('#rtime').innerHTML=`${t} · ${f.fc?`<em>forecast</em> +${Math.max(m,0)} min`:m>-3?'now':`${-m} min ago`}`;
+  $('#rtime').innerHTML=`${t} · ${f.fc?`<em>forecast</em> +${Math.max(m,0)} min`:m>-3?'now':m<-90?`${(-m/60).toFixed(1)} h ago`:`${-m} min ago`}`;
  }
 }
 function radarTick(){
@@ -1200,6 +1200,27 @@ async function radarInit(){
  }catch(e){}
  radarLoadKind(radarKind);
 }
+/* NASA IMERG: find the newest available times, then build an animation */
+const nasaISO=t=>new Date(t).toISOString().slice(0,19)+'Z';
+const NASA_URL=t=>`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate/default/${nasaISO(t)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`;
+function imgOK(url){
+ return new Promise(res=>{
+  const im=new Image(),to=setTimeout(()=>{im.src='';res(false)},6000);
+  im.onload=()=>{clearTimeout(to);res(true)};
+  im.onerror=()=>{clearTimeout(to);res(false)};
+  im.src=url;
+ });
+}
+async function nasaTimes(){
+ const step=30*60e3,base=Math.floor(Date.now()/step)*step;
+ // test every slot from 1h to 9h ago, in parallel, using one small tile
+ const cand=[];for(let k=2;k<=18;k++)cand.push(base-k*step);
+ const ok=await Promise.all(cand.map(t=>imgOK(NASA_URL(t).replace('{z}','2').replace('{y}','1').replace('{x}','2'))));
+ const latest=cand.find((t,i)=>ok[i]);          // cand is newest-first
+ if(!latest)return[];
+ return Array.from({length:12},(_,i)=>latest-(11-i)*step);
+}
+
 async function radarLoadKind(k){
  if(!radarMap)return;
  const tok=radarTok,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
@@ -1209,11 +1230,24 @@ async function radarLoadKind(k){
  $('#rleg').hidden=k!='rain';
  note.textContent='';$('#rtime').textContent='';
 
- if(k=='nasa'){
-  radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',{pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9}).addTo(radarMap)];
-  radarFrames=[{}];sl.max=0;sl.value=0;sl.disabled=true;pl.disabled=true;
-  note.textContent='Satellite rain estimate · worldwide';
-  $('#rtime').textContent='Latest available (a few hours old)';
+  if(k=='nasa'){
+  sl.disabled=true;pl.disabled=true;
+  note.textContent='Checking the latest satellite frames…';
+  const times=await nasaTimes();
+  if(tok!==radarTok||!radarMap)return;
+  if(!times.length){
+   // fallback: one still image, as before
+   radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',{pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9}).addTo(radarMap)];
+   radarFrames=[{}];sl.max=0;
+   note.textContent='Satellite rain estimate · worldwide (still image)';
+   $('#rtime').textContent='Latest available';
+   return;
+  }
+  radarFrames=times.map(t=>({time:t/1000,fc:false}));
+  radarLayers=times.map(t=>L.tileLayer(NASA_URL(t),{pane:'radar',className:'rlayer',opacity:0,maxNativeZoom:6,maxZoom:9}).addTo(radarMap));
+  sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
+  note.textContent='Satellite rain estimate · worldwide · last ~6 h';
+  radarShow(0);radarBtn();radarTick();
   return;
  }
  sl.disabled=false;pl.disabled=false;
