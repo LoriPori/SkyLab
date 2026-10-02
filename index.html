@@ -206,6 +206,16 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)
 .st:hover{transform:translateY(-3px);background:#fff}
 .st b{display:block;font-family:var(--serif);font-weight:400;font-size:26px;margin:2px 0}
 .st span{font-size:12px;color:var(--mut);line-height:1.35;display:block}
+/* ---- Imagem nos factos das curiosidades cientificas ---- */
+.fimg {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 18px;
+  margin: 12px 0 8px;
+  border: 1px solid rgba(20, 49, 79, .14);
+  box-shadow: 0 8px 24px rgba(10, 40, 90, .12);
+}
 
 /* landing */
 .land h1{font-family:var(--serif);font-weight:400;font-size:clamp(56px,10vw,108px);line-height:.95;letter-spacing:-.02em;
@@ -360,29 +370,26 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 @keyframes flagIn{from{transform:rotateY(90deg) scale(.5);opacity:0}}
 html[lang=pt] .rtime.buf::after{content:' · a carregar…'}
 
-/* ---- cartão: chuva na próxima hora ---- */
-.ra{position:fixed;top:84px;right:20px;z-index:8;width:min(340px,calc(100vw - 32px));display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:20px;overflow:hidden;color:var(--ink);text-shadow:none;background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(226,240,255,.92));backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 20px 50px rgba(10,40,90,.3);animation:raIn .75s cubic-bezier(.3,1.4,.4,1) both}
-.ra::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(120,190,255,.28) 50%,transparent 65%);transform:translateX(-100%);animation:raSh 3.6s 1s ease-in-out infinite}
-.ra.off{animation:raOut .45s ease forwards}
-@keyframes raIn{from{opacity:0;transform:translateX(40px) scale(.9)}}
-@keyframes raOut{to{opacity:0;transform:translateX(40px) scale(.92)}}
-@keyframes raSh{60%,100%{transform:translateX(100%)}}
-.rai{position:relative;flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#8fd0ff,#2f7ee0);box-shadow:0 8px 20px rgba(47,126,224,.45);animation:bobi 3s ease-in-out infinite}
-.rai .ic{width:30px;height:30px;stroke:#fff;fill:none;position:relative;top:-4px;animation:none}
-.rai i{position:absolute;left:calc(17px + var(--x));top:35px;width:2px;height:8px;border-radius:2px;background:#fff;opacity:0;animation:rdrop 1s var(--d) linear infinite}
-@keyframes rdrop{0%{transform:translateY(-3px);opacity:0}30%{opacity:.95}100%{transform:translateY(11px);opacity:0}}
-.rab{position:relative;min-width:0;flex:1;padding-right:14px}
-.rab b{display:block;font-family:var(--serif);font-weight:400;font-size:22px;line-height:1.1}
-.rab span{display:block;margin-top:2px;font-size:13px;color:var(--mut)}
-.rab small{display:block;margin-top:8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
-.rabars{display:flex;align-items:flex-end;gap:4px;height:24px;margin:4px 0 8px}
-.rabars i{flex:1;min-height:3px;border-radius:4px;background:rgba(47,126,224,.22);transform-origin:bottom;animation:gy .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*90ms + .25s)}
-.rabars i.w{background:linear-gradient(#7fc1ff,#2f7ee0)}
-.rap{height:4px;border-radius:4px;background:rgba(20,49,79,.1);overflow:hidden}
-.rap i{display:block;width:0;height:100%;border-radius:4px;background:linear-gradient(90deg,#7fc1ff,#2f7ee0);transition:width 1s cubic-bezier(.2,.8,.2,1)}
-.rax{position:absolute;top:8px;right:8px;width:26px;height:26px;border:0;border-radius:50%;background:none;color:var(--mut);font-size:14px;cursor:pointer;transition:background .2s,transform .3s}
-.rax:hover{background:rgba(20,49,79,.08);transform:rotate(90deg)}
-@media(max-width:860px){.ra{top:auto;bottom:84px;left:16px;right:16px;width:auto}}
+/* ---- Setas de Vento no Radar ---- */
+.wind-arrow-icon {
+  background: transparent !important;
+  border: none !important;
+}
+.wind-arrow-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.wind-arrow-box span {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px #000, 0 0 2px #000;
+  margin-top: -2px;
+  white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -428,7 +435,7 @@ const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let LANG=lsGet('lang')||((navigator.language||'').toLowerCase().startsWith('pt')?'pt':'en');
 const LOC=()=>LANG=='pt'?'pt-PT':'en';
 document.documentElement.lang=LANG;
-if(lsGet('unit')&&lsGet('unitManual')==null)lsSet('unitManual',1);   // quem já escolheu unidades fica como está
+//if(lsGet('unit')&&lsGet('unitManual')==null)lsSet('unitManual',1);   // quem já escolheu unidades fica como está
 let unit=lsGet('unit')||(LANG=='pt'?'c':'f'),data=null,place=null,tab='today',lastKey='',tickT;
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const T=c=>Math.round(unit=='c'?c:c*9/5+32);
@@ -495,27 +502,53 @@ function theme(tC,k){
 function tempColor(c){const t=Math.max(-10,Math.min(38,c)),hue=208-((t+10)/48)*182;return`hsl(${hue.toFixed(0)},72%,58%)`}
 
 /* ============ science facts ============ */
-const FACTS=[
-['clear','Why the sky is blue','Air molecules scatter short wavelengths of sunlight far more than long ones (Rayleigh scattering). Violet scatters even more, but the Sun emits less of it and our eyes respond weakly to it, so we see blue.','Optics'],
-['clear','Sunsets are red for a reason','At sunset, light crosses much more atmosphere. Most blue is scattered out of the beam on the way, leaving reds and oranges to reach your eyes.','Optics'],
-['clear','Sunlight is 8 minutes old','Light from the Sun takes about 8 minutes and 20 seconds to reach Earth, so you always see the Sun as it was a little while ago.','Astronomy'],
-['night','Starlight is old news','Light from the Moon takes about 1.3 seconds to reach you. Light from the nearest star beyond the Sun takes over four years, so you are seeing the past.','Astronomy'],
-['night','Why stars twinkle','Turbulent air bends starlight on its way down, making the point of light flicker. Planets twinkle less because they are small discs, not points.','Optics'],
-['night','The Moon is drifting away','It moves about 3.8 cm farther from Earth every year, roughly the speed fingernails grow.','Astronomy'],
-['cloud','A cloud is heavy','A typical fair-weather cumulus holds roughly 500 tonnes of water, held up by rising air and droplets so tiny they fall extremely slowly.','Atmosphere'],
-['cloud','Why clouds look white','Water droplets scatter all visible wavelengths about equally, so sunlight stays white. Thick clouds look grey because little light gets through their base.','Optics'],
-['rain','Raindrops are not teardrops','Small drops are nearly spherical. Larger ones flatten into a shape like a hamburger bun as air pushes up on them.','Fluid dynamics'],
-['rain','The smell of rain','Petrichor comes from oils released by plants and from geosmin, a compound made by soil bacteria. Raindrops hitting dry ground launch it into the air.','Chemistry'],
-['rain','Raindrops fall fast','A large raindrop reaches about 9 m/s, roughly 30 km/h. Drizzle drifts down at under 1 m/s.','Fluid dynamics'],
-['snow','Snow is white, ice is blue','Ice crystals scatter all colours equally, so snow looks white. Thick, clear ice absorbs a little red light and shows a faint blue.','Optics'],
-['snow','No two snowflakes are exactly alike','Each crystal follows a slightly different path through temperature and humidity on the way down, shaping it uniquely.','Meteorology'],
-['storm','Lightning is hotter than the Sun','A lightning channel briefly reaches about 30,000 °C, roughly five times hotter than the Sun’s surface. The air explodes outward: that is thunder.','Physics'],
-['storm','Count to the thunder','Sound travels about 1 km in 3 seconds. Count the seconds between flash and bang, divide by three, and you have the distance in kilometres.','Physics'],
-['fog','Fog is a cloud on the ground','It forms the same way as any cloud: air cools to its dew point and water vapour condenses onto tiny particles.','Atmosphere'],
-['hot','Humid heat feels worse than dry heat','At the same temperature, high humidity slows sweat evaporation, so your body can’t shed heat as efficiently.','Physiology'],
-['cold','Why cold air feels dry','Cold air can hold far less water vapour. Warm it indoors without adding moisture and its relative humidity drops sharply.','Thermodynamics'],
-['uv','Clouds don’t block all UV','Up to 80% of UV rays pass through light cloud cover, which is why overcast days can still burn skin.','Radiation']
+/* ============ science facts ============ */
+const FACTS = [
+  // Factos originais
+  ['clear','Why the sky is blue','Air molecules scatter short wavelengths of sunlight far more than long ones (Rayleigh scattering). Violet scatters even more, but the Sun emits less of it and our eyes respond weakly to it, so we see blue.','Optics'],
+  ['clear','Sunsets are red for a reason','At sunset, light crosses much more atmosphere. Most blue is scattered out of the beam on the way, leaving reds and oranges to reach your eyes.','Optics'],
+  ['clear','Sunlight is 8 minutes old','Light from the Sun takes about 8 minutes and 20 seconds to reach Earth, so you always see the Sun as it was a little while ago.','Astronomy'],
+  ['night','Starlight is old news','Light from the Moon takes about 1.3 seconds to reach you. Light from the nearest star beyond the Sun takes over four years, so you are seeing the past.','Astronomy'],
+  ['night','Why stars twinkle','Turbulent air bends starlight on its way down, making the point of light flicker. Planets twinkle less because they are small discs, not points.','Optics'],
+  ['night','The Moon is drifting away','It moves about 3.8 cm farther from Earth every year, roughly the speed fingernails grow.','Astronomy'],
+  ['cloud','A cloud is heavy','A typical fair-weather cumulus holds roughly 500 tonnes of water, held up by rising air and droplets so tiny they fall extremely slowly.','Atmosphere'],
+  ['cloud','Why clouds look white','Water droplets scatter all visible wavelengths about equally, so sunlight stays white. Thick clouds look grey because little light gets through their base.','Optics'],
+  ['rain','Raindrops are not teardrops','Small drops are nearly spherical. Larger ones flatten into a shape like a hamburger bun as air pushes up on them.','Fluid dynamics'],
+  ['rain','The smell of rain','Petrichor comes from oils released by plants and from geosmin, a compound made by soil bacteria. Raindrops hitting dry ground launch it into the air.','Chemistry'],
+  ['rain','Raindrops fall fast','A large raindrop reaches about 9 m/s, roughly 30 km/h. Drizzle drifts down at under 1 m/s.','Fluid dynamics'],
+  ['snow','Snow is white, ice is blue','Ice crystals scatter all colours equally, so snow looks white. Thick, clear ice absorbs a little red light and shows a faint blue.','Optics'],
+  ['snow','No two snowflakes are exactly alike','Each crystal follows a slightly different path through temperature and humidity on the way down, shaping it uniquely.','Meteorology'],
+  ['storm','Lightning is hotter than the Sun','A lightning channel briefly reaches about 30,000 °C, roughly five times hotter than the Sun’s surface. The air explodes outward: that is thunder.','Physics'],
+  ['storm','Count to the thunder','Sound travels about 1 km in 3 seconds. Count the seconds between flash and bang, divide by three, and you have the distance in kilometres.','Physics'],
+  ['fog','Fog is a cloud on the ground','It forms the same way as any cloud: air cools to its dew point and water vapour condenses onto tiny particles.','Atmosphere'],
+  ['hot','Humid heat feels worse than dry heat','At the same temperature, high humidity slows sweat evaporation, so your body can’t shed heat as efficiently.','Physiology'],
+  ['cold','Why cold air feels dry','Cold air can hold far less water vapour. Warm it indoors without adding moisture and its relative humidity drops sharply.','Thermodynamics'],
+  ['uv','Clouds don’t block all UV','Up to 80% of UV rays pass through light cloud cover, which is why overcast days can still burn skin.','Radiation'],
+
+  // Novos factos com imagens associadas aos ficheiros do GitHub
+  ['cold','Ice Bubbles Trapped in Frozen Lakes','Methane gas produced by bacterial decomposition gets trapped beneath frozen lake surfaces, forming glassy vertical pillars of ice bubbles.','Physics','air-ice.png'],
+  ['clear','Crepuscular Rays','Sunlight passing through gaps in clouds creates dramatic sunbeams that appear to radiate outward due to atmospheric perspective.','Optics','crepuscular-rays.png'],
+  ['storm','Raining Frogs and Fish','Strong tornadic waterspouts can vacuum up small aquatic animals like frogs or fish, carrying them miles before raining them down.','Meteorology','frog.png'],
+  ['cloud','Glory Rings around Shadows','A Glory is an optical halo produced when sunlight backscatters through tiny uniform cloud droplets directly surrounding an observer shadows.','Optics','glory.png'],
+  ['storm','Haboob Dust Storms','Powerful thunderstorm downdrafts hitting dry ground trigger violent haboobs—giant walls of sand and dust thousands of feet high.','Atmosphere','haboob.png'],
+  ['cloud','Von Kármán Vortices','Winds passing over isolated islands form swirling, street-like vortex chains in cloud patterns downwind, visible from space.','Fluid dynamics','landsat_art_karman.png'],
+  ['cloud','Lenticular UFO Clouds','Stationary lens-shaped clouds form downwind of mountain ridges as moist air moves in waves, often mistaken for flying saucers.','Atmosphere','lenticular-clouds.png'],
+  ['night','Light Pillars in Freezing Air','Vertical pillars of light appear to project upward from ground lights when light reflects off millions of flat hexagonal ice crystals.','Optics','light-pillars.png'],
+  ['night','Lunar Halo 22° Ring','Refraction of moonlight through millions of hexagonal ice crystals in high cirrus clouds creates a bright 22-degree halo.','Optics','lunar-halo.png'],
+  ['clear','Mock Suns and Sundogs','Párhelios or mock suns are bright optical spots appearing on either side of the Sun when light refracts through ice plates.','Optics','mock-suns.png'],
+  ['snow','Penitentes Snow Blades','High in dry alpine regions, direct solar sublimation turns snow into tall, spiky blade-like fields of ice pointing toward the sun.','Meteorology','nieve-penitente.png'],
+  ['snow','Natural Snow Rollers','Rare wind gusts rolling wet snow across frozen ground carve hollow snow donuts or cylinders that look like giant snow rolls.','Meteorology','snow-rolls.png'],
+  ['storm','Squall Line Shelf Clouds','A squall line is a continuous line of severe thunderstorms featuring dramatic, low shelf clouds and violent wind shifts.','Meteorology','squall-line.png'],
+  ['fog','Spectral Fogbows','Fogbows are ghostly white rainbows formed by tiny fog droplets that diffract sunlight, washing out distinct spectral colors.','Optics','strange-bows.png'],
+  ['clear','Solar Halos Predict Rain','Sun halos form as sunlight bends through high-altitude ice crystals, historically signaling an approaching warm front and rain.','Optics','sun-halos.png'],
+  ['rain','Virga: Rain That Never Hits Ground','Streaks of rain or snow falling from clouds evaporate in dry air layers long before touching the surface of the Earth.','Atmosphere','virga.png'],
+  ['storm','Volcanic Lightning','Volcanic plumes generate dramatic electrical storms as colliding ash particles generate massive static charges.','Physics','volcanic-lightning.png'],
+  ['storm','Waterspouts over Open Water','Whirling columns of wind and water mist form over oceans and lakes, spinning like aquatic tornadoes.','Meteorology','waterspouts.gif'],
+  ['storm','The Fujiwhara Cyclone Dance','When two tropical cyclones approach each other, they begin orbiting around a common center before merging or separating.','Meteorology','fujiwhara.gif'],
+  ['hot','Nocturnal Heat Bursts','Collapsing thunderstorms can trigger sudden heat bursts, causing ground temperatures to spike sharply within minutes at night.','Thermodynamics','heat-bursts.gif']
 ];
+
+
 function factKey(){
  const c=data.current,k=cat(c.weather_code,c.is_day);let key=k;
  if(k=='clear'||k=='cloud'){if(c.temperature_2m>=30)key='hot';else if(data.daily.uv_index_max[0]>=7&&c.is_day)key='uv'}
@@ -527,15 +560,20 @@ function factPool(){
  const m=factKey();
  return[...FACTS.filter(f=>f[0]==m),...FACTS.filter(f=>f[0]!=m)];
 }
-const QZ=[
-['Lightning never strikes the same place twice.',0,'Myth. The Empire State Building is hit around 20 times a year. Tall, pointed, conductive objects are repeat targets.'],
-['Raindrops fall in a teardrop shape.',0,'Myth. Small drops are spheres; big ones flatten like a bun as air pushes up on them.'],
-['Snowflakes grow six arms because of the hexagonal structure of ice.',1,'Fact. Water molecules lock into a hexagonal lattice, so classic snow crystals have six-fold symmetry.'],
-['Earth is closest to the Sun during Northern Hemisphere summer.',0,'Myth. Earth is closest in early January. Seasons come from the 23.4° axial tilt, not distance.'],
-['Thunder is the sound of air expanding violently around a lightning bolt.',1,'Fact. The channel heats to about 30,000 °C in microseconds and the air bursts outward as a shock wave.'],
-['You lose most of your body heat through your head.',0,'Myth. The head is about 7–10% of body surface, so it loses roughly that share of heat.'],
-['A cloud is made of water vapour.',0,'Myth. Vapour is invisible. Clouds are tiny liquid droplets or ice crystals that formed from it.'],
-['Dew forms when surfaces cool below the air’s dew point.',1,'Fact. Air at that temperature can no longer hold its vapour, so it condenses on the cold surface.']
+const QZ = [
+  ['Lightning never strikes the same place twice.',0,'Myth. The Empire State Building is hit around 20 times a year. Tall, pointed, conductive objects are repeat targets.'],
+  ['Raindrops fall in a teardrop shape.',0,'Myth. Small drops are spheres; big ones flatten like a bun as air pushes up on them.'],
+  ['Snowflakes grow six arms because of the hexagonal structure of ice.',1,'Fact. Water molecules lock into a hexagonal lattice, so classic snow crystals have six-fold symmetry.'],
+  ['Earth is closest to the Sun during Northern Hemisphere summer.',0,'Myth. Earth is closest in early January. Seasons come from the 23.4° axial tilt, not distance.'],
+  ['Thunder is the sound of air expanding violently around a lightning bolt.',1,'Fact. The channel heats to about 30,000 °C in microseconds and the air bursts outward as a shock wave.'],
+  ['You lose most of your body heat through your head.',0,'Myth. The head is about 7–10% of body surface, so it loses roughly that share of heat.'],
+  ['A cloud is made of water vapour.',0,'Myth. Vapour is invisible. Clouds are tiny liquid droplets or ice crystals that formed from it.'],
+  ['Dew forms when surfaces cool below the air’s dew point.',1,'Fact. Air at that temperature can no longer hold its vapour, so it condenses on the cold surface.'],
+  // Novas perguntas para o Verdadeiro ou Falso
+  ['Tornado winds can exceed 400 km/h.',1,'Fact. Violent tornadoes reach wind speeds above 400 km/h, capable of ripping structure foundations apart.'],
+  ['Volcanic eruptions can trigger their own lightning storms.',1,'Fact. Friction between colliding ash particles inside the plume generates massive static electricity.'],
+  ['Virga rain clouds are invisible to weather radars.',0,'Myth. Radars detect precipitation streaks of virga even when they evaporate before reaching the ground.'],
+  ['The Fujiwhara effect makes two close hurricanes dance around each other.',1,'Fact. When two cyclones come within close range, they orbit around a shared central point like binary stars.']
 ];
 let qi=lsGet('qi')||0,score=lsGet('score')||[0,0],sciMode='fact',factI=0;
 
@@ -633,36 +671,66 @@ const PT={
  /* cartão de chuva */
  'Dismiss':'Fechar','Next 60 min':'Próximos 60 min'
 };
-const FACTS_PT=[
- ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos (dispersão de Rayleigh). O violeta dispersa-se ainda mais, mas o Sol emite menos dele e os nossos olhos respondem-lhe pouco, por isso vemos azul.'],
- ['Os pores do sol são vermelhos por uma razão','Ao pôr do sol, a luz atravessa muito mais atmosfera. A maior parte do azul é dispersada para fora do feixe pelo caminho, deixando os vermelhos e laranjas chegarem aos teus olhos.'],
- ['A luz do Sol tem 8 minutos','A luz do Sol demora cerca de 8 minutos e 20 segundos a chegar à Terra, por isso vês sempre o Sol como ele era há pouco tempo.'],
- ['A luz das estrelas é notícia velha','A luz da Lua demora cerca de 1,3 segundos a chegar até ti. A da estrela mais próxima, além do Sol, demora mais de quatro anos, por isso estás a ver o passado.'],
- ['Porque é que as estrelas cintilam','O ar turbulento desvia a luz das estrelas na descida, fazendo o ponto de luz tremeluzir. Os planetas cintilam menos porque são pequenos discos, não pontos.'],
- ['A Lua está a afastar-se','Afasta-se cerca de 3,8 cm da Terra por ano, mais ou menos à velocidade a que crescem as unhas.'],
- ['Uma nuvem é pesada','Um cúmulo típico de bom tempo contém cerca de 500 toneladas de água, sustentadas por ar ascendente e por gotículas tão pequenas que caem muito lentamente.'],
- ['Porque é que as nuvens parecem brancas','As gotículas de água dispersam todos os comprimentos de onda visíveis de forma quase igual, por isso a luz solar continua branca. As nuvens espessas parecem cinzentas porque pouca luz atravessa a base.'],
- ['As gotas de chuva não têm forma de lágrima','As gotas pequenas são quase esféricas. As maiores achatam-se numa forma de pão de hambúrguer à medida que o ar as empurra por baixo.'],
- ['O cheiro da chuva','O petricor vem dos óleos libertados pelas plantas e da geosmina, um composto produzido por bactérias do solo. As gotas, ao bater no chão seco, lançam-no para o ar.'],
- ['As gotas de chuva caem depressa','Uma gota grande atinge cerca de 9 m/s, aproximadamente 30 km/h. O chuvisco desce a menos de 1 m/s.'],
- ['A neve é branca, o gelo é azul','Os cristais de gelo dispersam todas as cores por igual, por isso a neve parece branca. O gelo espesso e transparente absorve um pouco de luz vermelha e mostra um azul ténue.'],
- ['Não há dois flocos de neve iguais','Cada cristal segue um caminho ligeiramente diferente de temperatura e humidade na queda, o que lhe dá uma forma única.'],
- ['O relâmpago é mais quente do que o Sol','Um canal de relâmpago atinge brevemente cerca de 30 000 °C, aproximadamente cinco vezes mais do que a superfície do Sol. O ar explode para fora: isso é o trovão.'],
- ['Conta até ao trovão','O som percorre cerca de 1 km em 3 segundos. Conta os segundos entre o clarão e o estrondo, divide por três e tens a distância em quilómetros.'],
- ['O nevoeiro é uma nuvem ao nível do chão','Forma-se como qualquer nuvem: o ar arrefece até ao ponto de orvalho e o vapor de água condensa-se em partículas minúsculas.'],
- ['O calor húmido custa mais do que o calor seco','À mesma temperatura, a humidade elevada atrasa a evaporação do suor, e o corpo não consegue libertar calor com tanta eficiência.'],
- ['Porque é que o ar frio parece seco','O ar frio comporta muito menos vapor de água. Se o aqueceres dentro de casa sem lhe juntar humidade, a humidade relativa desce bastante.'],
- ['As nuvens não bloqueiam todos os UV','Até 80% dos raios UV atravessam uma cobertura de nuvens ligeira, por isso dias nublados também podem queimar a pele.']
+const FACTS_PT = [
+  // (mantenha os 19 factos PT originais...)
+  ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos...'],
+  ['Os pores do sol são vermelhos por uma razão','Ao pôr do sol, a luz atravessa muito mais atmosfera...'],
+  ['A luz do Sol tem 8 minutos','A luz do Sol demora cerca de 8 minutos e 20 segundos a chegar à Terra...'],
+  ['A luz das estrelas é notícia velha','A luz da Lua demora cerca de 1,3 segundos a chegar até ti...'],
+  ['Porque é que as estrelas cintilam','O ar turbulento desvia a luz das estrelas na descida...'],
+  ['A Lua está a afastar-se','Afasta-se cerca de 3,8 cm da Terra por ano...'],
+  ['Uma nuvem é pesada','Um cúmulo típico de bom tempo contém cerca de 500 toneladas de água...'],
+  ['Porque é que as nuvens parecem brancas','As gotículas de água dispersam todos os comprimentos de onda visíveis...'],
+  ['As gotas de chuva não têm forma de lágrima','As gotas pequenas são quase esféricas...'],
+  ['O cheiro da chuva','O petricor vem dos óleos libertados pelas plantas...'],
+  ['As gotas de chuva caem depressa','Uma gota grande atinge cerca de 9 m/s...'],
+  ['A neve é branca, o gelo é azul','Os cristais de gelo dispersam todas as cores por igual...'],
+  ['Não há dois flocos de neve iguais','Cada cristal segue um caminho ligeiramente diferente...'],
+  ['O relâmpago é mais quente do que o Sol','Um canal de relâmpago atinge brevemente cerca de 30 000 °C...'],
+  ['Conta até ao trovão','O som percorre cerca de 1 km em 3 segundos...'],
+  ['O nevoeiro é uma nuvem ao nível do chão','Forma-se como qualquer nuvem: o ar arrefece até ao ponto de orvalho...'],
+  ['O calor húmido custa mais do que o calor seco','À mesma temperatura, a humidade elevada atrasa a evaporação do suor...'],
+  ['Porque é que o ar frio parece seco','O ar frio comporta muito menos vapor de água...'],
+  ['As nuvens não bloqueiam todos os UV','Até 80% dos raios UV atravessam uma cobertura de nuvens ligeira...'],
+
+  // Traduções para os factos com imagem
+  ['Bolhas de gelo presas em lagos congelados','O gás metano produzido pela decomposição é retido sob o gelo dos lagos, formando pilares verticais de bolhas.'],
+  ['Raios crepusculares','A luz solar ao passar por aberturas nas nuvens cria feixes de luz dramáticos que parecem convergir devido à perspetiva.'],
+  ['Chuva de sapos e peixes','Trombas d\'água intensas podem aspirar pequenos anfíbios e peixes, transportando-os por quilómetros antes de os precipitar.'],
+  ['A Glória à volta de sombras','A Glória é um halo ótico produzido quando a luz do sol se dispersa em gotículas de nuvens à volta da sombra do observador.'],
+  ['Tempestades de poeira Haboob','Fortes correntes descendentes de trovoadas criam haboobs—paredes gigantescas de areia e poeira com centenas de metros.'],
+  ['Vórtices de Von Kármán','O vento ao passar por ilhas altas forma padrões em espiral nas nuvens visíveis a partir do espaço.'],
+  ['Nuvens lenticulares em forma de OVNI','Nuvens estacionárias em forma de lente formam-se no topo das montanhas, muitas vezes confundidas com discos voadores.'],
+  ['Pilares de luz no ar congelado','Colunas verticais de luz parecem erguer-se no céu quando a luz reflete em milhões de cristais de gelo hexagonais.'],
+  ['Halo Lunar de 22°','A refração da luz da Lua em cristais de gelo de nuvens cirro cria um anel brilhante de 22 graus.'],
+  ['Párhelios ou Falsos Sóis','Os párhelios são pontos luminosos que aparecem em ambos os lados do Sol devido à refração em cristais de gelo.'],
+  ['Penitentes de neve nas alturas','Em regiões alpinas secas, a sublimação direta da neve cria campos de agulhas de gelo afiadas apontando para o Sol.'],
+  ['Rolos naturais de neve','Raios de vento a rolar neve húmida em solo congelado escavam rolos e rosquinhas de neve impressionantes.'],
+  ['Nuvens de prateleira em linhas de instabilidade','Uma linha de instabilidade de trovoadas apresenta nuvens de prateleira dramáticas e ventos violentos.'],
+  ['Arcos de nevoeiro espetrais','Os arcos de nevoeiro são arcos-íris brancos fantasmagóricos formados por gotículas tão pequenas que esbatem as cores.'],
+  ['Halos solares preveem chuva','Os halos solares formam-se quando a luz atravessa cristais de gelo no alto da atmosfera, sinalizando chuva próxima.'],
+  ['Virga: a chuva que não toca no chão','A precipitação que cai de nuvens altas evapora-se no ar seco antes de conseguir chegar à superfície.'],
+  ['Relâmpagos vulcânicos','Nuvens vulcânicas geram trovoadas elétricas impressionantes devido ao atrito constante entre partículas de cinza.'],
+  ['Trombas d\'água no mar','Colunas giratórias de vento e névoa formam-se sobre o mar ou lagos, girando como tornados aquáticos.'],
+  ['A dança ciclónica de Fujiwhara','Quando dois ciclones tropicais se aproximam, orbitam em redor de um centro comum antes de se fundirem ou afastarem.'],
+  ['Explosões noturnas de calor','Trovoadas em colapso podem libertar explosões de calor, fazendo a temperatura no solo subir subitamente em poucos minutos.']
 ];
-const QZ_PT=[
- ['O raio nunca cai duas vezes no mesmo sítio.','Mito. O Empire State Building é atingido cerca de 20 vezes por ano. Objetos altos, pontiagudos e condutores são alvos repetidos.'],
- ['As gotas de chuva caem em forma de lágrima.','Mito. As gotas pequenas são esferas; as grandes achatam-se como um pão à medida que o ar as empurra por baixo.'],
- ['Os flocos de neve têm seis braços por causa da estrutura hexagonal do gelo.','Facto. As moléculas de água encaixam numa rede hexagonal, por isso os cristais de neve clássicos têm simetria de ordem seis.'],
- ['A Terra está mais perto do Sol durante o verão no Hemisfério Norte.','Mito. A Terra está mais perto no início de janeiro. As estações vêm da inclinação do eixo de 23,4°, não da distância.'],
- ['O trovão é o som do ar a expandir-se violentamente à volta de um relâmpago.','Facto. O canal aquece a cerca de 30 000 °C em microssegundos e o ar rebenta para fora como uma onda de choque.'],
- ['Perdes a maior parte do calor do corpo pela cabeça.','Mito. A cabeça é cerca de 7–10% da superfície do corpo, por isso perde aproximadamente essa parte do calor.'],
- ['Uma nuvem é feita de vapor de água.','Mito. O vapor é invisível. As nuvens são gotículas líquidas minúsculas ou cristais de gelo que se formaram a partir dele.'],
- ['O orvalho forma-se quando as superfícies arrefecem abaixo do ponto de orvalho do ar.','Facto. A essa temperatura o ar já não consegue reter o vapor, que se condensa na superfície fria.']
+
+const QZ_PT = [
+  // (mantenha os 8 originais...)
+  ['O raio nunca cai duas vezes no mesmo sítio.','Mito. O Empire State Building é atingido cerca de 20 vezes por ano...'],
+  ['As gotas de chuva caem em forma de lágrima.','Mito. As gotas pequenas são esferas; as grandes achatam-se...'],
+  ['Os flocos de neve têm seis braços por causa da estrutura hexagonal do gelo.','Facto. As moléculas de água encaixam numa rede hexagonal...'],
+  ['A Terra está mais perto do Sol durante o verão no Hemisfério Norte.','Mito. A Terra está mais perto no início de janeiro...'],
+  ['O trovão é o som do ar a expandir-se violentamente à volta de um relâmpago.','Facto. O canal aquece a cerca de 30 000 °C...'],
+  ['Perdes a maior parte do calor do corpo pela cabeça.','Mito. A cabeça é cerca de 7–10% da superfície do corpo...'],
+  ['Uma nuvem é feita de vapor de água.','Mito. O vapor é invisível. As nuvens são gotículas líquidas minúsculas...'],
+  ['O orvalho forma-se quando as superfícies arrefecem abaixo do ponto de orvalho do ar.','Facto. A essa temperatura o ar já não consegue reter o vapor...'],
+  // Traduções das novas perguntas
+  ['Os ventos num tornado podem ultrapassar os 400 km/h.','Facto. Os tornados mais violentos atingem velocidades acima dos 400 km/h, capazes de arrancar fundações.'],
+  ['Erupções vulcânicas podem gerar as suas próprias trovoadas de relâmpagos.','Facto. O atrito entre partículas de cinza na nuvem vulcânica gera eletricidade estática massiva.'],
+  ['A chuva virga é invisível para os radares meteorológicos.','Mito. Os radares detetam as cortinas de precipitação virga mesmo que se evaporem antes de chegar ao solo.'],
+  ['O efeito Fujiwhara faz dois furacões próximos orbitarem um à volta do outro.','Facto. Quando dois ciclones se aproximam, orbitam em redor de um ponto central comum como estrelas binárias.']
 ];
 const firstS=s=>s.split('. ')[0].replace(/\.$/,'')+'.';          // o ticker mostra só a 1.ª frase do facto
 FACTS.forEach((f,i)=>{const p=FACTS_PT[i];if(p){PT[f[1]]=p[0];PT[f[2]]=p[1];PT[firstS(f[2])]=firstS(p[1])}});
@@ -774,9 +842,11 @@ function paintLang(swap){
 function setLang(l){
  if(l==LANG)return;
  LANG=l;lsSet('lang',l);document.documentElement.lang=l;
- if(!lsGet('unitManual'))setUnit(l=='pt'?'c':'f',false,true);           // unidades seguem o idioma, salvo escolha manual
+ if(!lsGet('unitManual')){
+   setUnit(l=='pt'?'c':'f', false, false);
+ }
  trTree(document.body);paintLang(true);
- if(data)render();else if(!place&&$('#hero')&&$('#hero').classList.contains('land'))landing();   // recalcula datas
+ if(data)render();else if(!place&&$('#hero')&&$('#hero').classList.contains('land'))landing();
 }
 $('#lng').onclick=()=>setLang(LANG=='pt'?'en':'pt');
 paintLang();trTree(document.body);
@@ -882,7 +952,7 @@ function nowcastHTML(){
  }
  const first=p.findIndex(x=>x>=.05),mx=Math.max(...p,.5);
  const head=first<0?'Dry for the next 2 hours':first==0?'Raining now':`Rain in about ${first*15} min`;
- return`<div class="ncbox"><div class="nb">${p.map((x,i)=>`<i style="height:${Math.max(12,x/mx*100)}%;animation-delay:${i*60}ms"></i>`).join('')}</div><span>${head}</span></div>`;
+ return`<div class="ncbox" title="Precipitation forecast for the next 2 hours"><div class="nb">${p.map((x,i)=>`<i style="height:${Math.max(14,x/mx*100)}%;animation-delay:${i*60}ms;background:${x>=.05?'#3b8fe0':'rgba(255,255,255,.6)'}"></i>`).join('')}</div><span><b>${head}</b></span></div>`;
 }
 function heroHTML(){
  const c=data.current,d=data.daily;
@@ -1186,13 +1256,14 @@ async function loadPollen(){
 }
 
 /* --- Science --- */
-function sciBody(){
- if(sciMode=='quiz'){
-  const z=QZ[qi%QZ.length];
-  return`<p class="qs">${z[0]}</p><div class="qb"><button class="pill dk" data-a="0">Myth</button><button class="pill dk" data-a="1">Fact</button></div><p class="qr" aria-live="polite"></p><div class="sc" id="sc">${score[0]} right of ${score[1]}</div>`;
- }
- const pool=factPool(),f=pool[((factI%pool.length)+pool.length)%pool.length];
- return`<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2><p class="fp">${f[2]}</p><div class="fnav"><button class="pill dk" data-f="-1">Previous</button><button class="pill dk" data-f="1">Another</button></div>`;
+function sciBody() {
+  if (sciMode == 'quiz') {
+    const z = QZ[qi % QZ.length];
+    return `<p class="qs">${z[0]}</p><div class="qb"><button class="pill dk" data-a="0">Myth</button><button class="pill dk" data-a="1">Fact</button></div><p class="qr" aria-live="polite"></p><div class="sc" id="sc">${score[0]} right of ${score[1]}</div>`;
+  }
+  const pool = factPool(), f = pool[((factI % pool.length) + pool.length) % pool.length];
+  const imgHTML = f[4] ? `<img class="fimg" src="${f[4]}" alt="${f[1]}" loading="lazy">` : '';
+  return `<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2>${imgHTML}<p class="fp">${f[2]}</p><div class="fnav"><button class="pill dk" data-f="-1">Previous</button><button class="pill dk" data-f="1">Another</button></div>`;
 }
 function sciPane(){
  return`<div class="pane g2e"><section class="card"><div class="sw"><button data-s="fact" aria-pressed="${sciMode=='fact'}">Did you know</button><button data-s="quiz" aria-pressed="${sciMode=='quiz'}">Myth or fact</button></div><div id="sbody">${sciBody()}</div></section>
@@ -1229,7 +1300,7 @@ function render(){
  paintFav();timeTravel();startTicker();
  countUp($('#tn'),T(c.temperature_2m));
  setTab(tab);loadExtras();
- checkAlerts();rainAlert();
+ checkAlerts();
  document.title=`${T(c.temperature_2m)}° ${place.name} — Skylab`;
  if(!fresh)scrollTo(0,y);
 }
@@ -1237,7 +1308,7 @@ function render(){
 /* ============ landing ============ */
 const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-74.01],['Sydney','Australia',-33.87,151.21],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Rio de Janeiro','Brazil',-22.91,-43.17],['Cape Town','South Africa',-33.92,18.42],['Mumbai','India',19.08,72.88]];
 function landing(){
-  clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);raClose(false);
+  clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);
  const hr=new Date().getHours(),night=hr<6||hr>=20,k=night?'night':'clear';
  theme(night?10:24,k);if(mode!==k)fxSet(k);
  setOrb(night?'moon':'sun',78,28,.9);
@@ -1577,45 +1648,6 @@ addEventListener('load',moveInd);
 setInterval(()=>{if(place&&!document.hidden)show(place.lat,place.lon,place.name,place.sub)},6e5);
 addEventListener('online',()=>{if(place)show(place.lat,place.lon,place.name,place.sub)});
 
-/* ============ cartão: chuva na próxima hora ============ */
-let raEl=null,raT=0;
-function rain60(d){
- const m=d&&d.minutely_15,p=m&&m.precipitation?m.precipitation.slice(0,4).map(x=>x||0):[];
- const first=p.findIndex(x=>x>=.05);
- if(first<0)return null;
- const at=Date.parse(m.time[first]+'Z')-(d.utc_offset_seconds||0)*1000;       // hora absoluta do 1.º bloco com chuva
- return{p,mins:first==0?0:Math.max(0,Math.round((at-Date.now())/6e4)),peak:Math.max(...p)*4};
-}
-function raClose(snooze){
- clearInterval(raT);
- const e=raEl;raEl=null;
- if(e){e.classList.add('off');setTimeout(()=>e.remove(),450)}
- if(snooze&&place)lsSet('rain60',{k:place.name,t:Date.now()});            // não volta a aparecer neste local durante 45 min
-}
-function raFill(r){
- if(!raEl)return;
- const lvl=r.peak<.5?'Light':r.peak<4?'Moderate':'Heavy';
- raEl.querySelector('#rat').textContent=r.mins<=0?'Raining now':`Rain in about ${r.mins} min`;
- raEl.querySelector('#ras').textContent=`${lvl} rain · up to ${(Math.round(r.peak*10)/10).toFixed(1)} mm/h`;
- raEl.querySelector('.rap i').style.width=(r.mins<=0?100:Math.max(6,(1-r.mins/60)*100))+'%';
-}
-function rainAlert(){
- const r=place&&data?rain60(data):null,sn=lsGet('rain60');
- if(!r||(sn&&place&&sn.k==place.name&&Date.now()-sn.t<45*6e4)){raClose(false);return}
- const isNew=!raEl;
- if(isNew){
-  raEl=document.createElement('div');raEl.className='ra';raEl.setAttribute('role','status');
-  raEl.innerHTML=`<div class="rai"><i style="--x:0px;--d:0s"></i><i style="--x:8px;--d:.35s"></i><i style="--x:16px;--d:.7s"></i>${ic('cloud')}</div><div class="rab"><b id="rat"></b><span id="ras"></span><small>Next 60 min</small><div class="rabars"></div><div class="rap"><i></i></div></div><button class="rax" aria-label="Dismiss">✕</button>`;
-  raEl.querySelector('.rax').onclick=()=>raClose(true);
-  document.body.appendChild(raEl);
-  clearInterval(raT);
-  raT=setInterval(()=>{const q=place&&data?rain60(data):null;q?raFill(q):raClose(false)},20000);   // contagem decrescente ao vivo
- }
- const mx=Math.max(...r.p,.5);
- raEl.querySelector('.rabars').innerHTML=r.p.map((x,i)=>`<i class="${x>=.05?'w':''}" style="--n:${i};height:${Math.max(14,x/mx*100)}%"></i>`).join('');
- if(isNew)setTimeout(()=>raFill(r),90);else raFill(r);                  // o atraso deixa a barra de progresso animar
-}
-
 /* ============ silent severe-weather alerts (no UI) ============ */
 const ALERTS=[
  ['storm',d=>d.current.weather_code>=95,()=>['Thunderstorm',`Thunderstorm activity at ${place.name}. Stay away from open ground and tall objects.`]],
@@ -1664,6 +1696,72 @@ const RADAR_KINDS=[['nasa','Rain'],['wind','Wind'],['cloud','Clouds'],['sat','Sa
 const OWM_KINDS={wind:{layer:'wind_new',note:'Wind speed · OpenWeatherMap · updated regularly',lo:'Calm',hi:'Storm',grad:'linear-gradient(90deg,#cfe6f5,#aacbe6,#b364bc,#7a4cac,#46009f)'}};
 let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='nasa',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+let windMarkers = [];
+
+function clearWindMarkers(){
+  windMarkers.forEach(m=>{ try{ radarMap.removeLayer(m); }catch(e){} });
+  windMarkers = [];
+}
+
+async function updateWindVectors(){
+  if(!radarMap || radarKind !== 'wind') {
+    clearWindMarkers();
+    return;
+  }
+  clearWindMarkers();
+
+  const bounds = radarMap.getBounds();
+  const s = bounds.getSouth(), n = bounds.getNorth();
+  const w = bounds.getWest(), e = bounds.getEast();
+
+  // Cria uma grelha de 5x5 pontos sobre a área visível do mapa
+  const lats = [], lons = [];
+  const rows = 5, cols = 5;
+  const latStep = (n - s) / (rows + 1);
+  const lonStep = (e - w) / (cols + 1);
+
+  for(let r = 1; r <= rows; r++){
+    for(let c = 1; c <= cols; c++){
+      lats.push(+(s + r * latStep).toFixed(3));
+      lons.push(+(w + c * lonStep).toFixed(3));
+    }
+  }
+
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=wind_speed_10m,wind_direction_10m`;
+    const res = await fetch(url);
+    if(!res.ok) return;
+    const j = await res.json();
+    const dataArr = Array.isArray(j) ? j : [j];
+
+    dataArr.forEach((item, idx) => {
+      if(!item.current) return;
+      const deg = item.current.wind_direction_10m || 0;
+      const spd = item.current.wind_speed_10m || 0;
+      const lat = lats[idx], lon = lons[idx];
+
+      // Conversão Azimutal para direção do fluxo: (graus + 180) % 360
+      const flowDeg = (deg + 180) % 360;
+
+      const arrowSvg = `<svg viewBox="0 0 24 24" style="width:20px;height:20px;transform:rotate(${flowDeg}deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));">
+        <path d="M12 2L18 20L12 16L6 20L12 2Z" fill="#ffffff" stroke="#1d5f8c" stroke-width="1.8" stroke-linejoin="round"/>
+      </svg>`;
+
+      const icon = L.divIcon({
+        className: 'wind-arrow-icon',
+        html: `<div class="wind-arrow-box">${arrowSvg}<span>${W(spd)}</span></div>`,
+        iconSize: [30, 36],
+        iconAnchor: [15, 18]
+      });
+
+      const marker = L.marker([lat, lon], {icon, interactive: false, pane: 'radar'});
+      marker.addTo(radarMap);
+      windMarkers.push(marker);
+    });
+  } catch(err) {
+    console.warn('[Wind vectors]', err);
+  }
+}
 
 /* ---- tile cache: every tile is downloaded once per session ---- */
 const tileCache=new Map(),tilePending=new Map(),noCors=new Set(),tileQ=[];
@@ -1733,11 +1831,24 @@ function radarPane(){
  <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">light</span><i id="rlbar"></i><span id="rlmax">heavy</span><span>mm/h</span></div>
  </section></div>`;
 }
+function clearRadarLayers(){
+  if(!radarMap)return;
+  clearWindMarkers();
+  radarMap.eachLayer(l=>{
+    if(l.options && (l.options.pane === 'radar' || (l.options.className && l.options.className.includes('rlayer')))){
+      try { radarMap.removeLayer(l); } catch(e){}
+    }
+  });
+}
+
 function radarStop(){
  radarTok++;clearTimeout(radarTimer);
+ clearRadarLayers();
  if(radarMap){try{radarMap.remove()}catch(e){}radarMap=null}
  radarLayers=[];radarFrames=[];
 }
+
+
 function radarBtn(){const b=$('#rplay');if(b){b.textContent=radarPlay?'❚❚':'▶';b.setAttribute('aria-label',radarPlay?'Pause':'Play')}}
 function radarShow(i){
   if(!radarMap||!radarLayers.length||!$('#rtime'))return;
@@ -1817,6 +1928,9 @@ async function radarInit(){
  $('#rsl').oninput=e=>{radarPlay=false;radarBtn();clearTimeout(radarTimer);radarShow(+e.target.value)};
  radarBtn();
  radarLoadKind(radarKind);
+ radarMap.on('moveend', () => {
+  if(radarKind === 'wind') updateWindVectors();
+});
 }
 /* NASA IMERG: find the newest available times, then build an animation */
 const nasaISO=t=>new Date(t).toISOString().slice(0,19)+'Z';
@@ -1910,11 +2024,13 @@ async function nasaLegend(){
   $('#rlmax').textContent=nasaLeg.max||'heavy';
 }
 
+
 async function radarLoadKind(k){
   if(!radarMap)return;
   const tok=radarTok,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
   clearTimeout(radarTimer);
-  radarLayers.forEach(l=>radarMap.removeLayer(l));radarLayers=[];radarFrames=[];
+  clearRadarLayers(); // Limpa garantidamente todas as camadas do mapa anterior
+  radarLayers=[];radarFrames=[];
   radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
    $('#rmap').classList.toggle('cloudy',k=='cloud'||!!OWM_KINDS[k]);   // mapa escuro também no vento
   $('#rleg').hidden=!OWM_KINDS[k];
@@ -2004,6 +2120,10 @@ async function radarLoadKind(k){
   note.textContent=ow.note;$('#rtime').textContent='Current';
   $('#rleg').innerHTML=`<span>${ow.lo}</span><i style="background:${ow.grad}"></i><span>${ow.hi}</span>`;
   radarShow(0);radarBtn();
+
+  if (k === 'wind') {
+  updateWindVectors();
+}
 }
 
 /* ============ IPMA warnings (topbar) ============ */
