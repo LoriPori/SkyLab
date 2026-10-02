@@ -353,6 +353,36 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 }
 @media(max-width:860px){.land .gwrap{width:min(100%,560px)}}
 
+/* ---- idioma ---- */
+.pill.lang{display:inline-flex;align-items:center;gap:7px}
+.pill.lang img{width:20px;height:20px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1.5px rgba(255,255,255,.75)}
+.pill.lang img.swap{animation:flagIn .55s cubic-bezier(.3,1.5,.4,1)}
+@keyframes flagIn{from{transform:rotateY(90deg) scale(.5);opacity:0}}
+html[lang=pt] .rtime.buf::after{content:' · a carregar…'}
+
+/* ---- cartão: chuva na próxima hora ---- */
+.ra{position:fixed;top:84px;right:20px;z-index:8;width:min(340px,calc(100vw - 32px));display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:20px;overflow:hidden;color:var(--ink);text-shadow:none;background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(226,240,255,.92));backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 20px 50px rgba(10,40,90,.3);animation:raIn .75s cubic-bezier(.3,1.4,.4,1) both}
+.ra::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(120,190,255,.28) 50%,transparent 65%);transform:translateX(-100%);animation:raSh 3.6s 1s ease-in-out infinite}
+.ra.off{animation:raOut .45s ease forwards}
+@keyframes raIn{from{opacity:0;transform:translateX(40px) scale(.9)}}
+@keyframes raOut{to{opacity:0;transform:translateX(40px) scale(.92)}}
+@keyframes raSh{60%,100%{transform:translateX(100%)}}
+.rai{position:relative;flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#8fd0ff,#2f7ee0);box-shadow:0 8px 20px rgba(47,126,224,.45);animation:bobi 3s ease-in-out infinite}
+.rai .ic{width:30px;height:30px;stroke:#fff;fill:none;position:relative;top:-4px;animation:none}
+.rai i{position:absolute;left:calc(17px + var(--x));top:35px;width:2px;height:8px;border-radius:2px;background:#fff;opacity:0;animation:rdrop 1s var(--d) linear infinite}
+@keyframes rdrop{0%{transform:translateY(-3px);opacity:0}30%{opacity:.95}100%{transform:translateY(11px);opacity:0}}
+.rab{position:relative;min-width:0;flex:1;padding-right:14px}
+.rab b{display:block;font-family:var(--serif);font-weight:400;font-size:22px;line-height:1.1}
+.rab span{display:block;margin-top:2px;font-size:13px;color:var(--mut)}
+.rab small{display:block;margin-top:8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.rabars{display:flex;align-items:flex-end;gap:4px;height:24px;margin:4px 0 8px}
+.rabars i{flex:1;min-height:3px;border-radius:4px;background:rgba(47,126,224,.22);transform-origin:bottom;animation:gy .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*90ms + .25s)}
+.rabars i.w{background:linear-gradient(#7fc1ff,#2f7ee0)}
+.rap{height:4px;border-radius:4px;background:rgba(20,49,79,.1);overflow:hidden}
+.rap i{display:block;width:0;height:100%;border-radius:4px;background:linear-gradient(90deg,#7fc1ff,#2f7ee0);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.rax{position:absolute;top:8px;right:8px;width:26px;height:26px;border:0;border-radius:50%;background:none;color:var(--mut);font-size:14px;cursor:pointer;transition:background .2s,transform .3s}
+.rax:hover{background:rgba(20,49,79,.08);transform:rotate(90deg)}
+@media(max-width:860px){.ra{top:auto;bottom:84px;left:16px;right:16px;width:auto}}
 </style>
 </head>
 <body>
@@ -373,6 +403,7 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
  <button class="pill" id="loc">Locate</button>
  <button class="pill" id="sur" title="Jump to a place with interesting weather">Surprise</button>
  <button class="pill sndb" id="snd" aria-pressed="false" title="Ambient weather sound">Sound</button>
+ <button class="pill lang" id="lng"><img id="lngi" alt="" width="20" height="20"><span id="lngt"></span></button>
  <div class="seg" role="group" aria-label="Units"><button data-u="c">°C</button><button data-u="f">°F</button></div>
  <div class="wpop" id="wpop" hidden role="dialog" aria-label="IPMA warnings"></div>
 </header>
@@ -394,7 +425,11 @@ const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelecto
 const main=$('#main'),q=$('#q'),sg=$('#sg');
 const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let unit=lsGet('unit')||'c',data=null,place=null,tab='today',lastKey='',tickT;
+let LANG=lsGet('lang')||((navigator.language||'').toLowerCase().startsWith('pt')?'pt':'en');
+const LOC=()=>LANG=='pt'?'pt-PT':'en';
+document.documentElement.lang=LANG;
+if(lsGet('unit')&&lsGet('unitManual')==null)lsSet('unitManual',1);   // quem já escolheu unidades fica como está
+let unit=lsGet('unit')||(LANG=='pt'?'c':'f'),data=null,place=null,tab='today',lastKey='',tickT;
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const T=c=>Math.round(unit=='c'?c:c*9/5+32);
 const W=k=>unit=='c'?Math.round(k)+' km/h':Math.round(k*.621)+' mph';
@@ -504,6 +539,248 @@ const QZ=[
 ];
 let qi=lsGet('qi')||0,score=lsGet('score')||[0,0],sciMode='fact',factI=0;
 
+/* ============ idioma PT / EN ============ */
+for(const m of['toLocaleString','toLocaleDateString','toLocaleTimeString']){
+ const o=Date.prototype[m];
+ Date.prototype[m]=function(l,...r){return o.call(this,l==='en'?LOC():l,...r)};   // datas no idioma ativo
+}
+const PT={
+ /* topbar, landing, globo */
+ 'Search a city':'Pesquisar uma cidade','Install app':'Instalar app','Locate':'Localizar','Surprise':'Surpresa',
+ 'Jump to a place with interesting weather':'Saltar para um sítio com tempo interessante','Sound':'Som',
+ 'Ambient weather sound':'Som ambiente do tempo','Units':'Unidades',
+ 'Weather by Open-Meteo · Places by BigDataCloud · Pollen by Atmospore':'Meteorologia por Open-Meteo · Locais por BigDataCloud · Pólen por Atmospore',
+ 'The sky, explained.':'O céu, explicado.',
+ 'Live weather for anywhere on Earth, with the science behind what you’re looking at.':'Tempo em direto para qualquer ponto da Terra, com a ciência por trás do que estás a ver.',
+ 'Use my location':'Usar a minha localização','Surprise me':'Surpreende-me','Skylab — Weather & Science':'Skylab — Tempo e Ciência',
+ 'Interactive globe. Drag to rotate.':'Globo interativo. Arrasta para rodar.','You’re here':'Estás aqui','Near you':'Perto de ti',
+ 'Approximate, from your time zone. Use “Use my location” for the exact spot.':'Aproximado, a partir do teu fuso horário. Usa “Usar a minha localização” para o ponto exato.',
+ 'Tokyo':'Tóquio','New York':'Nova Iorque','Sydney':'Sidney','Reykjavík':'Reiquiavique','Cape Town':'Cidade do Cabo',
+ /* IPMA */
+ 'IPMA warnings':'Avisos do IPMA','No active warnings for this area. ☀️':'Sem avisos ativos para esta zona. ☀️','Source: IPMA ↗':'Fonte: IPMA ↗',
+ 'No warnings':'Sem avisos','yellow':'amarelo','orange':'laranja','red':'vermelho',
+ /* erros, localização, pesquisa, toasts */
+ 'Could not load the forecast':'Não foi possível carregar a previsão','You appear to be offline.':'Pareces estar sem ligação.',
+ 'Weather service unavailable':'Serviço meteorológico indisponível','Location isn’t supported':'A localização não é suportada',
+ 'This browser can’t share your location. Search for a city instead.':'Este navegador não consegue partilhar a tua localização. Pesquisa antes uma cidade.',
+ 'Finding you…':'A localizar-te…','Allow location access when your browser asks.':'Permite o acesso à localização quando o navegador perguntar.',
+ 'Location access is blocked':'O acesso à localização está bloqueado','Couldn’t get your location':'Não foi possível obter a tua localização',
+ 'Allow location for this page in your browser settings, or search for a city above.':'Permite a localização para esta página nas definições do navegador, ou pesquisa uma cidade acima.',
+ 'Try again, or search for a city above.':'Tenta de novo, ou pesquisa uma cidade acima.','Try my location again':'Tentar de novo a minha localização',
+ 'Your location':'A tua localização','No matches. Check the spelling.':'Sem resultados. Verifica a ortografia.',
+ 'Search is unavailable right now.':'A pesquisa não está disponível neste momento.',
+ 'Ambient sound off':'Som ambiente desligado','Ambient sound matches the weather':'O som ambiente acompanha o tempo','Refreshing…':'A atualizar…',
+ 'Loading…':'A carregar…','Loading map…':'A carregar o mapa…',
+ /* tempo atmosférico */
+ 'Clear sky':'Céu limpo','Mostly clear':'Quase limpo','Partly cloudy':'Parcialmente nublado','Overcast':'Encoberto','Fog':'Nevoeiro',
+ 'Freezing fog':'Nevoeiro gelado','Light drizzle':'Chuvisco fraco','Drizzle':'Chuvisco','Heavy drizzle':'Chuvisco forte',
+ 'Freezing drizzle':'Chuvisco gelado','Light rain':'Chuva fraca','Rain':'Chuva','Heavy rain':'Chuva forte','Freezing rain':'Chuva gelada',
+ 'Light snow':'Neve fraca','Snow':'Neve','Heavy snow':'Neve forte','Snow grains':'Grãos de neve','Rain showers':'Aguaceiros',
+ 'Violent showers':'Aguaceiros violentos','Snow showers':'Aguaceiros de neve','Thunderstorm':'Trovoada','Thunderstorm with hail':'Trovoada com granizo',
+ /* herói, separadores, hoje, semana */
+ 'Open in Science':'Abrir em Ciência','Save place':'Guardar local','Save this place':'Guardar este local','Remove from saved places':'Remover dos locais guardados',
+ 'Travel through the next 24 hours':'Viaja pelas próximas 24 horas','Drag to travel through the next 24 hours':'Arrasta para viajar pelas próximas 24 horas',
+ 'Now':'Agora','Today':'Hoje','Week':'Semana','Radar':'Radar','Air & pollen':'Ar e pólen','Science':'Ciência',
+ 'Dry for the next 2 hours':'Seco nas próximas 2 horas','Raining now':'A chover agora',
+ 'Comfort score':'Índice de conforto','Excellent':'Excelente','Comfortable':'Confortável','So-so':'Assim-assim','Rough':'Difícil',
+ 'Wind':'Vento','Humidity':'Humidade','Pressure':'Pressão','Sun and moon':'Sol e Lua','Best time outside:':'Melhor hora lá fora:',
+ 'Daylight has passed for today.':'O dia de sol já terminou por hoje.','Cooler':'Mais frio','Warmer':'Mais quente','▮ rain chance':'▮ prob. de chuva',
+ 'Temperature over the next 24 hours':'Temperatura nas próximas 24 horas','Sun position':'Posição do Sol','Next 24 hours':'Próximas 24 horas',
+ 'New moon':'Lua nova','Waxing crescent':'Lua crescente','First quarter':'Quarto crescente','Waxing gibbous':'Crescente gibosa','Full moon':'Lua cheia',
+ 'Waning gibbous':'Minguante gibosa','Last quarter':'Quarto minguante','Waning crescent':'Lua minguante',
+ 'Shorts and a light tee':'Calções e t-shirt leve','T-shirt weather':'Tempo de t-shirt','Long sleeves':'Mangas compridas','Warm jacket':'Casaco quente',
+ 'Heavy coat, hat, gloves':'Casaco grosso, gorro e luvas','Waterproof jacket':'Casaco impermeável','Take an umbrella':'Leva um guarda-chuva',
+ 'Sunscreen and sunglasses':'Protetor solar e óculos de sol','Sunglasses':'Óculos de sol','Windproof layer':'Camada corta-vento',
+ 'Drink plenty of water':'Bebe muita água','Ice risk outside':'Risco de gelo lá fora','Good for a walk':'Bom para passear',
+ /* ar e pólen */
+ 'Air quality':'Qualidade do ar','Pollen & allergies':'Pólen e alergias','Good':'Bom','Fair':'Razoável','Moderate':'Moderado','Poor':'Mau',
+ 'Very poor':'Muito mau','Extremely poor':'Extremamente mau','Air is clean. Enjoy the outdoors.':'O ar está limpo. Aproveita o exterior.',
+ 'Fine for most people.':'Bom para a maioria das pessoas.','Sensitive people may notice effects.':'Pessoas sensíveis podem notar efeitos.',
+ 'Consider shorter time outside.':'Pondera passar menos tempo lá fora.','Limit strenuous outdoor activity.':'Limita a atividade física intensa ao ar livre.',
+ 'Stay indoors if you can.':'Fica em casa, se puderes.','Not available for this place right now.':'Indisponível para este local neste momento.',
+ 'None':'Nenhum','Low':'Baixo','High':'Alto','Very high':'Muito alto','Extreme':'Extremo',
+ 'Alder':'Amieiro','Birch':'Bétula','Grass':'Gramíneas','Mugwort':'Artemísia','Olive':'Oliveira','Ragweed':'Ambrósia',
+ 'Pollen is low across the board. A good day for allergy sufferers to be outside.':'O pólen está baixo em geral. Bom dia para alérgicos estarem ao ar livre.',
+ 'Rain is likely soon. It often rinses pollen out of the air, so levels can drop afterwards.':'É provável chuva em breve. Costuma lavar o pólen do ar, por isso os níveis podem descer depois.',
+ 'Dry and windy: pollen travels far today, and levels can peak around midday.':'Seco e ventoso: o pólen viaja longe hoje e os níveis podem atingir o pico por volta do meio-dia.',
+ 'Humid air makes pollen grains heavier, so they tend to settle closer to the ground.':'O ar húmido torna os grãos de pólen mais pesados, por isso tendem a assentar mais perto do chão.',
+ 'Calm, dry weather: pollen usually peaks from late morning to the afternoon. Mornings are gentler.':'Tempo calmo e seco: o pólen costuma atingir o pico do fim da manhã à tarde. As manhãs são mais suaves.',
+ 'Open-Meteo fallback · Europe only':'Alternativa Open-Meteo · só Europa',
+ 'Atmospore didn’t return usable data for this request. Check the browser console for details.':'A Atmospore não devolveu dados utilizáveis para este pedido. Vê a consola do navegador para mais detalhes.',
+ 'No pollen data is available for this location.':'Não há dados de pólen para este local.','Pollen data couldn’t be loaded right now.':'Não foi possível carregar os dados de pólen agora.',
+ /* ciência */
+ 'Did you know':'Sabias que','Myth or fact':'Mito ou facto','Myth':'Mito','Fact':'Facto','Previous':'Anterior','Another':'Outro',
+ 'Next question':'Próxima pergunta','Correct.':'Certo.','Not quite.':'Quase.','The physics right now':'A física neste momento',
+ 'Dew point':'Ponto de orvalho','Dry and comfortable':'Seco e confortável','Pleasant':'Agradável','Slightly humid':'Ligeiramente húmido','Humid':'Húmido','Oppressive':'Abafado',
+ 'Cloud base':'Base das nuvens','Fog level':'Ao nível do nevoeiro','125 m per °C of spread':'125 m por °C de diferença','Wind chill':'Sensação de frio com vento',
+ 'Wind strips heat from skin':'O vento leva o calor da pele','Heat index':'Índice de calor','Humidity slows sweat':'A humidade atrasa o suor','Body heat':'Calor corporal',
+ 'Neutral':'Neutro','No chill or heat stress':'Sem stress de frio ou calor','Speed of sound':'Velocidade do som','Faster in warm air':'Mais rápido em ar quente',
+ 'Daylight':'Luz do dia','Low, unsettled':'Baixa, instável','High, settled':'Alta, estável','Near average':'Perto da média',
+ 'Optics':'Ótica','Astronomy':'Astronomia','Atmosphere':'Atmosfera','Fluid dynamics':'Dinâmica de fluidos','Chemistry':'Química','Meteorology':'Meteorologia',
+ 'Physics':'Física','Physiology':'Fisiologia','Thermodynamics':'Termodinâmica','Radiation':'Radiação',
+ /* radar */
+ 'Weather radar map':'Mapa do radar meteorológico','Radar time':'Hora do radar','Pause':'Pausar','Play':'Reproduzir','Clouds':'Nuvens','Satellite':'Satélite',
+ 'Light':'Fraca','Heavy':'Forte','Rain rate':'Intensidade da chuva','light':'fraca','heavy':'forte','Current':'Atual','daily':'diário','Calm':'Calmo','Storm':'Tempestade',
+ 'Loading wind layer…':'A carregar a camada de vento…','Wind layer needs OWM_KEY in the worker.':'A camada de vento precisa da OWM_KEY no worker.',
+ 'Wind speed · OpenWeatherMap · updated regularly':'Velocidade do vento · OpenWeatherMap · atualizado regularmente',
+ 'Loading cloud layer…':'A carregar a camada de nuvens…','Global cloud cover · OpenWeatherMap · updated regularly':'Cobertura global de nuvens · OpenWeatherMap · atualizado regularmente',
+ 'Loading satellite frames…':'A carregar imagens de satélite…','Satellite imagery unavailable right now.':'Imagens de satélite indisponíveis neste momento.',
+ 'True-colour satellite · NASA VIIRS · global daily composite':'Satélite em cor real · NASA VIIRS · composição diária global',
+ 'Satellite rain estimate · worldwide · last ~6 h':'Estimativa de chuva por satélite · mundial · últimas ~6 h',
+ /* alertas (notificações do navegador) */
+ 'High wind':'Vento forte','Extreme heat':'Calor extremo','Extreme cold':'Frio extremo','Very high UV':'UV muito alto','Rain approaching':'Chuva a aproximar-se',
+ 'Poor air quality':'Fraca qualidade do ar','High pollen':'Pólen elevado','Rain in the next hour':'Chuva na próxima hora',
+ /* cartão de chuva */
+ 'Dismiss':'Fechar','Next 60 min':'Próximos 60 min'
+};
+const FACTS_PT=[
+ ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos (dispersão de Rayleigh). O violeta dispersa-se ainda mais, mas o Sol emite menos dele e os nossos olhos respondem-lhe pouco, por isso vemos azul.'],
+ ['Os pores do sol são vermelhos por uma razão','Ao pôr do sol, a luz atravessa muito mais atmosfera. A maior parte do azul é dispersada para fora do feixe pelo caminho, deixando os vermelhos e laranjas chegarem aos teus olhos.'],
+ ['A luz do Sol tem 8 minutos','A luz do Sol demora cerca de 8 minutos e 20 segundos a chegar à Terra, por isso vês sempre o Sol como ele era há pouco tempo.'],
+ ['A luz das estrelas é notícia velha','A luz da Lua demora cerca de 1,3 segundos a chegar até ti. A da estrela mais próxima, além do Sol, demora mais de quatro anos, por isso estás a ver o passado.'],
+ ['Porque é que as estrelas cintilam','O ar turbulento desvia a luz das estrelas na descida, fazendo o ponto de luz tremeluzir. Os planetas cintilam menos porque são pequenos discos, não pontos.'],
+ ['A Lua está a afastar-se','Afasta-se cerca de 3,8 cm da Terra por ano, mais ou menos à velocidade a que crescem as unhas.'],
+ ['Uma nuvem é pesada','Um cúmulo típico de bom tempo contém cerca de 500 toneladas de água, sustentadas por ar ascendente e por gotículas tão pequenas que caem muito lentamente.'],
+ ['Porque é que as nuvens parecem brancas','As gotículas de água dispersam todos os comprimentos de onda visíveis de forma quase igual, por isso a luz solar continua branca. As nuvens espessas parecem cinzentas porque pouca luz atravessa a base.'],
+ ['As gotas de chuva não têm forma de lágrima','As gotas pequenas são quase esféricas. As maiores achatam-se numa forma de pão de hambúrguer à medida que o ar as empurra por baixo.'],
+ ['O cheiro da chuva','O petricor vem dos óleos libertados pelas plantas e da geosmina, um composto produzido por bactérias do solo. As gotas, ao bater no chão seco, lançam-no para o ar.'],
+ ['As gotas de chuva caem depressa','Uma gota grande atinge cerca de 9 m/s, aproximadamente 30 km/h. O chuvisco desce a menos de 1 m/s.'],
+ ['A neve é branca, o gelo é azul','Os cristais de gelo dispersam todas as cores por igual, por isso a neve parece branca. O gelo espesso e transparente absorve um pouco de luz vermelha e mostra um azul ténue.'],
+ ['Não há dois flocos de neve iguais','Cada cristal segue um caminho ligeiramente diferente de temperatura e humidade na queda, o que lhe dá uma forma única.'],
+ ['O relâmpago é mais quente do que o Sol','Um canal de relâmpago atinge brevemente cerca de 30 000 °C, aproximadamente cinco vezes mais do que a superfície do Sol. O ar explode para fora: isso é o trovão.'],
+ ['Conta até ao trovão','O som percorre cerca de 1 km em 3 segundos. Conta os segundos entre o clarão e o estrondo, divide por três e tens a distância em quilómetros.'],
+ ['O nevoeiro é uma nuvem ao nível do chão','Forma-se como qualquer nuvem: o ar arrefece até ao ponto de orvalho e o vapor de água condensa-se em partículas minúsculas.'],
+ ['O calor húmido custa mais do que o calor seco','À mesma temperatura, a humidade elevada atrasa a evaporação do suor, e o corpo não consegue libertar calor com tanta eficiência.'],
+ ['Porque é que o ar frio parece seco','O ar frio comporta muito menos vapor de água. Se o aqueceres dentro de casa sem lhe juntar humidade, a humidade relativa desce bastante.'],
+ ['As nuvens não bloqueiam todos os UV','Até 80% dos raios UV atravessam uma cobertura de nuvens ligeira, por isso dias nublados também podem queimar a pele.']
+];
+const QZ_PT=[
+ ['O raio nunca cai duas vezes no mesmo sítio.','Mito. O Empire State Building é atingido cerca de 20 vezes por ano. Objetos altos, pontiagudos e condutores são alvos repetidos.'],
+ ['As gotas de chuva caem em forma de lágrima.','Mito. As gotas pequenas são esferas; as grandes achatam-se como um pão à medida que o ar as empurra por baixo.'],
+ ['Os flocos de neve têm seis braços por causa da estrutura hexagonal do gelo.','Facto. As moléculas de água encaixam numa rede hexagonal, por isso os cristais de neve clássicos têm simetria de ordem seis.'],
+ ['A Terra está mais perto do Sol durante o verão no Hemisfério Norte.','Mito. A Terra está mais perto no início de janeiro. As estações vêm da inclinação do eixo de 23,4°, não da distância.'],
+ ['O trovão é o som do ar a expandir-se violentamente à volta de um relâmpago.','Facto. O canal aquece a cerca de 30 000 °C em microssegundos e o ar rebenta para fora como uma onda de choque.'],
+ ['Perdes a maior parte do calor do corpo pela cabeça.','Mito. A cabeça é cerca de 7–10% da superfície do corpo, por isso perde aproximadamente essa parte do calor.'],
+ ['Uma nuvem é feita de vapor de água.','Mito. O vapor é invisível. As nuvens são gotículas líquidas minúsculas ou cristais de gelo que se formaram a partir dele.'],
+ ['O orvalho forma-se quando as superfícies arrefecem abaixo do ponto de orvalho do ar.','Facto. A essa temperatura o ar já não consegue reter o vapor, que se condensa na superfície fria.']
+];
+const firstS=s=>s.split('. ')[0].replace(/\.$/,'')+'.';          // o ticker mostra só a 1.ª frase do facto
+FACTS.forEach((f,i)=>{const p=FACTS_PT[i];if(p){PT[f[1]]=p[0];PT[f[2]]=p[1];PT[firstS(f[2])]=firstS(p[1])}});
+QZ.forEach((z,i)=>{const p=QZ_PT[i];if(p){PT[z[0]]=p[0];PT[z[2]]=p[1]}});
+const LOW={};Object.values(LABEL).forEach(en=>{if(PT[en])LOW[en.toLowerCase()]=PT[en].toLowerCase()});
+const TW={Freezing:'Gelado',Cold:'Frio',Cool:'Fresco',Mild:'Ameno',Warm:'Quente',Hot:'Muito quente'};
+const WW={'calm':'calmo','a light breeze':'com brisa ligeira','breezy':'com vento moderado','windy':'ventoso','gusty':'com rajadas'};
+const RCP={'within the hour':'com chuva provável na próxima hora','later today':'com chuva provável mais tarde','this evening':'com chuva provável ao fim do dia'};
+const UVL={Low:'Baixo',Moderate:'Moderado',High:'Alto','Very high':'Muito alto',Extreme:'Extremo'};
+const onD=x=>x=='today'?'hoje':/^(sábado|domingo)/i.test(x)?'no '+x:'na '+x;
+const dec=s=>String(s).replace('.',',');
+const polN=n=>{const c=n[0].toUpperCase()+n.slice(1);return PT[c]||c};
+const PT_RX=[
+ [/^(Freezing|Cold|Cool|Mild|Warm|Hot) and (calm|a light breeze|breezy|windy|gusty), (.+?)(, rain falling now|, with rain likely (within the hour|later today|this evening))?\.$/,
+  (m,a,b,c,rc,w)=>`${TW[a]} e ${WW[b]}, ${LOW[c]||c}${rc?(w?', '+RCP[w]:', a chover agora'):''}.`],
+ [/^Feels like (-?\d+)° · High (-?\d+)° · Low (-?\d+)°$/,'Sensação de $1° · Máx. $2° · Mín. $3°'],
+ [/^(\d+)% chance of rain$/,'$1% de probabilidade de chuva'],
+ [/^(\d+)% rain chance in the next 3 hours$/,'$1% de probabilidade de chuva nas próximas 3 horas'],
+ [/^Rain in about (\d+) min$/,'Chuva dentro de cerca de $1 min'],
+ [/^This week: (?:snow arrives (.+?)|rain arrives (.+?)|skies stay dry all week)\. Warmest (.+) at (-?\d+)°, coolest (.+) at (-?\d+)°\.$/,
+  (m,sn,rn,w,a,c,b)=>`Esta semana: ${sn?'neve '+onD(sn):rn?'chuva '+onD(rn):'o céu mantém-se limpo toda a semana'}. Mais quente ${onD(w)}, ${a}°; mais frio ${onD(c)}, ${b}°.`],
+ [/^(\d+)% illuminated$/,'$1% iluminada'],
+ [/^UV · (Low|Moderate|High|Very high|Extreme)$/,(m,l)=>'UV · '+UVL[l]],
+ [/^(.*?)\s*· (\d+)% rain$/,(m,a,b)=>`${a?a+' ':''}· ${b}% de chuva`],
+ [/^Comfort score (\d+) out of 100$/,'Índice de conforto $1 em 100'],
+ [/^Air quality index (\d+)$/,'Índice de qualidade do ar $1'],
+ [/^Tomorrow (\+|−)(\d+)s$/,'Amanhã $1$2 s'],
+ [/^Next (\d+) days$/,'Próximos $1 dias'],
+ [/^(\d+) right of (\d+)$/,'$1 certas em $2'],
+ [/^(.+) pollen is running high\. Keep windows closed, consider an antihistamine before symptoms start, and shower after time outdoors\.$/,
+  (m,n)=>`Pólen elevado (${polN(n.toLowerCase()).toLowerCase()}). Mantém as janelas fechadas, pondera tomar um anti-histamínico antes de os sintomas começarem e toma banho depois de estares ao ar livre.`],
+ [/^Pollen is moderate, led by (.+)\. Sensitive people may notice mild symptoms\.$/,
+  (m,n)=>`Pólen moderado, sobretudo de ${polN(n).toLowerCase()}. Pessoas sensíveis podem notar sintomas ligeiros.`],
+ [/^(.*) · now$/,'$1 · agora'],[/^(.*) · (\d+) min ago$/,'$1 · há $2 min'],[/^(.*) · ([\d.]+) h ago$/,'$1 · há $2 h'],
+ [/^Loading frames (\d+)\/(\d+)…$/,'A carregar imagens $1/$2…'],
+ [/^Units: (.*)$/,'Unidades: $1'],
+ [/^(\d+) warnings?$/,(m,n)=>`${n} aviso${n=='1'?'':'s'}`],
+ [/^Open the forecast for (.+)$/,'Abrir a previsão de $1'],
+ [/^(.*) Check your connection and try again\.$/,(m,a)=>`${PT[a]||a} Verifica a ligação e tenta novamente.`],
+ [/^(Light|Moderate|Heavy) rain · up to ([\d.]+) mm\/h$/,(m,l,v)=>`Chuva ${l=='Light'?'fraca':l=='Moderate'?'moderada':'forte'} · até ${dec(v)} mm/h`],
+ /* corpo das notificações */
+ [/^Thunderstorm activity at (.+)\. Stay away from open ground and tall objects\.$/,'Atividade de trovoada em $1. Afasta-te de terrenos abertos e de objetos altos.'],
+ [/^Heavy rain at (.+)\. Watch for flooded roads\.$/,'Chuva forte em $1. Atenção a estradas inundadas.'],
+ [/^Heavy snow at (.+)\. Allow extra travel time\.$/,'Neve forte em $1. Conta com mais tempo de viagem.'],
+ [/^Wind near (.+) at (.+)\. Secure loose objects\.$/,'Vento perto de $1 em $2. Prende os objetos soltos.'],
+ [/^(-?\d+)° at (.+)\. Drink water and avoid the midday sun\.$/,'$1° em $2. Bebe água e evita o sol do meio-dia.'],
+ [/^(-?\d+)° at (.+)\. Limit time outside and cover exposed skin\.$/,'$1° em $2. Limita o tempo lá fora e cobre a pele exposta.'],
+ [/^UV index (\d+) today in (.+)\. Use sunscreen and seek shade\.$/,'Índice UV $1 hoje em $2. Usa protetor solar e procura sombra.'],
+ [/^Heavy rain is likely within a few hours in (.+)\.$/,'É provável chuva forte dentro de poucas horas em $1.'],
+ [/^Air quality index is (\d+) in (.+)\. Limit outdoor exertion\.$/,'O índice de qualidade do ar é $1 em $2. Limita o esforço ao ar livre.'],
+ [/^(Low|Moderate|High|Very high) pollen risk in (.+?)(?:, led by (.+?))?\. Keep windows closed if you are allergic\.$/,
+  (m,l,p,t)=>`Risco de pólen ${(UVL[l]||l).toLowerCase()} em ${p}${t?', sobretudo de '+polN(t).toLowerCase():''}. Mantém as janelas fechadas se fores alérgico.`],
+ [/^It is raining at (.+)\.$/,'Está a chover em $1.'],
+ [/^Rain expected at (.+) in about (\d+) min\.$/,'Chuva prevista em $1 dentro de cerca de $2 min.']
+];
+function trStr(s){
+ if(LANG!='pt'||!/[A-Za-z]/.test(s))return s;
+ const d=PT[s];if(d!==undefined)return d;
+ for(const[rx,f]of PT_RX){const m=s.match(rx);if(m)return typeof f=='function'?f(...m):s.replace(rx,f)}
+ return s;
+}
+const tr=trStr;
+
+/* tradutor do DOM: guarda o inglês original de cada nó e reaplica ao mudar de idioma */
+const ORIG=new WeakMap(),AORIG=new WeakMap(),TR_ATTRS=['placeholder','title','aria-label'];
+function trText(n){
+ if(!n.parentNode||/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName))return;
+ const raw=n.nodeValue,rec=ORIG.get(n),en=rec&&raw===rec.pt?rec.en:raw;
+ if(LANG!='pt'){if(en!==raw)n.nodeValue=en;ORIG.delete(n);return}
+ const m=en.match(/^(\s*)([\s\S]*?)(\s*)$/);
+ if(!m[2])return;
+ const pt=trStr(m[2]);
+ if(pt===m[2]){ORIG.delete(n);return}
+ const out=m[1]+pt+m[3];ORIG.set(n,{en,pt:out});
+ if(out!==raw)n.nodeValue=out;
+}
+function trAttr(el,a){
+ const v=el.getAttribute(a);if(v==null)return;
+ const o=AORIG.get(el)||{},rec=o[a],en=rec&&v===rec.pt?rec.en:v,pt=trStr(en);
+ if(pt!==en)o[a]={en,pt};else delete o[a];
+ AORIG.set(el,o);if(pt!==v)el.setAttribute(a,pt);
+}
+function trTree(root){
+ if(root.nodeType==3)return trText(root);
+ if(root.nodeType!=1)return;
+ const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let n;while((n=w.nextNode()))trText(n);
+ const els=root.querySelectorAll?[...root.querySelectorAll('[placeholder],[title],[aria-label]')]:[];
+ if(root.matches&&root.matches('[placeholder],[title],[aria-label]'))els.push(root);
+ els.forEach(el=>TR_ATTRS.forEach(a=>trAttr(el,a)));
+}
+let indRaf=0;
+new MutationObserver(ms=>{
+ for(const m of ms){
+  if(m.type=='characterData')trText(m.target);
+  else if(m.type=='attributes')trAttr(m.target,m.attributeName);
+  else m.addedNodes.forEach(trTree);
+ }
+ if(!indRaf)indRaf=requestAnimationFrame(()=>{indRaf=0;moveInd()});          // as abas mudam de largura
+}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:TR_ATTRS});
+
+function paintLang(swap){
+ const i=$('#lngi'),t=$('#lngt'),b=$('#lng');if(!i)return;
+ i.src=LANG=='pt'?'portugal-icon.png':'us-icon.png';
+ t.textContent=LANG.toUpperCase();
+ b.title=b.ariaLabel=LANG=='pt'?'Switch to English':'Mudar para português';
+ if(swap&&!still){i.classList.remove('swap');void i.offsetWidth;i.classList.add('swap')}
+}
+function setLang(l){
+ if(l==LANG)return;
+ LANG=l;lsSet('lang',l);document.documentElement.lang=l;
+ if(!lsGet('unitManual'))setUnit(l=='pt'?'c':'f',false,true);           // unidades seguem o idioma, salvo escolha manual
+ trTree(document.body);paintLang(true);
+ if(data)render();else if(!place&&$('#hero')&&$('#hero').classList.contains('land'))landing();   // recalcula datas
+}
+$('#lng').onclick=()=>setLang(LANG=='pt'?'en':'pt');
+paintLang();trTree(document.body);
+
 /* ============ fetching ============ */
 async function getWeather(lat,lon){
  const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,dew_point_2m&hourly=temperature_2m,weather_code,precipitation_probability,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max&minutely_15=precipitation&forecast_minutely_15=8&timezone=auto&forecast_days=7`;
@@ -511,11 +788,11 @@ async function getWeather(lat,lon){
 }
 async function reverse(lat,lon){
  try{
-  const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);const j=await r.json();
+  const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=${LANG}`);const j=await r.json();
   return{name:j.city||j.locality||'Your location',sub:[j.principalSubdivision,j.countryName].filter(Boolean).join(', ')};
  }catch(e){return{name:'Your location',sub:''}}
 }
-const geo=async(n,c=5)=>((await(await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(n)}&count=${c}&language=en`)).json()).results||[]).map(x=>({lat:x.latitude,lon:x.longitude,name:x.name,sub:[x.admin1,x.country].filter(Boolean).join(', ')}));
+const geo=async(n,c=5)=>((await(await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(n)}&count=${c}&language=${LANG}`)).json()).results||[]).map(x=>({lat:x.latitude,lon:x.longitude,name:x.name,sub:[x.admin1,x.country].filter(Boolean).join(', ')}));
 async function show(lat,lon,name,sub){
  document.body.classList.add('busy');
  try{
@@ -952,7 +1229,7 @@ function render(){
  paintFav();timeTravel();startTicker();
  countUp($('#tn'),T(c.temperature_2m));
  setTab(tab);loadExtras();
- checkAlerts();
+ checkAlerts();rainAlert();
  document.title=`${T(c.temperature_2m)}° ${place.name} — Skylab`;
  if(!fresh)scrollTo(0,y);
 }
@@ -960,11 +1237,11 @@ function render(){
 /* ============ landing ============ */
 const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-74.01],['Sydney','Australia',-33.87,151.21],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Rio de Janeiro','Brazil',-22.91,-43.17],['Cape Town','South Africa',-33.92,18.42],['Mumbai','India',19.08,72.88]];
 function landing(){
- clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);
+ clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);raClose(false);
  const hr=new Date().getHours(),night=hr<6||hr>=20,k=night?'night':'clear';
  theme(night?10:24,k);if(mode!==k)fxSet(k);
  setOrb(night?'moon':'sun',78,28,.9);
- document.title='Skylab — Weather & Science';
+ document.title=tr('Skylab — Weather & Science');
  main.className='enter';
  main.innerHTML=`<section class="hero land" id="hero"><div class="now"><h1>The sky, explained.</h1><p class="lp">Live weather for anywhere on Earth, with the science behind what you’re looking at.</p>
  <div class="cta"><button class="pill big solid" id="lc">Use my location</button><button class="pill big" id="ls">Surprise me</button></div>
@@ -1270,9 +1547,14 @@ main.addEventListener('click',e=>{
  }
 });
 $('#loc').onclick=locate;$('#sur').onclick=surprise;
+function setUnit(u,manual,skipRender){
+ unit=u;lsSet('unit',u);if(manual)lsSet('unitManual',1);
+ $$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.u==unit));
+ if(data&&!skipRender)render();
+}
 $$('.seg button').forEach(b=>{
  b.setAttribute('aria-pressed',b.dataset.u==unit);
- b.onclick=()=>{unit=b.dataset.u;lsSet('unit',unit);$$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.u==unit));if(data)render()};
+ b.onclick=()=>setUnit(b.dataset.u,true);
 });
 $('#logo').onclick=()=>{lsSet('place',null);landing()};
 addEventListener('scroll',()=>$('#hd').classList.toggle('stuck',scrollY>20),{passive:true});
@@ -1295,6 +1577,45 @@ addEventListener('load',moveInd);
 setInterval(()=>{if(place&&!document.hidden)show(place.lat,place.lon,place.name,place.sub)},6e5);
 addEventListener('online',()=>{if(place)show(place.lat,place.lon,place.name,place.sub)});
 
+/* ============ cartão: chuva na próxima hora ============ */
+let raEl=null,raT=0;
+function rain60(d){
+ const m=d&&d.minutely_15,p=m&&m.precipitation?m.precipitation.slice(0,4).map(x=>x||0):[];
+ const first=p.findIndex(x=>x>=.05);
+ if(first<0)return null;
+ const at=Date.parse(m.time[first]+'Z')-(d.utc_offset_seconds||0)*1000;       // hora absoluta do 1.º bloco com chuva
+ return{p,mins:first==0?0:Math.max(0,Math.round((at-Date.now())/6e4)),peak:Math.max(...p)*4};
+}
+function raClose(snooze){
+ clearInterval(raT);
+ const e=raEl;raEl=null;
+ if(e){e.classList.add('off');setTimeout(()=>e.remove(),450)}
+ if(snooze&&place)lsSet('rain60',{k:place.name,t:Date.now()});            // não volta a aparecer neste local durante 45 min
+}
+function raFill(r){
+ if(!raEl)return;
+ const lvl=r.peak<.5?'Light':r.peak<4?'Moderate':'Heavy';
+ raEl.querySelector('#rat').textContent=r.mins<=0?'Raining now':`Rain in about ${r.mins} min`;
+ raEl.querySelector('#ras').textContent=`${lvl} rain · up to ${(Math.round(r.peak*10)/10).toFixed(1)} mm/h`;
+ raEl.querySelector('.rap i').style.width=(r.mins<=0?100:Math.max(6,(1-r.mins/60)*100))+'%';
+}
+function rainAlert(){
+ const r=place&&data?rain60(data):null,sn=lsGet('rain60');
+ if(!r||(sn&&place&&sn.k==place.name&&Date.now()-sn.t<45*6e4)){raClose(false);return}
+ const isNew=!raEl;
+ if(isNew){
+  raEl=document.createElement('div');raEl.className='ra';raEl.setAttribute('role','status');
+  raEl.innerHTML=`<div class="rai"><i style="--x:0px;--d:0s"></i><i style="--x:8px;--d:.35s"></i><i style="--x:16px;--d:.7s"></i>${ic('cloud')}</div><div class="rab"><b id="rat"></b><span id="ras"></span><small>Next 60 min</small><div class="rabars"></div><div class="rap"><i></i></div></div><button class="rax" aria-label="Dismiss">✕</button>`;
+  raEl.querySelector('.rax').onclick=()=>raClose(true);
+  document.body.appendChild(raEl);
+  clearInterval(raT);
+  raT=setInterval(()=>{const q=place&&data?rain60(data):null;q?raFill(q):raClose(false)},20000);   // contagem decrescente ao vivo
+ }
+ const mx=Math.max(...r.p,.5);
+ raEl.querySelector('.rabars').innerHTML=r.p.map((x,i)=>`<i class="${x>=.05?'w':''}" style="--n:${i};height:${Math.max(14,x/mx*100)}%"></i>`).join('');
+ if(isNew)setTimeout(()=>raFill(r),90);else raFill(r);                  // o atraso deixa a barra de progresso animar
+}
+
 /* ============ silent severe-weather alerts (no UI) ============ */
 const ALERTS=[
  ['storm',d=>d.current.weather_code>=95,()=>['Thunderstorm',`Thunderstorm activity at ${place.name}. Stay away from open ground and tall objects.`]],
@@ -1304,6 +1625,7 @@ const ALERTS=[
  ['heat',d=>d.current.temperature_2m>=35,d=>['Extreme heat',`${T(d.current.temperature_2m)}° at ${place.name}. Drink water and avoid the midday sun.`]],
  ['cold',d=>d.current.temperature_2m<=-10,d=>['Extreme cold',`${T(d.current.temperature_2m)}° at ${place.name}. Limit time outside and cover exposed skin.`]],
  ['uv',d=>d.current.is_day&&d.daily.uv_index_max[0]>=9,d=>['Very high UV',`UV index ${Math.round(d.daily.uv_index_max[0])} today in ${place.name}. Use sunscreen and seek shade.`]],
+ ['rain60',d=>!!rain60(d),d=>{const r=rain60(d);return['Rain in the next hour',r.mins<=0?`It is raining at ${place.name}.`:`Rain expected at ${place.name} in about ${r.mins} min.`]}],
  ['rainsoon',d=>{
    const h=d.hourly,i=idx0();
    return h.precipitation_probability[i]<40&&h.precipitation_probability.slice(i+1,i+5).some(p=>p>=70);
@@ -1322,7 +1644,7 @@ function checkAlerts(){
    log[k]=1;
    const[title,body]=msg(data);
    try{
-    const n=new Notification('Skylab · '+title,{body,tag:k});
+    const n=new Notification('Skylab · '+tr(title),{body:tr(body),tag:k});
     n.onclick=()=>{focus();n.close()};
    }catch(e){}
   }
@@ -1338,8 +1660,9 @@ addEventListener('pointerdown',askNotif,{once:true});
 addEventListener('keydown',askNotif,{once:true});
 
 /* ============ Radar tab ============ */
-const RADAR_KINDS=[['rain','Rain radar'],['cloud','Clouds'],['sat','Satellite'],['nasa','Global rain']];
-let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='rain',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
+const RADAR_KINDS=[['nasa','Rain'],['wind','Wind'],['cloud','Clouds'],['sat','Satellite']];
+const OWM_KINDS={wind:{layer:'wind_new',note:'Wind speed · OpenWeatherMap · updated regularly',lo:'Calm',hi:'Storm',grad:'linear-gradient(90deg,#cfe6f5,#aacbe6,#b364bc,#7a4cac,#46009f)'}};
+let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='nasa',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 /* ---- tile cache: every tile is downloaded once per session ---- */
@@ -1400,10 +1723,7 @@ function loadLeaflet(){
   new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})
  ]).catch(e=>{leafletP=null;throw e}));
 }
-async function radarGetMeta(){
- if(radarMeta&&Date.now()-radarMetaT<3e5)return radarMeta;
- radarMeta=await fetchJSON('https://api.rainviewer.com/public/weather-maps.json');radarMetaT=Date.now();return radarMeta;
-}
+
 function radarPane(){
  return`<div class="pane"><section class="card radar">
  <div class="rtop"><div class="sw" id="rsw">${RADAR_KINDS.map(([k,n])=>`<button data-rk="${k}" aria-pressed="${k==radarKind}">${n}</button>`).join('')}</div><span class="rnow" id="rnote"></span></div>
@@ -1422,7 +1742,7 @@ function radarBtn(){const b=$('#rplay');if(b){b.textContent=radarPlay?'❚❚':'
 function radarShow(i){
   if(!radarMap||!radarLayers.length||!$('#rtime'))return;
   radarIdx=i;
-  const cur=radarLayers[i],op=(radarKind=='sat'||radarKind=='cloud')?.95:.8;
+  const cur=radarLayers[i],op=(radarKind=='sat'||radarKind=='cloud'||OWM_KINDS[radarKind])?.95:.8;
   if(!radarMap.hasLayer(cur))cur.addTo(radarMap);
   cur.setOpacity(op);
   /* as outras frames ficam no mapa (tiles já carregados), só ficam invisíveis */
@@ -1486,7 +1806,7 @@ async function radarInit(){
  const lp=radarMap.createPane('labels');lp.style.zIndex=260;lp.style.pointerEvents='none';
  const MAP_KEY='cb1_4644_2_e1ddc0590e0bf3595329dba5';
  L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${MAP_KEY}`,{maxZoom:19}).addTo(radarMap);
- radarMap.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · radar <a href="https://www.rainviewer.com/">RainViewer</a> · <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>');
+ radarMap.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · wind &amp; clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>');
  L.marker([place.lat,place.lon],{keyboard:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(radarMap);
  radarMap.on('click focus',()=>radarMap.scrollWheelZoom.enable());
  radarMap.on('mouseout',()=>radarMap.scrollWheelZoom.disable());
@@ -1596,8 +1916,8 @@ async function radarLoadKind(k){
   clearTimeout(radarTimer);
   radarLayers.forEach(l=>radarMap.removeLayer(l));radarLayers=[];radarFrames=[];
   radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
-  $('#rmap').classList.toggle('cloudy',k=='cloud');           // mapa escuro só na vista Clouds
-  $('#rleg').hidden=k!='rain';
+  $('#rmap').classList.toggle('cloudy',k=='cloud'||!!OWM_KINDS[k]);   // mapa escuro também no vento
+  $('#rleg').hidden=!OWM_KINDS[k];
   $('#rleg2').hidden=k!='nasa';
   if(k=='nasa')nasaLegend();
   note.textContent='';$('#rtime').textContent='';
@@ -1671,19 +1991,20 @@ async function radarLoadKind(k){
     return;
   }
 
-  /* ---- RainViewer radar ---- */
-  sl.disabled=false;pl.disabled=false;
-  let meta;
-  try{meta=await radarGetMeta()}catch(e){if(tok===radarTok&&note)note.textContent='Radar service unavailable right now.';return}
+  /* ---- Camadas OpenWeatherMap via worker (vento) ---- */
+  const ow=OWM_KINDS[k];
+  if(!ow)return;
+  sl.disabled=true;pl.disabled=true;
+  note.textContent='Loading wind layer…';
+  let owOk=false;
+  try{owOk=(await fetch(`${WORKER}/owm/${ow.layer}/0/0/0.png`)).ok}catch(e){}
   if(tok!==radarTok||!radarMap)return;
-  const host=meta.host||'https://tilecache.rainviewer.com',rad=meta.radar||{};
-  const frames=[...(rad.past||[]).slice(-8).map(f=>({...f,fc:false})),...(rad.nowcast||[]).map(f=>({...f,fc:true}))];
-  if(!frames.length){note.textContent='No radar frames available right now.';return}
-  radarFrames=frames;
-  radarLayers=frames.map(f=>mkLayer(host+f.path+'/256/{z}/{x}/{y}/2/1_1.png',{tileSize:256,maxNativeZoom:7,maxZoom:9}));
-  sl.max=frames.length-1;
-  note.textContent=frames.some(f=>f.fc)?'Recent radar + short forecast':'Recent radar · updates every 10 min';
-  radarShow(0);radarWarm();radarBtn();radarTick();
+  if(!owOk){note.textContent='Wind layer needs OWM_KEY in the worker.';return}
+  radarLayers=[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
+  radarFrames=[{}];sl.max=0;
+  note.textContent=ow.note;$('#rtime').textContent='Current';
+  $('#rleg').innerHTML=`<span>${ow.lo}</span><i style="background:${ow.grad}"></i><span>${ow.hi}</span>`;
+  radarShow(0);radarBtn();
 }
 
 /* ============ IPMA warnings (topbar) ============ */
