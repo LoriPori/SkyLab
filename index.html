@@ -94,17 +94,6 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .ncbox{display:flex;align-items:center;gap:14px;padding:10px 16px;border-radius:18px;background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.45);backdrop-filter:blur(12px);font-size:14px}
 .ncbox .nb{display:flex;align-items:flex-end;gap:4px;height:30px}
 .ncbox .nb i{width:6px;border-radius:3px;background:#fff;transform-origin:bottom;animation:gy .8s cubic-bezier(.2,.7,.2,1) both}
-.ncbox{max-width:min(100%,340px);transition:background .4s,border-color .4s}
-.ncbox.wet{background:rgba(255,255,255,.36);border-color:rgba(255,255,255,.7)}
-.ncbox>.ic{font-size:22px;flex:none}
-.ncg{display:flex;flex-direction:column;gap:3px;flex:none}
-.ncbox .nb i{opacity:.45}
-.ncbox .nb i.w{opacity:1;box-shadow:0 0 8px rgba(255,255,255,.7)}
-.nx{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.03em;opacity:.85}
-.nt{min-width:0}
-.nt b{display:block;font-weight:600}
-.nt small{display:block;margin-top:2px;font-size:12px;opacity:.92;line-height:1.35}
-.nt small:empty{display:none}
 
 /* ticker & tabs */
 .ticker{margin:4px 0 12px;min-height:26px;font-size:14px;display:flex;gap:9px;align-items:baseline;cursor:pointer;transition:opacity .4s,transform .4s;text-shadow:0 2px 12px rgba(10,30,60,.25)}
@@ -371,6 +360,29 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 @keyframes flagIn{from{transform:rotateY(90deg) scale(.5);opacity:0}}
 html[lang=pt] .rtime.buf::after{content:' · a carregar…'}
 
+/* ---- cartão: chuva na próxima hora ---- */
+.ra{position:fixed;top:84px;right:20px;z-index:8;width:min(340px,calc(100vw - 32px));display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:20px;overflow:hidden;color:var(--ink);text-shadow:none;background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(226,240,255,.92));backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 20px 50px rgba(10,40,90,.3);animation:raIn .75s cubic-bezier(.3,1.4,.4,1) both}
+.ra::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(120,190,255,.28) 50%,transparent 65%);transform:translateX(-100%);animation:raSh 3.6s 1s ease-in-out infinite}
+.ra.off{animation:raOut .45s ease forwards}
+@keyframes raIn{from{opacity:0;transform:translateX(40px) scale(.9)}}
+@keyframes raOut{to{opacity:0;transform:translateX(40px) scale(.92)}}
+@keyframes raSh{60%,100%{transform:translateX(100%)}}
+.rai{position:relative;flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#8fd0ff,#2f7ee0);box-shadow:0 8px 20px rgba(47,126,224,.45);animation:bobi 3s ease-in-out infinite}
+.rai .ic{width:30px;height:30px;stroke:#fff;fill:none;position:relative;top:-4px;animation:none}
+.rai i{position:absolute;left:calc(17px + var(--x));top:35px;width:2px;height:8px;border-radius:2px;background:#fff;opacity:0;animation:rdrop 1s var(--d) linear infinite}
+@keyframes rdrop{0%{transform:translateY(-3px);opacity:0}30%{opacity:.95}100%{transform:translateY(11px);opacity:0}}
+.rab{position:relative;min-width:0;flex:1;padding-right:14px}
+.rab b{display:block;font-family:var(--serif);font-weight:400;font-size:22px;line-height:1.1}
+.rab span{display:block;margin-top:2px;font-size:13px;color:var(--mut)}
+.rab small{display:block;margin-top:8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.rabars{display:flex;align-items:flex-end;gap:4px;height:24px;margin:4px 0 8px}
+.rabars i{flex:1;min-height:3px;border-radius:4px;background:rgba(47,126,224,.22);transform-origin:bottom;animation:gy .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*90ms + .25s)}
+.rabars i.w{background:linear-gradient(#7fc1ff,#2f7ee0)}
+.rap{height:4px;border-radius:4px;background:rgba(20,49,79,.1);overflow:hidden}
+.rap i{display:block;width:0;height:100%;border-radius:4px;background:linear-gradient(90deg,#7fc1ff,#2f7ee0);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.rax{position:absolute;top:8px;right:8px;width:26px;height:26px;border:0;border-radius:50%;background:none;color:var(--mut);font-size:14px;cursor:pointer;transition:background .2s,transform .3s}
+.rax:hover{background:rgba(20,49,79,.08);transform:rotate(90deg)}
+@media(max-width:860px){.ra{top:auto;bottom:84px;left:16px;right:16px;width:auto}}
 </style>
 </head>
 <body>
@@ -405,7 +417,7 @@ html[lang=pt] .rtime.buf::after{content:' · a carregar…'}
    their docs. Each candidate is tried in order; the first response that contains
    pollen-like fields wins. The raw response is logged in the console.
    NOTE: this key is visible to anyone who views the page source. */
- 
+
 const ATMO={ base:'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/v1' };
 let atmoDead=false;
 /* ============ basics ============ */
@@ -415,7 +427,8 @@ const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return n
 const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let LANG=lsGet('lang')||((navigator.language||'').toLowerCase().startsWith('pt')?'pt':'en');
 const LOC=()=>LANG=='pt'?'pt-PT':'en';
-document.documentElement.lang=LANG; 
+document.documentElement.lang=LANG;
+if(lsGet('unit')&&lsGet('unitManual')==null)lsSet('unitManual',1);   // quem já escolheu unidades fica como está
 let unit=lsGet('unit')||(LANG=='pt'?'c':'f'),data=null,place=null,tab='today',lastKey='',tickT;
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const T=c=>Math.round(unit=='c'?c:c*9/5+32);
@@ -501,22 +514,7 @@ const FACTS=[
 ['fog','Fog is a cloud on the ground','It forms the same way as any cloud: air cools to its dew point and water vapour condenses onto tiny particles.','Atmosphere'],
 ['hot','Humid heat feels worse than dry heat','At the same temperature, high humidity slows sweat evaporation, so your body can’t shed heat as efficiently.','Physiology'],
 ['cold','Why cold air feels dry','Cold air can hold far less water vapour. Warm it indoors without adding moisture and its relative humidity drops sharply.','Thermodynamics'],
-['uv','Clouds don’t block all UV','Up to 80% of UV rays pass through light cloud cover, which is why overcast days can still burn skin.','Radiation'],
-['storm','Lightning never stops','Somewhere on Earth, about 45 lightning flashes happen every second, more than a billion a year. Most never reach the ground: they leap between clouds or inside a single cloud.','Meteorology'],
-['storm','A hailstone as big as a volleyball','The largest hailstone measured in the United States fell in Vivian, South Dakota, in 2010: about 20 cm across and almost 0.9 kg. Strong updrafts keep stones aloft so they gain layer after layer of ice, like an onion.','Meteorology'],
-['storm','Winds faster than a bullet train','The strongest surface wind gust ever measured, 408 km/h, struck Barrow Island, Australia, during Cyclone Olivia in 1996. It beat the old record of 372 km/h from Mount Washington, which stood for 62 years.','Meteorology'],
-['storm','Haboobs: walls of dust','A haboob is a wall of dust, often over a kilometre tall, pushed out ahead of a thunderstorm by its cold downdraft. The word comes from the Arabic “habb”, meaning “to blow”.','Meteorology'],
-['storm','Lightning that shoots upwards','Red sprites are flashes that leap upward from the top of thunderclouds, 50 to 90 km up, and last only a few milliseconds. They are so faint and brief that they were only captured on camera in 1989.','Atmosphere'],
-['snow','Thundersnow is real','Thunder and lightning can happen while it snows. It is rare, and the falling snow and snow-covered ground soak up the sound, so the thunder is strangely muffled.','Meteorology'],
-['snow','The biggest snowflake on record','A snowflake reported at Fort Keogh, Montana, in 1887 was said to be 38 cm wide. Giant flakes like that are clumps of many crystals that stuck together on the way down.','Meteorology'],
-['uv','Snow can burn you from below','Fresh snow reflects up to 80% of UV rays, so on a sunny day at altitude you get hit twice: from above and from the ground. Skiers can burn under their chins and noses.','Radiation'],
-['hot','The hottest air ever measured','The highest air temperature officially recorded on Earth is 56.7 °C, at Furnace Creek in Death Valley, California, in July 1913. Some scientists doubt the reading, but nothing has beaten it.','Climate'],
-['cold','The coldest air ever measured','The lowest temperature measured at ground level by a thermometer is −89.2 °C, at Vostok Station in Antarctica in 1983. Satellites have since detected snow-surface temperatures near −93 °C on the East Antarctic plateau.','Climate'],
-['cold','Antarctica is a desert','Antarctica is the largest desert on Earth. A desert is defined by how little precipitation it gets, under about 250 mm a year, not by heat, so cold ones count too.','Climate'],
-['rain','A place that gets 12 metres of rain','Mawsynram, in northeast India, receives close to 12 metres of rain a year, around 20 times as much as London. Monsoon air is forced up the Khasi Hills, cools, and drops its water.','Climate'],
-['rain','It can rain fish','Waterspouts and strong updrafts can lift small fish or frogs and drop them kilometres away. Fish falls have been reported all over the world for centuries.','Meteorology'],
-['clear','Fire rainbows have no fire or rain','A “fire rainbow” is really a circumhorizontal arc: sunlight bending through flat, plate-shaped ice crystals in high cirrus clouds. It only appears when the Sun is higher than 58° above the horizon.','Optics'],
-['night','Rainbows by moonlight','A moonbow is a rainbow made by moonlight shining on rain or mist, opposite the Moon. To our eyes it usually looks white, though long-exposure photos reveal the colours.','Optics']
+['uv','Clouds don’t block all UV','Up to 80% of UV rays pass through light cloud cover, which is why overcast days can still burn skin.','Radiation']
 ];
 function factKey(){
  const c=data.current,k=cat(c.weather_code,c.is_day);let key=k;
@@ -537,16 +535,7 @@ const QZ=[
 ['Thunder is the sound of air expanding violently around a lightning bolt.',1,'Fact. The channel heats to about 30,000 °C in microseconds and the air bursts outward as a shock wave.'],
 ['You lose most of your body heat through your head.',0,'Myth. The head is about 7–10% of body surface, so it loses roughly that share of heat.'],
 ['A cloud is made of water vapour.',0,'Myth. Vapour is invisible. Clouds are tiny liquid droplets or ice crystals that formed from it.'],
-['Dew forms when surfaces cool below the air’s dew point.',1,'Fact. Air at that temperature can no longer hold its vapour, so it condenses on the cold surface.'],
-['A hailstone as big as a volleyball has been recorded.',1,'Fact. A stone that fell in Vivian, South Dakota, in 2010 measured about 20 cm across and weighed almost 0.9 kg.'],
-['Lightning can strike you under a clear blue sky.',1,'Fact. “Bolts from the blue” can leap 15 km or more from the edge of a storm, so if you can hear thunder, you are close enough to be struck.'],
-['Animals can fall from the sky during a storm.',1,'Fact. Waterspouts and strong updrafts can lift small fish and frogs and drop them far away. Fish falls have been reported around the world.'],
-['Thunder and lightning can happen during a snowstorm.',1,'Fact. It is called thundersnow. It is rare, and the snow muffles the sound so much that the thunder is hard to hear.'],
-['A rainbow can appear at night.',1,'Fact. Bright moonlight shining on rain or mist can make a moonbow. It is faint, so it usually looks white to our eyes.'],
-['Deserts are always hot.',0,'Myth. A desert is a place with very little precipitation. Antarctica, which is bitterly cold, is the largest desert on Earth.'],
-['The hottest temperature ever recorded on Earth was in the Sahara desert.',0,'Myth. The record is 56.7 °C in Death Valley, California (1913). A 58 °C reading from El Azizia, Libya (1922), was rejected by the WMO in 2012.'],
-['Snowflakes are just frozen raindrops.',0,'Myth. Frozen raindrops are ice pellets (sleet). Snow forms when water vapour freezes straight onto tiny ice crystals high in a cloud, which then grow into flakes.'],
-['When lightning hits a car, the rubber tyres protect the people inside.',0,'Myth. The metal body acts as a shield, guiding the current around you and into the ground. The tyres do very little.']
+['Dew forms when surfaces cool below the air’s dew point.',1,'Fact. Air at that temperature can no longer hold its vapour, so it condenses on the cold surface.']
 ];
 let qi=lsGet('qi')||0,score=lsGet('score')||[0,0],sciMode='fact',factI=0;
 
@@ -644,12 +633,6 @@ const PT={
  /* cartão de chuva */
  'Dismiss':'Fechar','Next 60 min':'Próximos 60 min'
 };
-
-Object.assign(PT,{
- 'Rain starting any minute':'Chuva a qualquer momento',
- 'No rain likely this week':'Sem chuva provável esta semana',
- 'continues past 2 hours':'continua depois das 2 horas'
-});
 const FACTS_PT=[
  ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos (dispersão de Rayleigh). O violeta dispersa-se ainda mais, mas o Sol emite menos dele e os nossos olhos respondem-lhe pouco, por isso vemos azul.'],
  ['Os pores do sol são vermelhos por uma razão','Ao pôr do sol, a luz atravessa muito mais atmosfera. A maior parte do azul é dispersada para fora do feixe pelo caminho, deixando os vermelhos e laranjas chegarem aos teus olhos.'],
@@ -664,27 +647,12 @@ const FACTS_PT=[
  ['As gotas de chuva caem depressa','Uma gota grande atinge cerca de 9 m/s, aproximadamente 30 km/h. O chuvisco desce a menos de 1 m/s.'],
  ['A neve é branca, o gelo é azul','Os cristais de gelo dispersam todas as cores por igual, por isso a neve parece branca. O gelo espesso e transparente absorve um pouco de luz vermelha e mostra um azul ténue.'],
  ['Não há dois flocos de neve iguais','Cada cristal segue um caminho ligeiramente diferente de temperatura e humidade na queda, o que lhe dá uma forma única.'],
- ['Um relâmpago é mais quente do que a superfície Sol','Um canal de relâmpago atinge brevemente cerca de 30 000 °C, aproximadamente cinco vezes mais do que a superfície do Sol. O ar explode para fora: isso é o trovão.'],
- ['Conta até ao trovão','O som percorre cerca de 1 km em 3 segundos. Conta os segundos entre o clarão e o estrondo, divide por três e tens a distância em quilómetros entre ti e a trovoada.'],
+ ['O relâmpago é mais quente do que o Sol','Um canal de relâmpago atinge brevemente cerca de 30 000 °C, aproximadamente cinco vezes mais do que a superfície do Sol. O ar explode para fora: isso é o trovão.'],
+ ['Conta até ao trovão','O som percorre cerca de 1 km em 3 segundos. Conta os segundos entre o clarão e o estrondo, divide por três e tens a distância em quilómetros.'],
  ['O nevoeiro é uma nuvem ao nível do chão','Forma-se como qualquer nuvem: o ar arrefece até ao ponto de orvalho e o vapor de água condensa-se em partículas minúsculas.'],
  ['O calor húmido custa mais do que o calor seco','À mesma temperatura, a humidade elevada atrasa a evaporação do suor, e o corpo não consegue libertar calor com tanta eficiência.'],
  ['Porque é que o ar frio parece seco','O ar frio comporta muito menos vapor de água. Se o aqueceres dentro de casa sem lhe juntar humidade, a humidade relativa desce bastante.'],
- ['As nuvens não bloqueiam todos os raios UV','Até 80% dos raios UV atravessam uma cobertura de nuvens ligeira, por isso dias nublados também podem queimar a pele.'],
-['O relâmpago nunca pára','Algures na Terra, acontecem cerca de 45 relâmpagos por segundo, mais de mil milhões por ano. A maioria nunca chega ao chão: salta entre nuvens ou dentro da mesma nuvem.'],
-['Uma pedra de granizo do tamanho de uma bola de voleibol','A maior pedra de granizo medida nos Estados Unidos caiu em Vivian, no Dakota do Sul, em 2010: cerca de 20 cm de diâmetro e quase 0,9 kg. As correntes ascendentes fortes mantêm as pedras no ar, que vão ganhando camada após camada de gelo, como uma cebola.'],
-['Ventos mais rápidos do que um comboio-bala','A rajada de vento à superfície mais forte alguma vez medida, 408 km/h, atingiu a ilha Barrow, na Austrália, durante o ciclone Olivia, em 1996. Superou o antigo recorde de 372 km/h do Monte Washington, que durou 62 anos.'],
-['Haboobs: muros de pó','Um haboob é um muro de pó, muitas vezes com mais de um quilómetro de altura, empurrado à frente de uma trovoada pela sua corrente descendente fria. A palavra vem do árabe “habb”, que significa “soprar”.'],
-['Relâmpagos que disparam para cima','Os sprites vermelhos são clarões que saltam do topo das nuvens de trovoada para cima, entre 50 e 90 km de altitude, e duram apenas alguns milissegundos. São tão ténues e breves que só foram captados em imagem em 1989.'],
-['A trovoada de neve existe','Podem ocorrer trovões e relâmpagos enquanto neva. É raro, e a neve a cair e o chão coberto de neve absorvem o som, por isso o trovão soa estranhamente abafado.'],
-['O maior floco de neve de que há registo','Um floco de neve registado em Fort Keogh, no Montana, em 1887, terá tido 38 cm de largura. Flocos gigantes como esse são aglomerados de muitos cristais que se colaram na queda.'],
-['A neve também queima por baixo','A neve fresca reflete até 80% dos raios UV, por isso, num dia de sol em altitude, apanhas radiação duas vezes: de cima e do chão. Quem esquia pode queimar-se debaixo do queixo e do nariz.'],
-['O ar mais quente alguma vez medido','A temperatura do ar mais alta oficialmente registada na Terra é de 56,7 °C, em Furnace Creek, no Vale da Morte, na Califórnia, em julho de 1913. Alguns cientistas duvidam da medição, mas ninguém a superou.'],
-['O ar mais frio alguma vez medido','A temperatura mais baixa medida por um termómetro ao nível do solo é de −89,2 °C, na estação Vostok, na Antártida, em 1983. Entretanto, os satélites detetaram temperaturas da superfície da neve perto de −93 °C no planalto da Antártida Oriental.'],
-['A Antártida é um deserto','A Antártida é o maior deserto da Terra. Um deserto define-se pela pouca precipitação que recebe, menos de cerca de 250 mm por ano, e não pelo calor, por isso os desertos frios também contam.'],
-['Um sítio onde chovem 12 metros','Mawsynram, no nordeste da Índia, recebe perto de 12 metros de chuva por ano, cerca de 20 vezes mais do que Londres. O ar da monção é forçado a subir as colinas de Khasi, arrefece e larga a sua água.'],
-['Pode chover peixes','As trombas-d’água e as correntes ascendentes fortes podem levantar pequenos peixes ou rãs e largá-los a quilómetros de distância. Há séculos que se relatam chuvas de peixes por todo o mundo.'],
-['Os arco-íris de fogo não têm fogo nem chuva','Um “arco-íris de fogo” é, na verdade, um arco circum-horizontal: luz solar que se desvia ao atravessar cristais de gelo planos, em forma de placa, em nuvens cirros altas. Só aparece quando o Sol está a mais de 58° acima do horizonte.'],
-['Arco-íris ao luar','Um arco-íris lunar é um arco-íris formado pela luz da Lua a incidir na chuva ou na neblina, do lado oposto à Lua. Aos nossos olhos costuma parecer branco, mas as fotografias de longa exposição revelam as cores.']
+ ['As nuvens não bloqueiam todos os UV','Até 80% dos raios UV atravessam uma cobertura de nuvens ligeira, por isso dias nublados também podem queimar a pele.']
 ];
 const QZ_PT=[
  ['O raio nunca cai duas vezes no mesmo sítio.','Mito. O Empire State Building é atingido cerca de 20 vezes por ano. Objetos altos, pontiagudos e condutores são alvos repetidos.'],
@@ -694,18 +662,8 @@ const QZ_PT=[
  ['O trovão é o som do ar a expandir-se violentamente à volta de um relâmpago.','Facto. O canal aquece a cerca de 30 000 °C em microssegundos e o ar rebenta para fora como uma onda de choque.'],
  ['Perdes a maior parte do calor do corpo pela cabeça.','Mito. A cabeça é cerca de 7–10% da superfície do corpo, por isso perde aproximadamente essa parte do calor.'],
  ['Uma nuvem é feita de vapor de água.','Mito. O vapor é invisível. As nuvens são gotículas líquidas minúsculas ou cristais de gelo que se formaram a partir dele.'],
- ['O orvalho forma-se quando as superfícies arrefecem abaixo do ponto de orvalho do ar.','Facto. A essa temperatura o ar já não consegue reter o vapor, que se condensa numa superfície fria.'],
-['Já foi registada uma pedra de granizo do tamanho de uma bola de voleibol.','Facto. Uma pedra que caiu em Vivian, no Dakota do Sul, em 2010, media cerca de 20 cm de diâmetro e pesava quase 0,9 kg.'],
-['Um relâmpago pode atingir-te debaixo de um céu azul e limpo.','Facto. Os “raios caídos do céu azul” podem saltar 15 km ou mais desde a orla de uma tempestade, por isso, se ouves trovões, estás perto o suficiente para seres atingido.'],
-['Podem cair animais do céu durante uma tempestade.','Facto. As trombas-d’água e as correntes ascendentes fortes podem levantar pequenos peixes e rãs e largá-los longe. Há relatos de chuvas de peixes por todo o mundo.'],
-['Pode haver trovões e relâmpagos durante uma nevada.','Facto. Chama-se trovoada de neve. É raro, e a neve abafa tanto o som que o trovão é difícil de ouvir.'],
-['Pode aparecer um arco-íris à noite.','Facto. A luz forte da Lua a incidir na chuva ou na neblina pode criar um arco-íris lunar. É ténue, por isso aos nossos olhos costuma parecer branco.'],
-['Os desertos são sempre quentes.','Mito. Um deserto é um sítio com muito pouca precipitação. A Antártida, que é terrivelmente fria, é o maior deserto da Terra.'],
-['A temperatura mais alta alguma vez registada na Terra foi no deserto do Saara.','Mito. O recorde é de 56,7 °C no Vale da Morte, na Califórnia (1913). Uma leitura de 58 °C em El Azizia, na Líbia (1922), foi rejeitada pela OMM em 2012.'],
-['Os flocos de neve são apenas gotas de chuva congeladas.','Mito. As gotas de chuva congeladas são grãos de gelo (sleet). A neve forma-se quando o vapor de água congela diretamente em minúsculos cristais de gelo no alto de uma nuvem, que depois crescem até se tornarem flocos.'],
-['Quando um relâmpago atinge um carro, os pneus de borracha protegem quem está lá dentro.','Mito. A carroçaria metálica funciona como um escudo, desviando a corrente à volta de quem lá está e para o chão. Os pneus pouco contribuem.']
+ ['O orvalho forma-se quando as superfícies arrefecem abaixo do ponto de orvalho do ar.','Facto. A essa temperatura o ar já não consegue reter o vapor, que se condensa na superfície fria.']
 ];
-PT['Climate']='Clima';
 const firstS=s=>s.split('. ')[0].replace(/\.$/,'')+'.';          // o ticker mostra só a 1.ª frase do facto
 FACTS.forEach((f,i)=>{const p=FACTS_PT[i];if(p){PT[f[1]]=p[0];PT[f[2]]=p[1];PT[firstS(f[2])]=firstS(p[1])}});
 QZ.forEach((z,i)=>{const p=QZ_PT[i];if(p){PT[z[0]]=p[0];PT[z[2]]=p[1]}});
@@ -744,10 +702,7 @@ const PT_RX=[
  [/^(\d+) warnings?$/,(m,n)=>`${n} aviso${n=='1'?'':'s'}`],
  [/^Open the forecast for (.+)$/,'Abrir a previsão de $1'],
  [/^(.*) Check your connection and try again\.$/,(m,a)=>`${PT[a]||a} Verifica a ligação e tenta novamente.`],
- [/^(Light|Moderate|Heavy) rain · up to ([\d.]+) (mm|in)\/h(?: · (.+))?$/,(m,l,v,u,t)=>`Chuva ${l=='Light'?'fraca':l=='Moderate'?'moderada':'forte'} · até ${dec(v)} ${u}/h${t?' · '+trStr(t):''}`],
- [/^stops in about (\d+) min$/,'pára dentro de cerca de $1 min'],
- [/^lasts about (\d+) min$/,'dura cerca de $1 min'],
- [/^Next likely rain: (.+)$/,'Próxima chuva provável: $1'],
+ [/^(Light|Moderate|Heavy) rain · up to ([\d.]+) mm\/h$/,(m,l,v)=>`Chuva ${l=='Light'?'fraca':l=='Moderate'?'moderada':'forte'} · até ${dec(v)} mm/h`],
  /* corpo das notificações */
  [/^Thunderstorm activity at (.+)\. Stay away from open ground and tall objects\.$/,'Atividade de trovoada em $1. Afasta-te de terrenos abertos e de objetos altos.'],
  [/^Heavy rain at (.+)\. Watch for flooded roads\.$/,'Chuva forte em $1. Atenção a estradas inundadas.'],
@@ -819,7 +774,7 @@ function paintLang(swap){
 function setLang(l){
  if(l==LANG)return;
  LANG=l;lsSet('lang',l);document.documentElement.lang=l;
- setUnit(l=='pt'?'c':'f',false,true);   // PT → °C, km/h · EN → °F, mph
+ if(!lsGet('unitManual'))setUnit(l=='pt'?'c':'f',false,true);           // unidades seguem o idioma, salvo escolha manual
  trTree(document.body);paintLang(true);
  if(data)render();else if(!place&&$('#hero')&&$('#hero').classList.contains('land'))landing();   // recalcula datas
 }
@@ -834,7 +789,7 @@ async function getWeather(lat,lon){
 async function reverse(lat,lon){
  try{
   const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=${LANG}`);const j=await r.json();
-  return{name:j.city||j.locality||'Your location',sub:[j.principalSubdivision,j.countryName].filter(Boolean).join(', ')};
+    return{name:j.city||j.locality||'Your location',sub:[j.principalSubdivision,j.countryName].filter(Boolean).join(', ')};
  }catch(e){return{name:'Your location',sub:''}}
 }
 const geo=async(n,c=5)=>((await(await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(n)}&count=${c}&language=${LANG}`)).json()).results||[]).map(x=>({lat:x.latitude,lon:x.longitude,name:x.name,sub:[x.admin1,x.country].filter(Boolean).join(', ')}));
@@ -919,54 +874,15 @@ function lab(){
 }
 
 /* ============ hero ============ */
-let ncT=0;
-const rainFmt=v=>unit=='c'?`${(Math.round(v*10)/10).toFixed(1)} mm/h`:`${(v*.03937).toFixed(2)} in/h`;
-function ncInfo(){
- const m=data.minutely_15;
- if(!m||!m.precipitation||!m.precipitation.length)return null;
- const p=m.precipitation.slice(0,8).map(x=>x||0),off=(data.utc_offset_seconds||0)*1000,now=Date.now();
- const at=i=>Date.parse(m.time[i]+'Z')-off;
- let k=p.findIndex((_,i)=>at(i)+9e5>now);if(k<0)k=p.length-1;   // bloco de 15 min em que estamos
- const q=p.slice(k),f=q.findIndex(x=>x>=.05);
- if(f<0)return{p,state:'dry'};
- const e=q.findIndex((x,i)=>i>f&&x<.05),wet=q.slice(f,e<0?q.length:e);
- return{p,state:f==0?'wet':'soon',
-  start:Math.max(0,Math.round((at(k+f)-now)/6e4)),
-  end:e<0?null:Math.max(1,Math.round((at(k+e)-now)/6e4)),
-  dur:wet.length*15,peak:Math.max(...wet)*4};
-}
-function ncText(){
- const h=data.hourly,i0=idx0(),n=ncInfo(),off=(data.utc_offset_seconds||0)*1000;
- if(!n){
-  const r=Math.max(...h.precipitation_probability.slice(i0,i0+3));
-  return{head:`${r}% rain chance in the next 3 hours`,sub:'',wet:false};
- }
- if(n.state=='dry'){
-  const lim=Date.now()+72e5;
-  const j=h.time.findIndex((t,k)=>k>=i0&&h.precipitation_probability[k]>=50&&Date.parse(t+'Z')-off>lim);
-  return{head:'Dry for the next 2 hours',
-   sub:j<0?'No rain likely this week':`Next likely rain: ${new Date(h.time[j]).toLocaleString('en',{weekday:'short',hour:'numeric'})}`,wet:false};
- }
- const lvl=n.peak<2.5?'Light':n.peak<7.5?'Moderate':'Heavy';
- const tail=n.state=='wet'
-  ?(n.end?`stops in about ${n.end} min`:'continues past 2 hours')
-  :(n.end?`lasts about ${n.dur} min`:'continues past 2 hours');
- const head=n.state=='wet'?'Raining now':n.start<5?'Rain starting any minute':`Rain in about ${n.start} min`;
- return{head,sub:`${lvl} rain · up to ${rainFmt(n.peak)} · ${tail}`,wet:true};
-}
 function nowcastHTML(){
- const t=ncText(),n=ncInfo(),mx=n?Math.max(...n.p,.5):1;
- const g=n?`<div class="ncg"><div class="nb">${n.p.map((x,i)=>`<i class="${x>=.05?'w':''}" title="${fmtT(data.minutely_15.time[i])} · ${rainFmt(x*4)}" style="height:${Math.max(12,x/mx*100)}%;animation-delay:${i*60}ms"></i>`).join('')}</div><div class="nx"><span>Now</span><span>1 h</span><span>2 h</span></div></div>`:ic('drop');
- return`<div class="ncbox${t.wet?' wet':''}" id="nc">${g}<div class="nt"><b id="nct" data-en="${t.head}">${t.head}</b><small id="ncs" data-en="${t.sub}">${t.sub}</small></div></div>`;
-}
-function ncTick(){
- clearInterval(ncT);
- ncT=setInterval(()=>{
-  const box=$('#nc');if(!box||!data)return clearInterval(ncT);
-  const t=ncText();
-  [['#nct',t.head],['#ncs',t.sub]].forEach(([s,v])=>{const el=$(s);if(el&&el.dataset.en!==v){el.dataset.en=v;el.textContent=v}});
-  box.classList.toggle('wet',t.wet);
- },30000);
+ const m=data.minutely_15,p=m&&m.precipitation?m.precipitation.slice(0,8).map(x=>x||0):null;
+ if(!p||!p.length){
+  const i0=idx0(),r=Math.max(...data.hourly.precipitation_probability.slice(i0,i0+3));
+  return`<div class="ncbox">${ic('drop')}<span>${r}% rain chance in the next 3 hours</span></div>`;
+ }
+ const first=p.findIndex(x=>x>=.05),mx=Math.max(...p,.5);
+ const head=first<0?'Dry for the next 2 hours':first==0?'Raining now':`Rain in about ${first*15} min`;
+ return`<div class="ncbox"><div class="nb">${p.map((x,i)=>`<i style="height:${Math.max(12,x/mx*100)}%;animation-delay:${i*60}ms"></i>`).join('')}</div><span>${head}</span></div>`;
 }
 function heroHTML(){
  const c=data.current,d=data.daily;
@@ -1321,7 +1237,7 @@ function render(){
 /* ============ landing ============ */
 const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-74.01],['Sydney','Australia',-33.87,151.21],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Rio de Janeiro','Brazil',-22.91,-43.17],['Cape Town','South Africa',-33.92,18.42],['Mumbai','India',19.08,72.88]];
 function landing(){
- clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);raClose(false);
+  clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);raClose(false);
  const hr=new Date().getHours(),night=hr<6||hr>=20,k=night?'night':'clear';
  theme(night?10:24,k);if(mode!==k)fxSet(k);
  setOrb(night?'moon':'sun',78,28,.9);
@@ -1632,7 +1548,7 @@ main.addEventListener('click',e=>{
 });
 $('#loc').onclick=locate;$('#sur').onclick=surprise;
 function setUnit(u,manual,skipRender){
- unit=u;lsSet('unit',u);
+ unit=u;lsSet('unit',u);if(manual)lsSet('unitManual',1);
  $$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.u==unit));
  if(data&&!skipRender)render();
 }
@@ -1662,6 +1578,7 @@ setInterval(()=>{if(place&&!document.hidden)show(place.lat,place.lon,place.name,
 addEventListener('online',()=>{if(place)show(place.lat,place.lon,place.name,place.sub)});
 
 /* ============ cartão: chuva na próxima hora ============ */
+let raEl=null,raT=0;
 function rain60(d){
  const m=d&&d.minutely_15,p=m&&m.precipitation?m.precipitation.slice(0,4).map(x=>x||0):[];
  const first=p.findIndex(x=>x>=.05);
@@ -1669,7 +1586,35 @@ function rain60(d){
  const at=Date.parse(m.time[first]+'Z')-(d.utc_offset_seconds||0)*1000;       // hora absoluta do 1.º bloco com chuva
  return{p,mins:first==0?0:Math.max(0,Math.round((at-Date.now())/6e4)),peak:Math.max(...p)*4};
 }
-
+function raClose(snooze){
+ clearInterval(raT);
+ const e=raEl;raEl=null;
+ if(e){e.classList.add('off');setTimeout(()=>e.remove(),450)}
+ if(snooze&&place)lsSet('rain60',{k:place.name,t:Date.now()});            // não volta a aparecer neste local durante 45 min
+}
+function raFill(r){
+ if(!raEl)return;
+ const lvl=r.peak<.5?'Light':r.peak<4?'Moderate':'Heavy';
+ raEl.querySelector('#rat').textContent=r.mins<=0?'Raining now':`Rain in about ${r.mins} min`;
+ raEl.querySelector('#ras').textContent=`${lvl} rain · up to ${(Math.round(r.peak*10)/10).toFixed(1)} mm/h`;
+ raEl.querySelector('.rap i').style.width=(r.mins<=0?100:Math.max(6,(1-r.mins/60)*100))+'%';
+}
+function rainAlert(){
+ const r=place&&data?rain60(data):null,sn=lsGet('rain60');
+ if(!r||(sn&&place&&sn.k==place.name&&Date.now()-sn.t<45*6e4)){raClose(false);return}
+ const isNew=!raEl;
+ if(isNew){
+  raEl=document.createElement('div');raEl.className='ra';raEl.setAttribute('role','status');
+  raEl.innerHTML=`<div class="rai"><i style="--x:0px;--d:0s"></i><i style="--x:8px;--d:.35s"></i><i style="--x:16px;--d:.7s"></i>${ic('cloud')}</div><div class="rab"><b id="rat"></b><span id="ras"></span><small>Next 60 min</small><div class="rabars"></div><div class="rap"><i></i></div></div><button class="rax" aria-label="Dismiss">✕</button>`;
+  raEl.querySelector('.rax').onclick=()=>raClose(true);
+  document.body.appendChild(raEl);
+  clearInterval(raT);
+  raT=setInterval(()=>{const q=place&&data?rain60(data):null;q?raFill(q):raClose(false)},20000);   // contagem decrescente ao vivo
+ }
+ const mx=Math.max(...r.p,.5);
+ raEl.querySelector('.rabars').innerHTML=r.p.map((x,i)=>`<i class="${x>=.05?'w':''}" style="--n:${i};height:${Math.max(14,x/mx*100)}%"></i>`).join('');
+ if(isNew)setTimeout(()=>raFill(r),90);else raFill(r);                  // o atraso deixa a barra de progresso animar
+}
 
 /* ============ silent severe-weather alerts (no UI) ============ */
 const ALERTS=[
@@ -1699,7 +1644,7 @@ function checkAlerts(){
    log[k]=1;
    const[title,body]=msg(data);
    try{
-    const n=new Notification('Skylab · '+tr(title),{body:tr(body),tag:k});
+       const n=new Notification('Skylab · '+tr(title),{body:tr(body),tag:k});
     n.onclick=()=>{focus();n.close()};
    }catch(e){}
   }
@@ -1797,7 +1742,7 @@ function radarBtn(){const b=$('#rplay');if(b){b.textContent=radarPlay?'❚❚':'
 function radarShow(i){
   if(!radarMap||!radarLayers.length||!$('#rtime'))return;
   radarIdx=i;
-  const cur=radarLayers[i],op=(radarKind=='sat'||radarKind=='cloud'||OWM_KINDS[radarKind])?.95:.8;
+   const cur=radarLayers[i],op=(radarKind=='sat'||radarKind=='cloud'||OWM_KINDS[radarKind])?.95:.8;
   if(!radarMap.hasLayer(cur))cur.addTo(radarMap);
   cur.setOpacity(op);
   /* as outras frames ficam no mapa (tiles já carregados), só ficam invisíveis */
@@ -1965,109 +1910,100 @@ async function nasaLegend(){
   $('#rlmax').textContent=nasaLeg.max||'heavy';
 }
 
-let radarKT=0;
-function radarClear(){
- if(!radarMap)return;
- radarMap.eachLayer(l=>{if(l.options&&l.options.pane==='radar')radarMap.removeLayer(l)});
- radarLayers=[];radarFrames=[];
-}
-
 async function radarLoadKind(k){
- if(!radarMap)return;
- const tok=radarTok,kt=++radarKT,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
- const stale=()=>tok!==radarTok||kt!==radarKT||!radarMap;   // o utilizador já mudou de radar/separador
- clearTimeout(radarTimer);radarBuffering(false);
- radarClear();
- radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
- $('#rmap').classList.toggle('cloudy',k=='cloud'||!!OWM_KINDS[k]);
- $('#rleg').hidden=!OWM_KINDS[k];
- $('#rleg2').hidden=k!='nasa';
- if(k=='nasa')nasaLegend();
- note.textContent='';$('#rtime').textContent='';
- sl.max=0;sl.value=0;
+  if(!radarMap)return;
+  const tok=radarTok,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  clearTimeout(radarTimer);
+  radarLayers.forEach(l=>radarMap.removeLayer(l));radarLayers=[];radarFrames=[];
+  radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
+   $('#rmap').classList.toggle('cloudy',k=='cloud'||!!OWM_KINDS[k]);   // mapa escuro também no vento
+  $('#rleg').hidden=!OWM_KINDS[k];
+  $('#rleg2').hidden=k!='nasa';
+  if(k=='nasa')nasaLegend();
+  note.textContent='';$('#rtime').textContent='';
 
- /* ---- Clouds ---- */
- let asSat=(k=='sat'),fbNote='';
- if(k=='cloud'){
-  sl.disabled=true;pl.disabled=true;
-  note.textContent='Loading cloud layer…';
-  let ok=false;
-  try{ok=(await fetch(WORKER+'/clouds/0/0/0.png')).ok}catch(e){}
-  if(stale())return;
-  if(ok){
-   radarLayers=[mkLayer(WORKER+'/clouds/{z}/{x}/{y}.png',{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
-   radarFrames=[{}];sl.max=0;
-   note.textContent='Global cloud cover · OpenWeatherMap · updated regularly';
-   $('#rtime').textContent='Current';
-   radarShow(0);radarBtn();
-   return;
+  /* ---- Clouds (OpenWeatherMap via worker): global, single layer ---- */
+  let asSat=(k=='sat'),fbNote='';
+  if(k=='cloud'){
+    sl.disabled=true;pl.disabled=true;
+    note.textContent='Loading cloud layer…';
+    let ok=false;
+    try{ok=(await fetch(WORKER+'/clouds/0/0/0.png')).ok}catch(e){}
+    if(tok!==radarTok||!radarMap)return;
+    if(ok){
+      radarLayers=[mkLayer(WORKER+'/clouds/{z}/{x}/{y}.png',{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
+      radarFrames=[{}];sl.max=0;
+      note.textContent='Global cloud cover · OpenWeatherMap · updated regularly';
+      $('#rtime').textContent='Current';
+      radarShow(0);radarBtn();
+      return;
+    }
+    asSat=true;fbNote=' · cloud layer needs OWM_KEY in the worker, showing satellite instead';
+    $('#rmap').classList.remove('cloudy');
   }
-  asSat=true;fbNote=' · cloud layer needs OWM_KEY in the worker, showing satellite instead';
-  $('#rmap').classList.remove('cloudy');
- }
 
- /* ---- Satellite ---- */
- if(asSat){
-  sl.disabled=true;pl.disabled=true;
-  note.textContent='Loading satellite frames…';
-  let j;
-  try{j=await satInfo(SAT_ID)}catch(e){
-   console.warn('[SAT]',e.message);
-   if(!stale())note.textContent='Satellite imagery unavailable right now.';
-   return;
+  /* ---- Satellite: NASA VIIRS true colour, global daily composites ---- */
+  if(asSat){
+    sl.disabled=true;pl.disabled=true;
+    note.textContent='Loading satellite frames…';
+    let j;
+    try{j=await satInfo(SAT_ID)}catch(e){
+      console.warn('[SAT]',e.message);
+      if(tok===radarTok&&note)note.textContent='Satellite imagery unavailable right now.';
+      return;
+    }
+    if(tok!==radarTok||!radarMap)return;
+    const daily=j.stepMs>=864e5;
+    let end=Date.parse(j.end);const start=Date.parse(j.start),N=daily?7:12;
+    if(daily)end-=j.stepMs;                       // today's mosaic is still incomplete: start at yesterday
+    const times=Array.from({length:N},(_,i)=>end-(N-1-i)*j.stepMs).filter(t=>t>=start);
+    const nz=+((j.tms.match(/Level(\d+)/)||[0,9])[1]);
+    console.info('[SAT] newest frame:',new Date(end).toISOString().slice(0,10));
+    radarFrames=times.map(t=>({time:t/1000,fc:false,day:daily}));
+    radarLayers=times.map(t=>mkLayer(satURL(SAT_ID,j,t),{maxNativeZoom:nz,maxZoom:9}));
+    sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
+    sl.value=times.length-1;
+    note.textContent='True-colour satellite · NASA VIIRS · global daily composite'+fbNote;
+    radarShow(times.length-1);radarPlay=false;radarBtn();   // start on the newest day, paused
+    radarShow(times.length-1);radarPlay=false;radarBtn();radarWarm();   // start on the newest day, paused
+    return;
   }
-  if(stale())return;
-  const daily=j.stepMs>=864e5;
-  let end=Date.parse(j.end);const start=Date.parse(j.start),N=daily?7:12;
-  if(daily)end-=j.stepMs;
-  const times=Array.from({length:N},(_,i)=>end-(N-1-i)*j.stepMs).filter(t=>t>=start);
-  const nz=+((j.tms.match(/Level(\d+)/)||[0,9])[1]);
-  radarFrames=times.map(t=>({time:t/1000,fc:false,day:daily}));
-  radarLayers=times.map(t=>mkLayer(satURL(SAT_ID,j,t),{maxNativeZoom:nz,maxZoom:9}));
-  sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
-  note.textContent='True-colour satellite · NASA VIIRS · global daily composite'+fbNote;
-  radarPlay=false;                      // começa no dia mais recente, em pausa
-  radarShow(times.length-1);radarBtn();radarWarm();
-  return;
- }
 
- /* ---- NASA IMERG ---- */
- if(k=='nasa'){
-  sl.disabled=true;pl.disabled=true;
-  note.textContent='Checking the latest satellite frames…';
-  const times=await nasaTimes();
-  if(stale())return;
-  if(times.length<2){
-   radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate_30min/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',
-    {pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9,errorTileUrl:BLANK}).addTo(radarMap)];
-   radarFrames=[{}];sl.max=0;
-   note.textContent='Satellite rain estimate · worldwide · latest image (no distinct frames to animate)';
-   $('#rtime').textContent='Latest available';
-   return;
+  /* ---- NASA IMERG ---- */
+  if(k=='nasa'){
+    sl.disabled=true;pl.disabled=true;
+    note.textContent='Checking the latest satellite frames…';
+    const times=await nasaTimes();
+    if(tok!==radarTok||!radarMap)return;
+    if(times.length<2){
+      radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate_30min/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',
+        {pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9,errorTileUrl:BLANK}).addTo(radarMap)];
+      radarFrames=[{}];sl.max=0;
+      note.textContent='Satellite rain estimate · worldwide · latest image (no distinct frames to animate)';
+      $('#rtime').textContent='Latest available';
+      return;
+    }
+    radarFrames=times.map(t=>({time:t/1000,fc:false}));
+    radarLayers=times.map(t=>mkLayer(NASA_URL(t),{maxNativeZoom:6,maxZoom:9}));
+    sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
+    note.textContent='Satellite rain estimate · worldwide · last ~6 h';
+    radarShow(0);radarWarm();radarBtn();radarTick();
+    return;
   }
-  radarFrames=times.map(t=>({time:t/1000,fc:false}));
-  radarLayers=times.map(t=>mkLayer(NASA_URL(t),{maxNativeZoom:6,maxZoom:9}));
-  sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
-  note.textContent='Satellite rain estimate · worldwide · last ~6 h';
-  radarPlay=!still;                     // antes ficava parado depois de visitar o Satélite
-  radarShow(0);radarWarm();radarBtn();radarTick();
-  return;
- }
-
- /* ---- Vento (OpenWeatherMap via worker) ---- */
- const ow=OWM_KINDS[k];
- if(!ow)return;
- sl.disabled=true;pl.disabled=true;
- note.textContent='Loading wind layer…';
- let owOk=false;
- try{owOk=(await fetch(`${WORKER}/owm/${ow.layer}/0/0/0.png`)).ok}catch(e){}
- if(stale())return;
- if(!owOk){note.textContent='Wind layer needs OWM_KEY in the worker.';return}
- radarLayers=[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
- radarFrames=[{}];sl.max=0;
- note.textContent=ow.note;$('#rtime').textContent='Current';
- $('#rleg').innerHTML=`<span>${ow.lo}</span><i style="background:${ow.grad}"></i><span>${ow.hi}</span>`;
- radarShow(0);radarBtn();
+  /* ---- Camadas OpenWeatherMap via worker (vento) ---- */
+  const ow=OWM_KINDS[k];
+  if(!ow)return;
+  sl.disabled=true;pl.disabled=true;
+  note.textContent='Loading wind layer…';
+  let owOk=false;
+  try{owOk=(await fetch(`${WORKER}/owm/${ow.layer}/0/0/0.png`)).ok}catch(e){}
+  if(tok!==radarTok||!radarMap)return;
+   if(!owOk){note.textContent='Wind layer needs OWM_KEY in the worker.';return}
+  radarLayers=[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
+  radarFrames=[{}];sl.max=0;
+  note.textContent=ow.note;$('#rtime').textContent='Current';
+  $('#rleg').innerHTML=`<span>${ow.lo}</span><i style="background:${ow.grad}"></i><span>${ow.hi}</span>`;
+  radarShow(0);radarBtn();
 }
 
 /* ============ IPMA warnings (topbar) ============ */
@@ -2137,7 +2073,7 @@ addEventListener('appinstalled',()=>{installEv=null;$('#inst').hidden=true;toast
 if('serviceWorker' in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 /* ============ boot ============ */
-const saved=lsGet('place');
+const saved=lsGet('place'); 
 if(saved)show(saved.lat,saved.lon,saved.name,saved.sub);else landing();
 </script>
 </body>
