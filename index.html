@@ -1117,15 +1117,23 @@ function lab(){
  if(F>=80&&rh>=40)heat=(-42.379+2.04901523*F+10.14333127*rh-.22475541*F*rh-.00683783*F*F-.05481717*rh*rh+.00122874*F*F*rh+.00085282*F*rh*rh-.00000199*F*F*rh*rh-32)*5/9;
  const feel=chill!==null?['Wind chill',T(chill)+'°','Wind strips heat from skin']:heat!==null?['Heat index',T(heat)+'°','Humidity slows sweat']:['Body heat','Neutral','No chill or heat stress'];
  const dl=(new Date(d.sunset[0])-new Date(d.sunrise[0]))/6e4,dl2=(new Date(d.sunset[1])-new Date(d.sunrise[1]))/6e4,df=Math.round((dl2-dl)*60);
- // Equação dos gases perfeitos para ar húmido (kg/m³)
- const rho=(c.surface_pressure*100/(287.058*(tC+273.15))).toFixed(3);
+ 
+ // Equação dos gases perfeitos para ar (kg/m³)
+ const pVal = c.surface_pressure || 1013.25;
+ const rho=(pVal*100/(287.058*(tC+273.15))).toFixed(3);
  const rhoSub=rho<1.18?'Thin, low lift':rho>1.25?'Dense, high lift':'Standard atmosphere';
 
- const tiles=[['Dew point',T(td)+'°',comfort],['Cloud base',cbTxt,'125 m per °C of spread'],feel,
-['Air density',rho+' kg/m³',rhoSub],
-['Speed of sound',Math.round(331.3+.606*tC)+' m/s','Faster in warm air'],
-['Daylight',hm(dl),`Tomorrow ${df>=0?'+':'−'}${Math.abs(df)}s`],
-['Pressure',Math.round(c.surface_pressure)+' hPa',c.surface_pressure<1005?'Low, unsettled':c.surface_pressure>1020?'High, settled':'Near average']];
+ const tiles=[
+  ['Dew point',T(td)+'°',comfort],
+  ['Cloud base',cbTxt,'125 m per °C of spread'],
+  feel,
+  ['Air density',rho+' kg/m³',rhoSub],
+  ['Speed of sound',Math.round(331.3+.606*tC)+' m/s','Faster in warm air'],
+  ['Daylight',hm(dl),`Tomorrow ${df>=0?'+':'−'}${Math.abs(df)}s`],
+  ['Pressure',Math.round(pVal)+' hPa',pVal<1005?'Low, unsettled':pVal>1020?'High, settled':'Near average']
+ ];
+
+ return tiles.map(([a,b,s],n)=>`<div class="st" style="--n:${n}"><span>${tr(a)}</span><b>${b}</b><span>${tr(s)}</span></div>`).join('');
 }
 
 /* ============ hero ============ */
@@ -1148,16 +1156,18 @@ function heroHTML(){
  const c=data.current,d=data.daily;
  const local=new Date(c.time).toLocaleString('en',{weekday:'long',hour:'numeric',minute:'2-digit'});
  return`<section class="hero" id="hero">
- <div class="now">
-  <div class="place"><h1>${place.name}</h1><button class="star" id="fav" aria-label="Save place"></button></div>
-  <div class="sub">${place.sub?place.sub+' · ':''}${local}</div>
-  <div class="temp"><span id="tn">${T(c.temperature_2m)}</span><sup>°</sup></div>
-  <div class="cond" id="cond"><span class="em">${emoji(c.weather_code,c.is_day)}</span>${LABEL[c.weather_code]||'—'}</div>
-  <div class="feels" id="feels">Feels like ${T(c.apparent_temperature)}° · High ${T(d.temperature_2m_max[0])}° · Low ${T(d.temperature_2m_min[0])}°</div>
-  <p class="lede">${heroLine()}</p>
-  <div class="tt"><input type="range" id="tr" min="0" max="24" value="0" aria-label="Travel through the next 24 hours"><div class="tl" id="tlab" aria-live="polite">Drag to travel through the next 24 hours</div></div>
- </div>
- <div class="scene"><div class="bigwrap"><i class="halo"></i><div class="bigic" id="bigic">${emoji(c.weather_code,c.is_day)}</div></div>${nowcastHTML()}</div>
+<div class="now">
+ <div class="place"><h1>${place.name}</h1><button class="star" id="fav" aria-label="Save place"></button></div>
+ <div class="sub">${place.sub?place.sub+' · ':''}${local}</div>
+ <div class="temp"><span id="tn">${T(c.temperature_2m)}</span><sup>°</sup></div>
+ <div class="cond" id="cond"><span class="em">${emoji(c.weather_code,c.is_day)}</span>
+${LABEL[c.weather_code]||'—'}</div>
+ <div class="feels" id="feels">Feels like ${T(c.apparent_temperature)}° · High ${T(d.temperature_2m_max[0])}° · Low ${T(d.temperature_2m_min[0])}°</div>
+ <p class="lede">${heroLine()}</p>
+ <div class="tt"><input type="range" id="tr" min="0" max="24" value="0" aria-label="Travel through the next 24 hours"><div class="tl" id="tlab" aria-live="polite">Drag to travel through the next 24 hours</div></div>
+</div>
+<div class="scene"><div class="bigwrap"><i class="halo"></i><div class="bigic" id="bigic">
+${emoji(c.weather_code,c.is_day)}</div></div>${nowcastHTML()}</div>
 </section>`;
 }
 function timeTravel(){
@@ -1290,9 +1300,9 @@ function todayPane(){
    <div><span>${tr('Stargazing index')}</span><b>${ephemerisData().seeingScore}% · ${ephemerisData().seeingLabel}</b></div>
   </div>
 
-  <p class="best">${best}</p>
-  <div class="chips">${advice()}</div>
- </section>div>`;
+ <p class="best">${best}</p>
+ <div class="chips">${advice()}</div>
+</section></div>`;
 }
 function scrub(){
  const svg=$('.chartbox svg');if(!svg)return;
@@ -1530,10 +1540,12 @@ function quizHTML(){
   +`<div class="qr" aria-live="polite">${res}</div><div class="sc" id="sc">${qs.r} right of ${qs.i+(done?1:0)}</div>`;
 }
 function sciBody() {
-  if (sciMode == 'quiz') return quizHTML();
-  const pool = factPool(), f = pool[((factI % pool.length) + pool.length) % pool.length];
-  const imgHTML = f[4] ? `<img class="fimg" src="${IMG_DIR}${f[4]}" data-n="${f[4]}" alt="${tr(f[1]).replace(/"/g,'&quot;')}" loading="lazy" decoding="async" onload="this.classList.add('ok')" onerror="imgFB(this)">` : '';
-  return `<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2>${imgHTML}
+ if (sciMode == 'quiz') return quizHTML();
+ const pool = factPool(), f = pool[((factI % pool.length) + pool.length) % pool.length];
+ const imgHTML = f[4] ? `<img class="fimg" src="${IMG_DIR}${f[4]}" data-n="${f[4]}" 
+alt="${tr(f[1]).replace(/"/g,'&quot;')}" loading="lazy" decoding="async" 
+onload="this.classList.add('ok')" onerror="imgFB(this)">` : '';
+ return `<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2>${imgHTML}
 <p class="fp">${f[2]}</p><div class="fnav"><button class="pill dk" data-f="-1">Previous</button><button class="pill dk" data-f="1">Another</button></div>`;
 }
 function sciPane(){
