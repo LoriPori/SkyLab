@@ -28,9 +28,8 @@ background:radial-gradient(40vmax 40vmax at 18% 22%,rgba(255,255,255,.38),transp
 animation:aur 28s ease-in-out infinite alternate}
 @keyframes aur{to{transform:translate3d(6%,4%,0) rotate(8deg) scale(1.1)}}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
-#orb{position:fixed;width:120px;height:120px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;opacity:0;
-transition:left 1s cubic-bezier(.2,.7,.2,1),top 1s cubic-bezier(.2,.7,.2,1),opacity .7s,background .7s}
-#orb.sun{background:radial-gradient(circle,#fffbe6 0 28%,#ffe08a 55%,rgba(255,224,138,0) 72%);animation:glow 5s ease-in-out infinite}
+
+
 #orb.moon{width:76px;height:76px;background:radial-gradient(circle at 35% 35%,#fff,#e4eaff 55%,#c5cfee);box-shadow:0 0 80px 22px rgba(210,220,255,.45);animation:glow 6s ease-in-out infinite}
 @keyframes glow{50%{transform:translate(-50%,-50%) scale(1.12)}}
 
@@ -263,6 +262,58 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)
 .dayf h3{font-family:var(--serif);font-weight:400;font-size:22px;line-height:1.2;margin:6px 0 4px;color:var(--ink)}
 .dayf p{font-size:14px;line-height:1.55;color:var(--mut)}
 @keyframes dayin{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}
+/* Facto do dia integrado no Hero dinâmico */
+.hero .dayf{
+  margin:14px 0 16px;
+  background:rgba(255,255,255,.22);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.45);
+  border-radius:20px;
+  box-shadow:0 14px 34px rgba(10,30,60,.16);
+  transition:transform .3s ease, background .3s ease, border-color .3s ease;
+}
+.hero .dayf:hover{
+  transform:translateY(-2px);
+  background:rgba(255,255,255,.3);
+  border-color:rgba(255,255,255,.65);
+}
+.hero .dayf::before{
+  background:linear-gradient(180deg,#fff3b0,#38bdf8);
+}
+.hero .dayf h3{
+  color:#fff;
+  text-shadow:0 2px 10px rgba(10,30,60,.25);
+}
+.hero .dayf p{
+  color:rgba(255,255,255,.94);
+}
+.hero .dayf .dtag{
+  color:#fff3b0;
+}
+.hero .dayf .dtag em{
+  color:rgba(255,255,255,.85);
+}
+
+/* Novo componente: Efemérides & Ótica Celeste */
+.ephem{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin:10px 0 4px;
+  padding:10px 12px;
+  border-radius:14px;
+  background:rgba(20,49,79,.06);
+  font-size:12px;
+}
+.ephem b{
+  display:block;
+  font-size:14px;
+  font-weight:600;
+  color:var(--ink);
+  margin-top:2px;
+}
+.ephem span{color:var(--mut)}
 
 .labgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .st{padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.65);transition:transform .25s,background .25s;animation:rise .55s both;animation-delay:calc(var(--n)*70ms)}
@@ -367,12 +418,41 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .rleg2 img[hidden],.rlegfb[hidden]{display:none}
 
 /* ---- globo ---- */
+/* ---- globo com halo atmosférico radiante ---- */
 .gwrap{position:relative;width:100%;aspect-ratio:1;margin:0 auto}
-#globe{position:absolute;inset:0;display:block;width:100%;height:100%;cursor:grab;touch-action:pan-y;opacity:0;transform:scale(.86);transition:opacity .9s ease,transform 1.1s cubic-bezier(.2,.9,.3,1.15);filter:drop-shadow(0 30px 40px rgba(10,40,90,.28))}
+#globe{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%;cursor:grab;touch-action:pan-y;opacity:0;transform:scale(.86);transition:opacity .9s ease,transform 1.1s cubic-bezier(.2,.9,.3,1.15);filter:drop-shadow(0 30px 45px rgba(10,40,90,.32))}
 .gwrap.ready #globe{opacity:1;transform:none}
 #globe:active{cursor:grabbing}
-.gwrap .bigwrap{position:absolute;inset:0;margin:auto;pointer-events:none;transition:opacity .6s,transform .9s}
-.gwrap.ready .bigwrap{opacity:0;transform:scale(.6)}
+
+/* Halo atmosférico permanente à volta do globo (dispersão de Rayleigh) */
+.globe-halo{
+  position:absolute;
+  inset:-8%;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:1;
+  background:radial-gradient(circle at 50% 50%,
+    rgba(125,211,252,.55) 0%,
+    rgba(56,189,248,.32) 42%,
+    rgba(37,99,235,.18) 60%,
+    rgba(14,165,233,0) 74%
+  );
+  filter:blur(18px);
+  animation:globeHaloPulse 6.5s ease-in-out infinite alternate;
+}
+.gwrap::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  box-shadow:0 0 38px 6px rgba(56,189,248,.4), inset 0 0 22px rgba(255,255,255,.25);
+  pointer-events:none;
+  z-index:3;
+}
+@keyframes globeHaloPulse{
+  0%{transform:scale(0.97);opacity:.75;filter:blur(15px)}
+  100%{transform:scale(1.03);opacity:1;filter:blur(22px)}
+}
 .gpin{position:absolute;left:0;top:0;z-index:2;color:var(--ink);white-space:nowrap;transition:opacity .35s;will-change:transform}
 .gpin[hidden]{display:none}
 .gpin.off{opacity:0;pointer-events:none}
@@ -438,7 +518,7 @@ html[lang=pt] .rtime.buf::after{content:' · a carregar…'}
 <body>
 <div class="aurora" aria-hidden="true"></div>
 <canvas id="fx" aria-hidden="true"></canvas>
-<div id="orb" aria-hidden="true"></div>
+
 <div class="wrap">
 <header id="hd">
  <div class="logo" id="logo"><span class="lg"></span>Skylab</div>
@@ -548,7 +628,7 @@ function tempColor(c){const t=Math.max(-10,Math.min(38,c)),hue=208-((t+10)/48)*1
 const IMG_BASE='facts/';
 const IMG_DIR=IMG_BASE&&!IMG_BASE.endsWith('/')?IMG_BASE+'/':IMG_BASE;   // garante a barra final
 function imgFB(el){   // se falhar, tenta outros sítios antes de desistir
- const n=el.dataset.n,tries=[IMG_DIR+n,n,'facts'+n,'img/'+n],i=+(el.dataset.t||0)+1;
+const n=el.dataset.n,tries=[IMG_DIR+n,n,'facts/'+n,'img/'+n],i=+(el.dataset.t||0)+1;
  if(i<tries.length){el.dataset.t=i;el.src=tries[i]}else el.remove();
 }
 const FACTS = [
@@ -786,7 +866,16 @@ const PT={
  'High wind':'Vento forte','Extreme heat':'Calor extremo','Extreme cold':'Frio extremo','Very high UV':'UV muito alto','Rain approaching':'Chuva a aproximar-se',
  'Poor air quality':'Fraca qualidade do ar','High pollen':'Pólen elevado','Rain in the next hour':'Chuva na próxima hora',
  /* cartão de chuva */
- 'Dismiss':'Fechar','Next 60 min':'Próximos 60 min'
+ 'Dismiss':'Fechar','Next 60 min':'Próximos 60 min',
+ 'Golden hour':'Hora dourada',
+ 'Stargazing index':'Índice de observação',
+ 'Optimal Seeing':'Visibilidade excelente',
+ 'Fair Seeing':'Visibilidade razoável',
+ 'Obscured / Hazy':'Encoberto / Turbulento',
+ 'Air density':'Densidade do ar',
+ 'Thin, low lift':'Rarefeito, menor sustentação',
+ 'Dense, high lift':'Denso, maior sustentação',
+ 'Standard atmosphere':'Atmosfera padrão',
 };
 const FACTS_PT=[
  ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos (dispersão de Rayleigh). O violeta dispersa-se ainda mais, mas o Sol emite menos dele e os nossos olhos respondem-lhe pouco, por isso vemos azul.'],
@@ -1028,8 +1117,15 @@ function lab(){
  if(F>=80&&rh>=40)heat=(-42.379+2.04901523*F+10.14333127*rh-.22475541*F*rh-.00683783*F*F-.05481717*rh*rh+.00122874*F*F*rh+.00085282*F*rh*rh-.00000199*F*F*rh*rh-32)*5/9;
  const feel=chill!==null?['Wind chill',T(chill)+'°','Wind strips heat from skin']:heat!==null?['Heat index',T(heat)+'°','Humidity slows sweat']:['Body heat','Neutral','No chill or heat stress'];
  const dl=(new Date(d.sunset[0])-new Date(d.sunrise[0]))/6e4,dl2=(new Date(d.sunset[1])-new Date(d.sunrise[1]))/6e4,df=Math.round((dl2-dl)*60);
- const tiles=[['Dew point',T(td)+'°',comfort],['Cloud base',cbTxt,'125 m per °C of spread'],feel,['Speed of sound',Math.round(331.3+.606*tC)+' m/s','Faster in warm air'],['Daylight',hm(dl),`Tomorrow ${df>=0?'+':'−'}${Math.abs(df)}s`],['Pressure',Math.round(c.surface_pressure)+' hPa',c.surface_pressure<1005?'Low, unsettled':c.surface_pressure>1020?'High, settled':'Near average']];
- return tiles.map(([a,b,s],n)=>`<div class="st" style="--n:${n}"><span>${a}</span><b>${b}</b><span>${s}</span></div>`).join('');
+ // Equação dos gases perfeitos para ar húmido (kg/m³)
+ const rho=(c.surface_pressure*100/(287.058*(tC+273.15))).toFixed(3);
+ const rhoSub=rho<1.18?'Thin, low lift':rho>1.25?'Dense, high lift':'Standard atmosphere';
+
+ const tiles=[['Dew point',T(td)+'°',comfort],['Cloud base',cbTxt,'125 m per °C of spread'],feel,
+['Air density',rho+' kg/m³',rhoSub],
+['Speed of sound',Math.round(331.3+.606*tC)+' m/s','Faster in warm air'],
+['Daylight',hm(dl),`Tomorrow ${df>=0?'+':'−'}${Math.abs(df)}s`],
+['Pressure',Math.round(c.surface_pressure)+' hPa',c.surface_pressure<1005?'Low, unsettled':c.surface_pressure>1020?'High, settled':'Near average']];
 }
 
 /* ============ hero ============ */
@@ -1141,6 +1237,34 @@ function sunSVG(){
  const body=up?'<circle r="20" fill="#ffd166" opacity=".4" class="glow"/><circle r="10" fill="#f6a81c"/>':'<circle r="9" fill="#e9eeff" stroke="#6b7bd6" stroke-width="1.5"/>';
  return`<svg viewBox="0 0 300 124" role="img" aria-label="Sun position" style="width:100%;height:auto"><path class="arc" d="${P}" fill="none" stroke="rgba(20,49,79,.35)" stroke-width="2"/><line x1="0" y1="100" x2="300" y2="100" stroke="rgba(20,49,79,.2)"/><g><animateMotion dur="${still?.01:2.6}s" path="${P}" keyPoints="0;${t.toFixed(3)}" keyTimes="0;1" calcMode="linear" fill="freeze"/>${body}</g><text x="20" y="118" font-size="12" fill="rgba(20,49,79,.65)">${fmtT(d.sunrise[0])}</text><text x="280" y="118" font-size="12" text-anchor="end" fill="rgba(20,49,79,.65)">${fmtT(d.sunset[0])}</text></svg>`;
 }
+/* ============ New Feature: Celestial Ephemeris & Stargazing Seeing ============ */
+function ephemerisData(){
+ const d=data.daily,c=data.current,h=data.hourly,i0=idx0();
+ const sr=new Date(d.sunrise[0]),ss=new Date(d.sunset[0]);
+ 
+ // Hora Dourada: ~45 min antes do pôr do sol
+ const ghStart=new Date(ss.getTime()-45*60000);
+ // Hora Azul: ~15 a 35 min após o pôr do sol
+ const bhStart=new Date(ss.getTime()+15*60000);
+ 
+ const fmtH=dt=>dt.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'});
+ 
+ // Índice de Observação Astronómica (Seeing 0-100)
+ const cloudProb=Math.max(...h.precipitation_probability.slice(i0,i0+6));
+ const rh=c.relative_humidity_2m;
+ const moonLit=moon().lit;
+ 
+ const seeingScore=Math.max(5,Math.min(100,Math.round(100 - (cloudProb*0.5) - (rh*0.25) - (moonLit*0.25))));
+ const seeingLabel=seeingScore>=75?tr('Optimal Seeing'):seeingScore>=50?tr('Fair Seeing'):tr('Obscured / Hazy');
+ 
+ return{
+  gh:`${fmtH(ghStart)} – ${fmtH(ss)}`,
+  bh:`${fmtH(bhStart)}`,
+  seeingScore,
+  seeingLabel
+ };
+}
+
 function todayPane(){
  const c=data.current,d=data.daily,m=moon(),uv=d.uv_index_max[0],ci=comfortInfo(),h=data.hourly;
  const uvl=uv<3?'Low':uv<6?'Moderate':uv<8?'High':uv<11?'Very high':'Extreme';
@@ -1159,9 +1283,16 @@ function todayPane(){
  <section class="card side">
   <div><h3>Sun and moon</h3>${sunSVG()}</div>
   <div class="moonrow"><span>${moonIcon()}</span><div><b>${m.n}</b><small>${m.lit}% illuminated</small></div></div>
+  
+  <!-- New Feature: Celestial Ephemeris & Stargazing Seeing -->
+  <div class="ephem">
+   <div><span>${tr('Golden hour')}</span><b>${ephemerisData().gh}</b></div>
+   <div><span>${tr('Stargazing index')}</span><b>${ephemerisData().seeingScore}% · ${ephemerisData().seeingLabel}</b></div>
+  </div>
+
   <p class="best">${best}</p>
   <div class="chips">${advice()}</div>
- </section></div>`;
+ </section>div>`;
 }
 function scrub(){
  const svg=$('.chartbox svg');if(!svg)return;
@@ -1354,7 +1485,10 @@ const dayN=()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.
 const dailyFact=()=>DAILY[((dayN()%DAILY.length)+DAILY.length)%DAILY.length];
 function dailyHTML(isNew){
  const f=dailyFact(),dt=new Date().toLocaleDateString(LOC(),{day:'numeric',month:'long'});
- return`<div class="dayf${isNew?' new':''}" id="dayf" data-d="${dayN()}"><div class="dtag"><span>Fact of the day</span><em>${dt}</em></div><h3>${f[1]}</h3><p>${f[2]}</p></div>`;
+ const title=LANG==='pt'&&f[3]?f[3][0]:f[1];
+ const text=LANG==='pt'&&f[3]?f[3][1]:f[2];
+ const cat=tr(f[0]);
+ return`<div class="dayf${isNew?' new':''}" id="dayf" data-d="${dayN()}"><div class="dtag"><span>${tr('Fact of the day')} · ${cat}</span><em>${dt}</em></div><h3>${title}</h3><p>${text}</p></div>`;
 }
 let dayT=0;
 function dayRefresh(){                       // troca o facto quando o dia muda
@@ -1399,7 +1533,8 @@ function sciBody() {
   if (sciMode == 'quiz') return quizHTML();
   const pool = factPool(), f = pool[((factI % pool.length) + pool.length) % pool.length];
   const imgHTML = f[4] ? `<img class="fimg" src="${IMG_DIR}${f[4]}" data-n="${f[4]}" alt="${tr(f[1]).replace(/"/g,'&quot;')}" loading="lazy" decoding="async" onload="this.classList.add('ok')" onerror="imgFB(this)">` : '';
-  return dailyHTML() + `<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2>${imgHTML}<p class="fp">${f[2]}</p><div class="fnav"><button class="pill dk" data-f="-1">Previous</button><button class="pill dk" data-f="1">Another</button></div>`;
+  return `<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2>${imgHTML}
+<p class="fp">${f[2]}</p><div class="fnav"><button class="pill dk" data-f="-1">Previous</button><button class="pill dk" data-f="1">Another</button></div>`;
 }
 function sciPane(){
  return`<div class="pane g2e"><section class="card${quizCls()}"><div class="sw"><button data-s="fact" aria-pressed="${sciMode=='fact'}">Did you know</button><button data-s="quiz" aria-pressed="${sciMode=='quiz'}">Myth or fact</button></div><div id="sbody">${sciBody()}</div></section>
@@ -1452,25 +1587,42 @@ function render(){
 /* ============ landing ============ */
 const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-74.01],['Sydney','Australia',-33.87,151.21],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Rio de Janeiro','Brazil',-22.91,-43.17],['Cape Town','South Africa',-33.92,18.42],['Mumbai','India',19.08,72.88]];
 function landing(){
-  clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);
+ clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);
  const hr=new Date().getHours(),night=hr<6||hr>=20,k=night?'night':'clear';
  theme(night?10:24,k);if(mode!==k)fxSet(k);
- setOrb(night?'moon':'sun',78,28,.9);
  document.title=tr('Skylab — Weather & Science');
  main.className='enter';
- main.innerHTML=`<section class="hero land" id="hero"><div class="now"><h1>The sky, explained.</h1><p class="lp">Live weather for anywhere on Earth, with the science behind what you’re looking at.</p>
- <div class="cta"><button class="pill big solid" id="lc">Use my location</button><button class="pill big" id="ls">Surprise me</button></div>
- <div class="ticker" id="tk"></div></div>
- <div class="scene"><div class="gwrap" id="gwrap"><div class="bigwrap" id="bw"><i class="halo"></i><div class="bigic">${ic(night?'moon':'sun')}</div></div><canvas id="globe" role="img" aria-label="Interactive globe. Drag to rotate."></canvas><button class="gpin" id="gpin" hidden></button></div></div></section>
- <section class="marq" id="marq"><div class="track">${CITIES.map(c=>`<div class="cityc sk">${c[0]}</div>`).join('')}</div></section>`;
+ main.innerHTML=`<section class="hero land" id="hero">
+<div class="now">
+ <h1>The sky, explained.</h1>
+ <p class="lp">Live weather for anywhere on Earth, with the science behind what you’re looking at.</p>
+ <div class="cta">
+  <button class="pill big solid" id="lc">Use my location</button>
+  <button class="pill big" id="ls">Surprise me</button>
+ </div>
+ ${dailyHTML()}
+ <div class="ticker" id="tk"></div>
+</div>
+<div class="scene">
+ <div class="gwrap" id="gwrap">
+  <div class="globe-halo" aria-hidden="true"></div>
+  <canvas id="globe" role="img" aria-label="Interactive globe. Drag to rotate."></canvas>
+  <button class="gpin" id="gpin" hidden></button>
+ </div>
+</div>
+</section>
+<section class="marq" id="marq"><div class="track">${CITIES.map(c=>`<div class="cityc sk">${c[0]}</div>`).join('')}</div></section>`;
  $('#lc').onclick=locate;$('#ls').onclick=surprise;startTicker();
  globeStart();
- const u=`https://api.open-meteo.com/v1/forecast?latitude=${CITIES.map(c=>c[2]).join(',')}&longitude=${CITIES.map(c=>c[3]).join(',')}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+ const u=`https://api.open-meteo.com/v1/forecast?latitude=${CITIES.map(c=>c[2]).join(',')}
+&longitude=${CITIES.map(c=>c[3]).join(',')}
+&current=temperature_2m,weather_code,is_day&timezone=auto`;
  fetch(u).then(r=>r.json()).then(j=>{
-  const el=$('#marq');if(!el)return;
-  const items=j.map((x,i)=>`<button class="cityc" data-ci="${i}">${emoji(x.current.weather_code,x.current.is_day)}<b>${T(x.current.temperature_2m)}°</b><span>${CITIES[i][0]}</span><small>${LABEL[x.current.weather_code]||''}</small></button>`).join('');
-  el.innerHTML=`<div class="track">${items}${items}</div>`;
-  el.onclick=e=>{const b=e.target.closest('[data-ci]');if(b){const c=CITIES[+b.dataset.ci];show(c[2],c[3],c[0],c[1])}};
+ const el=$('#marq');if(!el)return;
+ const items=j.map((x,i)=>`<button class="cityc" data-ci="${i}">
+${emoji(x.current.weather_code,x.current.is_day)}<b>${T(x.current.temperature_2m)}°</b><span>${CITIES[i][0]}</span><small>${LABEL[x.current.weather_code]||''}</small></button>`).join('');
+ el.innerHTML=`<div class="track">${items}${items}</div>`;
+ el.onclick=e=>{const b=e.target.closest('[data-ci]');if(b){const c=CITIES[+b.dataset.ci];show(c[2],c[3],c[0],c[1])}};
  }).catch(()=>{const el=$('#marq');if(el)el.innerHTML='<p style="text-align:center">World conditions are unavailable right now. Search for a city above.</p>'});
 }
 const EXTREMES=[['Oymyakon','Sakha, Russia',63.46,142.79],['Cherrapunji','Meghalaya, India',25.27,91.72],['Ushuaia','Tierra del Fuego, Argentina',-54.8,-68.3],['Singapore','Singapore',1.35,103.82],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Quito','Ecuador',-.18,-78.47],['Cairo','Egypt',30.04,31.24],['Vancouver','Canada',49.28,-123.12],['Nairobi','Kenya',-1.29,36.82]];
@@ -1671,7 +1823,7 @@ fxSize();if(!still)requestAnimationFrame(fxLoop);
 
 /* ============ sun / moon orb follows the time ============ */
 const orb=$('#orb');
-function setOrb(cls,l,t,o){orb.className=cls;orb.style.left=l+'vw';orb.style.top=t+'vh';orb.style.opacity=o}
+function setOrb(cls,l,t,o){if(!orb)return;orb.className=cls;orb.style.left=l+'vw';orb.style.top=t+'vh';orb.style.opacity=o}
 function orbAt(ts,k){
  const d=data.daily,t=new Date(ts),i=Math.max(0,d.time.indexOf(ts.slice(0,10)));
  const sr=new Date(d.sunrise[i]),ss=new Date(d.sunset[i]),sun=t>=sr&&t<=ss;let f;
@@ -2111,6 +2263,8 @@ async function radarInit(){
  try{await loadLeaflet()}catch(e){const m=$('#rmap');if(m)m.textContent='The map library couldn’t load. Check your connection.';return}
  if(tok!==radarTok||!$('#rmap'))return;
  $('#rmap').textContent='';
+  if(radarMap){try{radarMap.remove()}catch(e){}radarMap=null}
+ const rmapEl=$('#rmap');if(rmapEl&&rmapEl._leaflet_id)delete rmapEl._leaflet_id;
  radarMap=L.map('rmap',{center:[place.lat,place.lon],zoom:6,minZoom:3,maxZoom:9,scrollWheelZoom:false});
  radarMap.createPane('radar').style.zIndex=250;
  const lp=radarMap.createPane('labels');lp.style.zIndex=260;lp.style.pointerEvents='none';
