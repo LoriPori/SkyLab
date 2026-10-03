@@ -201,6 +201,69 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)
 .qs{font-family:var(--serif);font-size:25px;line-height:1.25;margin-bottom:14px}
 .qb{display:flex;gap:10px}.qr{margin-top:12px;color:var(--mut);font-size:14px;line-height:1.55}.qr b{color:var(--ink)}
 .sc{margin-top:10px;font-size:12px;color:var(--mut)}
+/* ---- Mito ou facto: jogo com fim, cartão verde/vermelho ---- */
+.qprog{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:12px;color:var(--mut)}
+.qprog span{white-space:nowrap}
+.qbar{flex:1;height:6px;border-radius:99px;background:rgba(20,49,79,.1);overflow:hidden}
+.qbar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--a),var(--acc));transition:width .55s cubic-bezier(.2,.8,.2,1)}
+.qb .pill:disabled{cursor:default;transform:none}
+.qb .pill:disabled:not(.qright):not(.qwrong){opacity:.4}
+.pill.dk.qright{background:rgba(34,197,94,.24);border-color:#22c55e;color:#14532d;font-weight:600}
+.pill.dk.qwrong{background:rgba(239,68,68,.2);border-color:#ef4444;color:#7f1d1d;font-weight:600}
+.card.qok,.card.qbad{transition:background .5s,border-color .5s,box-shadow .5s,transform .35s cubic-bezier(.2,.7,.2,1)}
+.card.qok{background:linear-gradient(160deg,rgba(220,250,232,.96),rgba(172,234,198,.92));border-color:#4cc77f;box-shadow:0 22px 50px -26px rgba(20,140,70,.6)}
+.card.qbad{background:linear-gradient(160deg,rgba(255,232,232,.97),rgba(251,188,188,.92));border-color:#ee6a6a;box-shadow:0 22px 50px -26px rgba(190,40,40,.55)}
+.qres{display:flex;gap:16px;align-items:flex-start;margin-top:14px}
+.qtxt{flex:1;min-width:0}
+.qtxt .pill{margin-top:12px}
+.qm{position:relative;flex:none;width:64px;height:64px;margin-left:6px}
+.qmark{display:block;width:64px;height:64px;overflow:visible}
+.qmark circle,.qmark path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.qring{stroke-width:3.5;--l:182;stroke-dasharray:var(--l) 400;transform:rotate(-90deg);transform-origin:50% 50%;transform-box:fill-box}
+.qtick{stroke-width:6;--l:40;stroke-dasharray:var(--l) 400}
+.qx1,.qx2{stroke-width:6;--l:30;stroke-dasharray:var(--l) 400}
+.qok .qdisc{fill:rgba(34,197,94,.2);stroke:none}
+.qbad .qdisc{fill:rgba(239,68,68,.18);stroke:none}
+.qok .qring,.qok .qtick{stroke:#16a34a}
+.qbad .qring,.qbad .qx1,.qbad .qx2{stroke:#dc2626}
+.cf{position:absolute;left:32px;top:32px;width:7px;height:11px;margin:-5px 0 0 -3px;border-radius:2px;background:var(--c);opacity:0;pointer-events:none}
+/* animações: só correm no momento da resposta (.fresh) */
+.card.fresh #sbody{animation:none}
+.fresh .qmark{animation:qpop .65s cubic-bezier(.2,1.6,.4,1) both}
+.fresh .qring{animation:qdraw .6s ease-out both}
+.fresh .qtick{animation:qdraw .4s .42s ease-out both}
+.fresh .qx1{animation:qdraw .26s .38s ease-out both}
+.fresh .qx2{animation:qdraw .26s .6s ease-out both}
+.fresh .cf{animation:qcf 1s .3s cubic-bezier(.1,.7,.3,1) both}
+.card.fresh.qok::after,.card.fresh.qbad::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;animation:qflash .9s ease-out both}
+.card.fresh.qok::after{--g:34,197,94}
+.card.fresh.qbad::after{--g:239,68,68}
+.card.fresh.qbad #sbody{animation:qshake .5s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes qdraw{from{stroke-dashoffset:var(--l)}to{stroke-dashoffset:0}}
+@keyframes qpop{0%{transform:scale(.2);opacity:0}55%{transform:scale(1.2);opacity:1}100%{transform:scale(1)}}
+@keyframes qcf{0%{opacity:1;transform:translate(0,0) rotate(0) scale(.4)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--r)) scale(1)}}
+@keyframes qflash{0%{box-shadow:inset 0 0 0 0 rgba(var(--g),.55)}100%{box-shadow:inset 0 0 70px 14px rgba(var(--g),0)}}
+@keyframes qshake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+/* ecrã final */
+.qend{text-align:center;padding:10px 0 4px}
+.qem{font-size:46px;line-height:1;animation:qpop .7s cubic-bezier(.2,1.6,.4,1) both}
+.qscore{margin:8px 0 12px;font-family:var(--serif)}
+.qscore b{font-weight:400;font-size:64px;line-height:1}
+.qscore span{font-size:24px;color:var(--mut);margin-left:6px}
+.qend .qbar{height:10px;max-width:280px;margin:0 auto 16px}
+.qend .qbar i{animation:qgrow 1.1s cubic-bezier(.2,.8,.2,1) both}
+.qverdict{font-size:15px;line-height:1.5;color:var(--mut);margin-bottom:16px}
+@keyframes qgrow{from{width:0}}
+/* ---- Facto do dia ---- */
+.dayf{position:relative;margin:0 0 18px;padding:14px 16px 14px 20px;border-radius:18px;background:linear-gradient(135deg,rgba(255,238,176,.6),rgba(255,214,150,.38));border:1px solid rgba(214,160,40,.38);overflow:hidden}
+.dayf::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(#f7c04a,#f08a24)}
+.dayf.new{animation:dayin .9s cubic-bezier(.2,.9,.3,1)}
+.dtag{display:flex;justify-content:space-between;gap:10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:#9a5a00}
+.dtag em{font-style:normal;font-weight:600;letter-spacing:.04em;opacity:.8}
+.dayf h3{font-family:var(--serif);font-weight:400;font-size:22px;line-height:1.2;margin:6px 0 4px;color:var(--ink)}
+.dayf p{font-size:14px;line-height:1.55;color:var(--mut)}
+@keyframes dayin{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}
+
 .labgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .st{padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.65);transition:transform .25s,background .25s;animation:rise .55s both;animation-delay:calc(var(--n)*70ms)}
 .st:hover{transform:translateY(-3px);background:#fff}
@@ -553,26 +616,83 @@ function factPool(){
  return[...FACTS.filter(f=>f[0]==m),...FACTS.filter(f=>f[0]!=m)];
 }
 const QZ = [
-  ['Lightning never strikes the same place twice.',0,'Myth. The Empire State Building is hit around 20 times a year. Tall, pointed, conductive objects are repeat targets.'],
-  ['Raindrops fall in a teardrop shape.',0,'Myth. Small drops are spheres; big ones flatten like a bun as air pushes up on them.'],
-  ['Snowflakes grow six arms because of the hexagonal structure of ice.',1,'Fact. Water molecules lock into a hexagonal lattice, so classic snow crystals have six-fold symmetry.'],
-  ['Earth is closest to the Sun during Northern Hemisphere summer.',0,'Myth. Earth is closest in early January. Seasons come from the 23.4° axial tilt, not distance.'],
-  ['Thunder is the sound of air expanding violently around a lightning bolt.',1,'Fact. The channel heats to about 30,000 °C in microseconds and the air bursts outward as a shock wave.'],
-  ['You lose most of your body heat through your head.',0,'Myth. The head is about 7–10% of body surface, so it loses roughly that share of heat.'],
-  ['A cloud is made of water vapour.',0,'Myth. Vapour is invisible. Clouds are tiny liquid droplets or ice crystals that formed from it.'],
-  ['Dew forms when surfaces cool below the air’s dew point.',1,'Fact. Air at that temperature can no longer hold its vapour, so it condenses on the cold surface.'],
-    // Novas perguntas (4.º elemento = tradução PT)
-  ['The strongest tornado winds ever measured topped 450 km/h.',1,'Fact. A mobile Doppler radar clocked about 480 km/h in an Oklahoma tornado in 1999.',['Os ventos de tornado mais fortes alguma vez medidos ultrapassaram os 450 km/h.','Facto. Um radar Doppler móvel registou cerca de 480 km/h num tornado do Oklahoma em 1999.']],
-  ['Volcanic eruptions can produce their own lightning.',1,'Fact. Colliding ash and rock fragments in the plume build up static charge.',['As erupções vulcânicas podem produzir os seus próprios relâmpagos.','Facto. Fragmentos de cinza e rocha a chocar na nuvem acumulam carga estática.']],
-  ['Virga is invisible to weather radar.',0,'Myth. Radar sees the falling streaks like any shower, even though nothing reaches the ground.',['A virga é invisível para o radar meteorológico.','Mito. O radar vê as cortinas de precipitação como um aguaceiro qualquer, mesmo que nada chegue ao chão.']],
-  ['Two close hurricanes can orbit each other.',1,'Fact. This is the Fujiwhara effect: they circle a shared centre and may merge.',['Dois furacões próximos podem orbitar um ao outro.','Facto. É o efeito Fujiwhara: giram em torno de um centro comum e podem fundir-se.']],
-  ['A ring around the Moon means rain is on the way.',0,'Myth. Halos come from high ice cloud, which often precedes rain but does not guarantee it.',['Um anel à volta da Lua quer dizer que vem chuva.','Mito. Os halos vêm de nuvens altas de gelo, que muitas vezes antecedem a chuva mas não a garantem.']],
-  ['Hair ice is made by a fungus.',1,'Fact. A fungus on dead wood shapes the ice into fine strands.',['O gelo-cabelo é feito por um fungo.','Facto. Um fungo na madeira morta molda o gelo em fios finos.']],
-  ['It can really rain frogs.',1,'Fact. Waterspouts and strong updrafts can lift small animals and drop them elsewhere.',['Pode mesmo chover rãs.','Facto. As trombas-d’água e as correntes ascendentes fortes conseguem levantar pequenos animais e largá-los noutro sítio.']],
-  ['The driest place on Earth is a hot desert.',0,'Myth. The McMurdo Dry Valleys in Antarctica get only about 2 mm of precipitation a year.',['O sítio mais seco da Terra é um deserto quente.','Mito. Os Vales Secos de McMurdo, na Antártida, recebem só cerca de 2 mm de precipitação por ano.']],
-  ['A big cumulonimbus can weigh millions of tonnes.',1,'Fact. The water it holds as droplets and ice adds up to a huge mass, held aloft by updrafts.',['Um grande cumulonimbo pode pesar milhões de toneladas.','Facto. A água que contém em gotículas e gelo soma uma massa enorme, mantida no ar pelas correntes ascendentes.']]
+  ['Highway overpasses are a safe place to shelter from a tornado.',0,'Myth. Overpasses can funnel and speed up tornado winds, and people sheltering under them have been killed. Get into a sturdy building instead.',['Os viadutos são um sítio seguro para te abrigares de um tornado.','Mito. Os viadutos podem canalizar e acelerar o vento do tornado, e já morreram pessoas que se abrigaram debaixo deles. Procura antes um edifício sólido.']],
+  ['Opening windows before a tornado does nothing to save your house.',1,'Fact. Buildings are wrecked by violent winds and flying debris, not by a pressure difference. Skip the windows and take shelter at once.',['Abrir as janelas antes de um tornado não salva a tua casa.','Facto. Os edifícios são destruídos pelo vento violento e pelos destroços, não por uma diferença de pressão. Esquece as janelas e abriga-te logo.']],
+  ['You can always spot a tornado by its funnel.',0,'Myth. Some tornadoes have no visible funnel, are wrapped in rain or strike at night. Act on the warning, not on what you can see.',['Consegues sempre detetar um tornado pelo seu funil.','Mito. Alguns tornados não têm funil visível, estão envoltos em chuva ou surgem de noite. Age pelo aviso, não pelo que consegues ver.']],
+  ['Hills, rivers and big cities protect a place from tornadoes.',0,'Myth. Tornadoes have crossed mountains and hit city centres, and one can form over water and move ashore.',['Colinas, rios e grandes cidades protegem um local dos tornados.','Mito. Já houve tornados a atravessar montanhas e a atingir centros de cidades, e um tornado pode formar-se sobre a água e passar para terra.']],
+  ['Lightning can strike when the sky overhead looks clear.',1,'Fact. A “bolt from the blue” can land 16–24 km (10–15 miles) from the storm, far outside the rain.',['Um relâmpago pode cair quando o céu por cima de ti parece limpo.','Facto. Um “raio vindo do azul” pode cair a 16–24 km (10–15 milhas) da tempestade, bem fora da chuva.']],
+  ['Rubber tyres are what protect you from lightning inside a car.',0,'Myth. It is the metal body that carries the current around you and into the ground. Rubber gives no protection.',['São os pneus de borracha que te protegem de um relâmpago dentro de um carro.','Mito. É a carroçaria metálica que conduz a corrente à tua volta até ao chão. A borracha não protege.']],
+  ['Benjamin Franklin’s famous kite was struck by lightning.',0,'Myth. According to NOAA, the kite was never actually struck.',['O famoso papagaio de Benjamin Franklin foi atingido por um relâmpago.','Mito. Segundo a NOAA, o papagaio nunca chegou a ser atingido.']],
+  ['“Heat lightning” is just ordinary lightning from a storm too far away to hear.',1,'Fact. There is no special kind of heat lightning. You see the flash, but the thunder fades out before it reaches you.',['O “relâmpago de calor” é só um relâmpago normal de uma trovoada longe de mais para se ouvir.','Facto. Não existe um tipo especial de relâmpago de calor. Vês o clarão, mas o trovão perde-se antes de chegar até ti.']],
+  ['It is safe to touch and give first aid to someone struck by lightning.',1,'Fact. A lightning victim carries no electrical charge, and quick first aid can save a life.',['É seguro tocar e prestar os primeiros socorros a alguém atingido por um relâmpago.','Facto. Uma vítima de relâmpago não fica carregada de eletricidade, e uns primeiros socorros rápidos podem salvar uma vida.']],
+  ['Just 15 cm of fast-moving floodwater can knock an adult off their feet.',1,'Fact. Six inches is enough, and over half of flood drownings happen when a vehicle is driven into floodwater.',['Bastam 15 cm de água de cheia em movimento rápido para deitar um adulto ao chão.','Facto. Seis polegadas chegam, e mais de metade dos afogamentos em cheias acontecem quando um veículo entra em água de cheia.']],
+  ['A car needs about a metre of floodwater before it starts to float.',0,'Myth. Just 30 cm (12 inches) of rushing water can carry away a small car, and 60 cm (2 ft) can carry away most vehicles.',['Um carro precisa de cerca de um metro de água para começar a flutuar.','Mito. Bastam 30 cm de água em movimento rápido para arrastar um carro pequeno, e 60 cm para levar a maioria dos veículos.']],
+  ['You can get sunburned in winter.',1,'Fact. UV depends on the Sun’s height and cloud cover, not on how cold the air feels, and snow reflects a lot of it.',['Podes queimar-te com o sol no inverno.','Facto. Os UV dependem da altura do Sol e da nebulosidade, não do frio que sentes, e a neve reflete muita radiação.']],
+  ['It can get too cold to snow.',0,'Myth. Snow only needs moisture in the air. Very cold air holds less of it, so heavy snow is less likely, but it is never impossible.',['Pode estar frio de mais para nevar.','Mito. A neve só precisa de humidade no ar. O ar muito frio guarda menos, por isso a neve forte é menos provável, mas nunca impossível.']],
+  ['Cold weather by itself gives you a cold.',0,'Myth. Colds and flu are caused by viruses, not by the temperature itself.',['O frio, por si só, dá-te uma constipação.','Mito. As constipações e a gripe são causadas por vírus, não pela temperatura em si.']],
+  ['Water swirls down a drain in opposite directions in the two hemispheres.',0,'Myth. The Coriolis effect is far too weak at that scale. The swirl depends on the sink’s shape and how the water was already moving.',['A água roda em sentidos opostos no ralo, consoante o hemisfério.','Mito. O efeito de Coriolis é fraco de mais a essa escala. O sentido da rotação depende da forma do lavatório e do movimento prévio da água.']],
+  ['Hurricanes often form right on the equator.',0,'Myth. The Coriolis effect is close to zero there, so tropical cyclones almost never form within a few degrees of the equator.',['Os furacões formam-se muitas vezes mesmo em cima do equador.','Mito. Aí o efeito de Coriolis é quase nulo, por isso os ciclones tropicais quase nunca se formam a poucos graus do equador.']],
+  ['The strongest winds of a hurricane blow in its calm eye.',0,'Myth. The eye is the calmest part, often clear. The strongest winds are in the eyewall around it.',['Os ventos mais fortes de um furacão sopram no seu olho calmo.','Mito. O olho é a parte mais calma, muitas vezes limpa. Os ventos mais fortes estão na parede do olho, à volta dele.']],
+  ['A hurricane’s category, from 1 to 5, is based only on its wind speed.',1,'Fact. The Saffir-Simpson scale rates maximum sustained winds. Storm surge and rain can be deadly at any category.',['A categoria de um furacão, de 1 a 5, depende apenas da velocidade do vento.','Facto. A escala de Saffir-Simpson mede o vento máximo sustentado. A maré de tempestade e a chuva podem ser mortais em qualquer categoria.']],
+  ['A tropical storm becomes a hurricane once its sustained winds reach 119 km/h.',1,'Fact. That is 74 mph. Below it, the system is a tropical storm or depression.',['Uma tempestade tropical passa a furacão quando o vento sustentado chega aos 119 km/h.','Facto. São 74 mph. Abaixo disso, o sistema é uma tempestade ou depressão tropical.']],
+  ['A strong wind can freeze car radiators and water pipes even when the air stays above 0 °C.',0,'Myth. Wind chill measures heat loss from exposed skin. Objects cannot cool below the actual air temperature.',['Um vento forte pode congelar radiadores de carros e canos de água mesmo com o ar acima de 0 °C.','Mito. A sensação térmica mede a perda de calor da pele exposta. Os objetos não arrefecem abaixo da temperatura real do ar.']],
+  ['The hottest air temperature ever officially recorded was in the Sahara.',0,'Myth. The WMO record is 56.7 °C at Furnace Creek, Death Valley, California, on 10 July 1913.',['A temperatura do ar mais alta alguma vez registada oficialmente foi no Sara.','Mito. O recorde da OMM é de 56,7 °C em Furnace Creek, no Vale da Morte, na Califórnia, a 10 de julho de 1913.']],
+  ['The heaviest hailstone ever recorded weighed more than a kilogram.',1,'Fact. A stone of 1.02 kg fell in Gopalganj, Bangladesh, on 14 April 1986, the WMO record.',['O granizo mais pesado alguma vez registado pesou mais de um quilo.','Facto. Uma pedra de 1,02 kg caiu em Gopalganj, no Bangladesh, a 14 de abril de 1986, o recorde da OMM.']],
+  ['The white trails behind high-flying jets are mostly water ice.',1,'Fact. Hot, humid exhaust meets very cold air, and the water vapour condenses and freezes into ice crystals.',['Os rastos brancos atrás dos aviões a grande altitude são sobretudo gelo de água.','Facto. O escape quente e húmido encontra ar muito frio, e o vapor de água condensa-se e congela em cristais de gelo.']],
+  ['Every cold snap is caused by the polar vortex.',0,'Myth. Cold snaps have many causes. The polar vortex is only sometimes involved.',['Todas as vagas de frio são causadas pelo vórtice polar.','Mito. As vagas de frio têm muitas causas. O vórtice polar só por vezes está envolvido.']],
+  ['Climate is usually defined from weather averaged over about 30 years.',1,'Fact. The WMO uses 30-year periods, such as 1991–2020, to smooth out year-to-year swings.',['O clima define-se normalmente pela média do tempo ao longo de cerca de 30 anos.','Facto. A OMM usa períodos de 30 anos, como 1991–2020, para atenuar as oscilações de ano para ano.']],
+  ['Somewhere on Earth, there are more than 40 lightning flashes every second.',1,'Fact. NASA satellites count about 44 flashes a second, around 1.4 billion a year. The old estimate of 100 a second was too high.',['Algures na Terra, ocorrem mais de 40 relâmpagos por segundo.','Facto. Os satélites da NASA contam cerca de 44 clarões por segundo, perto de 1,4 mil milhões por ano. A velha estimativa de 100 por segundo era demasiado alta.']],
+  ['Most lightning on Earth happens over land, not over the oceans.',1,'Fact. Roughly 90% of flashes occur over land, where thunderstorms are more favourable to lightning.',['A maior parte dos relâmpagos da Terra acontece em terra, não nos oceanos.','Facto. Cerca de 90% dos clarões ocorrem em terra, onde as trovoadas são mais favoráveis aos relâmpagos.']],
+  ['Dust from the Sahara helps fertilise the Amazon rainforest.',1,'Fact. NASA’s CALIPSO satellite tracked about 27.7 million tonnes of dust a year reaching the Amazon, carrying roughly 22,000 tonnes of phosphorus.',['A poeira do Sara ajuda a fertilizar a floresta amazónica.','Facto. O satélite CALIPSO da NASA seguiu cerca de 27,7 milhões de toneladas de poeira por ano a chegar à Amazónia, com cerca de 22 000 toneladas de fósforo.']],
+  ['On Saturn’s moon Titan, it rains liquid methane.',1,'Fact. Titan has clouds, rain and lakes of methane and ethane, in a cycle like Earth’s water cycle.',['Em Titã, a lua de Saturno, chove metano líquido.','Facto. Titã tem nuvens, chuva e lagos de metano e etano, num ciclo parecido com o ciclo da água da Terra.']],
+  ['Mercury, the planet closest to the Sun, is also the hottest planet.',0,'Myth. Venus is hotter, around 465 °C, because its thick carbon dioxide atmosphere traps heat.',['Mercúrio, o planeta mais próximo do Sol, é também o mais quente.','Mito. Vénus é mais quente, cerca de 465 °C, porque a sua atmosfera espessa de dióxido de carbono retém o calor.']]
 ];
-let qi=lsGet('qi')||0,score=lsGet('score')||[0,0],sciMode='fact',factI=0;
+
+/* ---- Facto do dia: 31 factos, nenhum repete os do "Sabias que" nem as perguntas ---- */
+const DAILY = [
+  ['Climate','26 metres of rain in a single year','Cherrapunji, in India, received more than 26 metres of rain between August 1860 and July 1861, the highest twelve-month total in the WMO archive.',['26 metros de chuva num só ano','Cherrapunji, na Índia, recebeu mais de 26 metros de chuva entre agosto de 1860 e julho de 1861, o maior total de doze meses no arquivo da OMM.']],
+  ['Atmosphere','Air has weight','At sea level, the air above every square centimetre weighs about a kilogram. The highest sea-level pressure ever recorded, 1,083.8 hPa at Agata, Russia, in December 1968, was only about 7% above normal.',['O ar tem peso','Ao nível do mar, o ar por cima de cada centímetro quadrado pesa cerca de um quilo. A pressão mais alta alguma vez registada ao nível do mar, 1083,8 hPa em Agata, na Rússia, em dezembro de 1968, ficou só cerca de 7% acima do normal.']],
+  ['Meteorology','The fastest wind ever measured','A gust of 408 km/h hit Barrow Island, Australia, on 10 April 1996, during tropical cyclone Olivia. It is the strongest surface gust on record outside a tornado.',['O vento mais rápido alguma vez medido','Uma rajada de 408 km/h atingiu a ilha Barrow, na Austrália, a 10 de abril de 1996, durante o ciclone tropical Olivia. É a rajada à superfície mais forte registada fora de um tornado.']],
+  ['Meteorology','Hailstones grow in rings','Cut a big hailstone open and you will find layers like an onion. Each trip up and down inside a storm’s updraft adds another coat of ice.',['O granizo cresce em anéis','Se cortares uma pedra de granizo grande, vês camadas como numa cebola. Cada viagem para cima e para baixo na corrente ascendente da tempestade acrescenta mais uma camada de gelo.']],
+  ['Atmosphere','Weather lives in the bottom layer','The troposphere holds roughly three quarters of all the air in the atmosphere and nearly all of its clouds and weather. It is roughly 8 to 18 km thick, thinnest at the poles.',['O tempo vive na camada de baixo','A troposfera guarda cerca de três quartos de todo o ar da atmosfera e quase todas as nuvens e o tempo. Tem entre 8 e 18 km de espessura, menos nos polos.']],
+  ['Meteorology','A millimetre of rain is a litre','One millimetre of rain falling on one square metre of ground is exactly one litre of water. That is how rain gauge totals translate into real water.',['Um milímetro de chuva é um litro','Um milímetro de chuva a cair sobre um metro quadrado de terreno equivale a exatamente um litro de água. É assim que os totais do udómetro se traduzem em água real.']],
+  ['Meteorology','The Beaufort scale was born at sea','In 1805 the Royal Navy officer Francis Beaufort devised a way to rate wind by its effects on a ship’s sails. It was later adapted for waves and for land.',['A escala de Beaufort nasceu no mar','Em 1805, o oficial da Marinha Real Francis Beaufort criou uma forma de classificar o vento pelos seus efeitos nas velas de um navio. Mais tarde foi adaptada às ondas e à terra.']],
+  ['Meteorology','Deadly storms lose their names','Atlantic hurricane names come from six lists that rotate year after year. When a storm is especially deadly or costly, as Katrina was, its name is retired for good.',['As tempestades mortais perdem o nome','Os nomes dos furacões do Atlântico vêm de seis listas que se repetem ano após ano. Quando uma tempestade é especialmente mortífera ou cara, como o Katrina, o nome é retirado para sempre.']],
+  ['Physics','Celsius’s thermometer was upside down','In Anders Celsius’s original scale, water boiled at 0 and froze at 100. It was reversed soon after he died.',['O termómetro de Celsius estava ao contrário','Na escala original de Anders Celsius, a água fervia a 0 e congelava a 100. Foi invertida pouco depois da sua morte.']],
+  ['Meteorology','Snow is mostly air','As a rough average, 10 cm of fresh snow melts down to about 1 cm of water, but the ratio swings a lot with temperature and the type of snow.',['A neve é sobretudo ar','Em média, 10 cm de neve fresca derretem em cerca de 1 cm de água, mas a proporção varia muito com a temperatura e o tipo de neve.']],
+  ['Atmosphere','A river of wind high above','Jet streams are narrow bands of fast wind, mostly blowing west to east around 9 to 12 km up. Their speeds can top 300 km/h.',['Um rio de vento lá no alto','As correntes de jato são faixas estreitas de vento rápido, que sopram sobretudo de oeste para leste, a cerca de 9 a 12 km de altitude. A velocidade pode passar dos 300 km/h.']],
+  ['Planetary science','A storm wider than Earth','Jupiter’s Great Red Spot is a giant storm that has been watched for well over a century, and it is wider than our whole planet.',['Uma tempestade mais larga do que a Terra','A Grande Mancha Vermelha de Júpiter é uma tempestade gigante observada há bem mais de um século, e é mais larga do que o nosso planeta inteiro.']],
+  ['Planetary science','Supersonic winds on Neptune','Neptune has the fastest winds in the solar system, up to about 2,000 km/h, even though it is the farthest planet from the Sun’s warmth.',['Ventos supersónicos em Neptuno','Neptuno tem os ventos mais rápidos do sistema solar, até cerca de 2000 km/h, apesar de ser o planeta mais afastado do calor do Sol.']],
+  ['Planetary science','Dust storms that cover a planet','Every few years, a dust storm on Mars can grow until it wraps the entire planet. The one in 2018 blocked so much sunlight that NASA’s Opportunity rover went silent.',['Tempestades de poeira que cobrem um planeta','De poucos em poucos anos, uma tempestade de poeira em Marte pode crescer até envolver o planeta inteiro. A de 2018 bloqueou tanta luz solar que o rover Opportunity, da NASA, ficou em silêncio.']],
+  ['Atmosphere','The ozone layer’s address','Most of Earth’s ozone sits in the stratosphere, roughly 15 to 35 km up, where it absorbs most of the Sun’s harmful ultraviolet light.',['A morada da camada de ozono','A maior parte do ozono da Terra está na estratosfera, a cerca de 15 a 35 km de altitude, onde absorve a maior parte da radiação ultravioleta nociva do Sol.']],
+  ['Atmosphere','Scorching, yet freezing','The International Space Station orbits in the thermosphere, where the few gas particles around it can reach about 2,000 °C. There are so few of them that they could not warm you.',['Escaldante, mas gelado','A Estação Espacial Internacional orbita na termosfera, onde as poucas partículas de gás à volta podem chegar a cerca de 2000 °C. São tão poucas que não te aqueceriam.']],
+  ['Climate','The ocean is Earth’s heat sponge','Oceans have absorbed roughly 90% of the extra heat trapped by greenhouse gases in recent decades, which is why sea temperatures matter so much for climate.',['O oceano é a esponja de calor da Terra','Os oceanos absorveram cerca de 90% do calor extra retido pelos gases com efeito de estufa nas últimas décadas, e é por isso que a temperatura do mar pesa tanto no clima.']],
+  ['Climate','Ice cores are time machines','Bubbles of ancient air trapped in Antarctic ice cores let scientists read the atmosphere back some 800,000 years.',['Os núcleos de gelo são máquinas do tempo','As bolhas de ar antigo presas nos núcleos de gelo da Antártida permitem aos cientistas ler a atmosfera até há cerca de 800 000 anos.']],
+  ['Astronomy','Earth’s wobble paces the ice ages','Slow, regular changes in Earth’s orbit and tilt, the Milankovitch cycles, help time the ice ages. The tilt itself drifts between about 22.1° and 24.5° over some 41,000 years.',['A oscilação da Terra marca o ritmo das idades do gelo','Mudanças lentas e regulares na órbita e na inclinação da Terra, os ciclos de Milankovitch, ajudam a marcar o ritmo das idades do gelo. A própria inclinação oscila entre cerca de 22,1° e 24,5° ao longo de uns 41 000 anos.']],
+  ['Meteorology','A thousand twisters a year','The United States sees about 1,200 tornadoes in an average year, more than any other country.',['Mil tornados por ano','Os Estados Unidos têm cerca de 1200 tornados num ano médio, mais do que qualquer outro país.']],
+  ['Meteorology','Tornadoes are rated by their damage','The Enhanced Fujita scale, from EF0 to EF5, estimates a tornado’s winds from the damage left behind, because measuring them directly is rare.',['Os tornados são classificados pelos estragos','A escala Fujita melhorada, de EF0 a EF5, estima o vento de um tornado a partir dos estragos que deixa, porque medi-lo diretamente é raro.']],
+  ['Meteorology','One storm, three names','Hurricanes, typhoons and cyclones are the same kind of storm. The name depends only on the ocean where it forms.',['Uma tempestade, três nomes','Furacões, tufões e ciclones são o mesmo tipo de tempestade. O nome depende só do oceano onde se forma.']],
+  ['Meteorology','Monsoon simply means “season”','The word comes from the Arabic mawsim, “season”, and reached Portuguese as monção.',['Monção quer simplesmente dizer “estação”','A palavra vem do árabe mawsim, “estação”, e chegou ao português como monção.']],
+  ['Thermodynamics','Rising air cools down','Dry air cools by about 10 °C for every kilometre it climbs, which is one reason mountain tops are so cold.',['O ar que sobe arrefece','O ar seco arrefece cerca de 10 °C por cada quilómetro que sobe, e é uma das razões pelas quais o topo das montanhas é tão frio.']],
+  ['Astronomy','The Sun that never sets','North of the Arctic Circle the Sun stays above the horizon for at least one full day every summer. At the North Pole it lasts for months.',['O Sol que nunca se põe','A norte do Círculo Polar Ártico, o Sol fica acima do horizonte pelo menos um dia inteiro em cada verão. No Polo Norte dura meses.']],
+  ['Meteorology','A record day of rain','La Réunion’s Foc-Foc received 1,825 mm of rain in 24 hours in January 1966, during Cyclone Denise. That is the world record.',['Um dia de chuva recorde','Foc-Foc, na ilha da Reunião, recebeu 1825 mm de chuva em 24 horas em janeiro de 1966, durante o ciclone Denise. É o recorde mundial.']],
+  ['Climate','El Niño changes weather worldwide','Every two to seven years, surface water in the central and eastern tropical Pacific warms up, which shifts rainfall and temperatures across much of the globe.',['O El Niño muda o tempo no mundo inteiro','Com intervalos de dois a sete anos, a água à superfície no Pacífico tropical central e oriental aquece, o que desloca a chuva e as temperaturas por grande parte do globo.']],
+  ['Climate','Why we are not a frozen planet','The natural greenhouse effect lifts Earth’s average surface temperature to about 15 °C. Without it, it would be around −18 °C.',['Porque não somos um planeta gelado','O efeito de estufa natural eleva a temperatura média à superfície da Terra para cerca de 15 °C. Sem ele, seria à volta de −18 °C.']],
+  ['Meteorology','Why storm clouds have anvils','A tall thunderstorm cloud flattens into an anvil when its rising air hits the stable layer at the top of the troposphere and has nowhere to go but sideways.',['Porque é que as nuvens de tempestade têm bigorna','Uma nuvem de trovoada alta achata-se numa bigorna quando o ar ascendente bate na camada estável no topo da troposfera e só pode espalhar-se para os lados.']],
+  ['Meteorology','Dust devils need no storm','Dust devils spin up on hot, sunny ground under clear skies. They are usually far weaker than tornadoes, which grow out of thunderstorms.',['Os remoinhos de poeira não precisam de tempestade','Os remoinhos de poeira formam-se em solo quente e soalheiro, com céu limpo. Costumam ser muito mais fracos do que os tornados, que nascem de trovoadas.']],
+  ['Climate','Antarctica’s ice','Antarctica holds about 90% of all the ice on Earth.',['O gelo da Antártida','A Antártida guarda cerca de 90% de todo o gelo da Terra.']]
+];
+
+let sciMode='fact',factI=0,qFresh=false;
+
+/* ---- Mito ou facto: estado do jogo (30 perguntas, ordem aleatória, com fim) ---- */
+function qNew(){
+ const o=QZ.map((_,i)=>i);
+ for(let i=o.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[o[i],o[j]]=[o[j],o[i]]}
+ return{v:2,o,i:0,r:0,a:null};          // i = pergunta atual, r = certas, a = resposta dada (null = ainda não respondeu)
+}
+let qs=(()=>{const s=lsGet('qz2');return s&&s.v==2&&Array.isArray(s.o)&&s.o.length==QZ.length?s:qNew()})();
+const qSave=()=>lsSet('qz2',qs);
 
 /* ============ idioma PT / EN ============ */
 for(const m of['toLocaleString','toLocaleDateString','toLocaleTimeString']){
@@ -690,21 +810,16 @@ const FACTS_PT=[
  ['As nuvens não bloqueiam todos os UV','Até 80% dos raios UV atravessam uma cobertura de nuvens ligeira, por isso dias nublados também podem queimar a pele.']
 ];
 
-const QZ_PT=[
- ['O raio nunca cai duas vezes no mesmo sítio.','Mito. O Empire State Building é atingido cerca de 20 vezes por ano. Objetos altos, pontiagudos e condutores são alvos repetidos.'],
- ['As gotas de chuva caem em forma de lágrima.','Mito. As gotas pequenas são esferas; as grandes achatam-se como um pão à medida que o ar as empurra por baixo.'],
- ['Os flocos de neve têm seis braços por causa da estrutura hexagonal do gelo.','Facto. As moléculas de água encaixam numa rede hexagonal, por isso os cristais de neve clássicos têm simetria de ordem seis.'],
- ['A Terra está mais perto do Sol durante o verão no Hemisfério Norte.','Mito. A Terra está mais perto no início de janeiro. As estações vêm da inclinação do eixo de 23,4°, não da distância.'],
- ['O trovão é o som do ar a expandir-se violentamente à volta de um relâmpago.','Facto. O canal aquece a cerca de 30 000 °C em microssegundos e o ar rebenta para fora como uma onda de choque.'],
- ['Perdes a maior parte do calor do corpo pela cabeça.','Mito. A cabeça é cerca de 7–10% da superfície do corpo, por isso perde aproximadamente essa parte do calor.'],
- ['Uma nuvem é feita de vapor de água.','Mito. O vapor é invisível. As nuvens são gotículas líquidas minúsculas ou cristais de gelo que se formaram a partir dele.'],
- ['O orvalho forma-se quando as superfícies arrefecem abaixo do ponto de orvalho do ar.','Facto. A essa temperatura o ar já não consegue reter o vapor, que se condensa na superfície fria.']
-];
-
 const firstS=s=>s.split('. ')[0].replace(/\.$/,'')+'.';          // o ticker mostra só a 1.ª frase do facto
 FACTS.forEach((f,i)=>{const p=f[5]||FACTS_PT[i];if(p){PT[f[1]]=p[0];PT[f[2]]=p[1];PT[firstS(f[2])]=firstS(p[1])}});
 QZ.forEach((z,i)=>{const p=z[3]||QZ_PT[i];if(p){PT[z[0]]=p[0];PT[z[2]]=p[1]}});
-Object.assign(PT,{'Biology':'Biologia','Climate':'Clima','Planetary science':'Ciência planetária',
+DAILY.forEach(f=>{PT[f[1]]=f[3][0];PT[f[2]]=f[3][1]});
+Object.assign(PT,{ 'Fact of the day':'Facto do dia','See result':'Ver resultado','Play again':'Jogar outra vez',
+ 'Flawless. You could be on the forecasting desk.':'Impecável. Já podias estar na redação do tempo.',
+ 'Brilliant. Hardly any myth got past you.':'Brilhante. Quase nenhum mito te enganou.',
+ 'Solid. A few myths slipped through, and now you know.':'Bom resultado. Alguns mitos escaparam, e agora já sabes.',
+ 'Not bad. Weather myths are sneaky.':'Nada mau. Os mitos do tempo são traiçoeiros.',
+ 'The weather is full of surprises. Give it another go!':'O tempo está cheio de surpresas. Tenta outra vez!','Biology':'Biologia','Climate':'Clima','Planetary science':'Ciência planetária',
  'Precipitation forecast for the next 2 hours':'Previsão de precipitação para as próximas 2 horas',
  'Rain for the next 2 hours':'Chuva nas próximas 2 horas','Light rain expected':'Chuva fraca prevista',
  'Moderate rain expected':'Chuva moderada prevista','Heavy rain expected':'Chuva forte prevista',
@@ -718,6 +833,7 @@ const onD=x=>x=='today'?'hoje':/^(sábado|domingo)/i.test(x)?'no '+x:'na '+x;
 const dec=s=>String(s).replace('.',',');
 const polN=n=>{const c=n[0].toUpperCase()+n.slice(1);return PT[c]||c};
 const PT_RX=[
+ [/^Question (\d+) of (\d+)$/,'Pergunta $1 de $2'],
  [/^(Freezing|Cold|Cool|Mild|Warm|Hot) and (calm|a light breeze|breezy|windy|gusty), (.+?)(, rain falling now|, with rain likely (within the hour|later today|this evening))?\.$/,
   (m,a,b,c,rc,w)=>`${TW[a]} e ${WW[b]}, ${LOW[c]||c}${rc?(w?', '+RCP[w]:', a chover agora'):''}.`],
  [/^Feels like (-?\d+)° · High (-?\d+)° · Low (-?\d+)°$/,'Sensação de $1° · Máx. $2° · Mín. $3°'],
@@ -1234,20 +1350,70 @@ async function loadPollen(){
 }
 
 /* --- Science --- */
+const dayN=()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5)};   // nº do dia (hora local)
+const dailyFact=()=>DAILY[((dayN()%DAILY.length)+DAILY.length)%DAILY.length];
+function dailyHTML(isNew){
+ const f=dailyFact(),dt=new Date().toLocaleDateString(LOC(),{day:'numeric',month:'long'});
+ return`<div class="dayf${isNew?' new':''}" id="dayf" data-d="${dayN()}"><div class="dtag"><span>Fact of the day</span><em>${dt}</em></div><h3>${f[1]}</h3><p>${f[2]}</p></div>`;
+}
+let dayT=0;
+function dayRefresh(){                       // troca o facto quando o dia muda
+ const el=$('#dayf');
+ if(el&&+el.dataset.d!==dayN())el.outerHTML=dailyHTML(true);
+}
+function dayArm(){                           // agenda a troca para as 0:00 (hora local)
+ clearTimeout(dayT);
+ const d=new Date(),next=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1,0,0,0,50);
+ dayT=setTimeout(()=>{dayRefresh();dayArm()},Math.max(1000,next-d));
+}
+dayArm();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){dayRefresh();dayArm()}});   // separador em segundo plano
+
+function quizCls(){
+ if(sciMode!='quiz'||qs.a==null||qs.i>=QZ.length)return'';
+ return QZ[qs.o[qs.i]][1]==qs.a?' qok':' qbad';
+}
+function qMark(ok){
+ const cf=ok?[...Array(14)].map((_,i)=>{const a=i/14*6.283+.2,d=40+(i%3)*10;
+  return`<i class="cf" style="--dx:${(Math.cos(a)*d).toFixed(0)}px;--dy:${(Math.sin(a)*d).toFixed(0)}px;--r:${i*47}deg;--c:${['#22c55e','#facc15','#38bdf8','#fb7185'][i%4]}"></i>`}).join(''):'';
+ const sym=ok?'<path class="qtick" d="M19 33.5l9 9 17.5-19.5"/>':'<path class="qx1" d="M22 22L42 42"/><path class="qx2" d="M42 22L22 42"/>';
+ return`<div class="qm"><svg class="qmark" viewBox="0 0 64 64" aria-hidden="true"><circle class="qdisc" cx="32" cy="32" r="29"/><circle class="qring" cx="32" cy="32" r="29"/>${sym}</svg>${cf}</div>`;
+}
+function quizEnd(){
+ const n=QZ.length,r=qs.r,t=r==n?0:r>=25?1:r>=18?2:r>=10?3:4;
+ const em=['🏆','🌟','👍','🌦️','🌱'][t];
+ const vd=['Flawless. You could be on the forecasting desk.','Brilliant. Hardly any myth got past you.','Solid. A few myths slipped through, and now you know.','Not bad. Weather myths are sneaky.','The weather is full of surprises. Give it another go!'][t];
+ return`<div class="qend"><div class="qem">${em}</div><div class="qscore"><b data-cu="${r}">0</b><span>/ ${n}</span></div><div class="qbar"><i style="width:${(r/n*100).toFixed(1)}%"></i></div><p class="qverdict">${vd}</p><button class="pill dk" data-qr>Play again</button></div>`;
+}
+function quizHTML(){
+ const n=QZ.length;
+ if(qs.i>=n)return quizEnd();
+ const z=QZ[qs.o[qs.i]],done=qs.a!=null,ok=done&&qs.a==z[1],last=qs.i+1>=n;
+ const btn=(v,l)=>{let c='pill dk';if(done){if(v==z[1])c+=' qright';else if(v==qs.a)c+=' qwrong'}return`<button class="${c}" data-a="${v}"${done?' disabled':''}>${l}</button>`};
+ const res=done?`<div class="qres">${qMark(ok)}<div class="qtxt"><b>${ok?'Correct.':'Not quite.'}</b> ${z[2]}<div><button class="pill dk" data-nq>${last?'See result':'Next question'}</button></div></div></div>`:'';
+ return`<div class="qprog"><span>Question ${qs.i+1} of ${n}</span><div class="qbar"><i style="width:${((qs.i+(done?1:0))/n*100).toFixed(1)}%"></i></div></div>`
+  +`<p class="qs">${z[0]}</p><div class="qb">${btn(0,'Myth')}${btn(1,'Fact')}</div>`
+  +`<div class="qr" aria-live="polite">${res}</div><div class="sc" id="sc">${qs.r} right of ${qs.i+(done?1:0)}</div>`;
+}
 function sciBody() {
-  if (sciMode == 'quiz') {
-    const z = QZ[qi % QZ.length];
-    return `<p class="qs">${z[0]}</p><div class="qb"><button class="pill dk" data-a="0">Myth</button><button class="pill dk" data-a="1">Fact</button></div><p class="qr" aria-live="polite"></p><div class="sc" id="sc">${score[0]} right of ${score[1]}</div>`;
-  }
+  if (sciMode == 'quiz') return quizHTML();
   const pool = factPool(), f = pool[((factI % pool.length) + pool.length) % pool.length];
   const imgHTML = f[4] ? `<img class="fimg" src="${IMG_DIR}${f[4]}" data-n="${f[4]}" alt="${tr(f[1]).replace(/"/g,'&quot;')}" loading="lazy" decoding="async" onload="this.classList.add('ok')" onerror="imgFB(this)">` : '';
-  return `<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2>${imgHTML}<p class="fp">${f[2]}</p><div class="fnav"><button class="pill dk" data-f="-1">Previous</button><button class="pill dk" data-f="1">Another</button></div>`;
+  return dailyHTML() + `<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2>${imgHTML}<p class="fp">${f[2]}</p><div class="fnav"><button class="pill dk" data-f="-1">Previous</button><button class="pill dk" data-f="1">Another</button></div>`;
 }
 function sciPane(){
- return`<div class="pane g2e"><section class="card"><div class="sw"><button data-s="fact" aria-pressed="${sciMode=='fact'}">Did you know</button><button data-s="quiz" aria-pressed="${sciMode=='quiz'}">Myth or fact</button></div><div id="sbody">${sciBody()}</div></section>
+ return`<div class="pane g2e"><section class="card${quizCls()}"><div class="sw"><button data-s="fact" aria-pressed="${sciMode=='fact'}">Did you know</button><button data-s="quiz" aria-pressed="${sciMode=='quiz'}">Myth or fact</button></div><div id="sbody">${sciBody()}</div></section>
  <section class="card"><h3>The physics right now</h3><div class="labgrid">${lab()}</div></section></div>`;
 }
-function drawSci(){const b=$('#sbody');if(!b)return;const n=b.cloneNode(false);n.innerHTML=sciBody();b.replaceWith(n)}
+function drawSci(){
+ const b=$('#sbody');if(!b)return;
+ const n=b.cloneNode(false);n.innerHTML=sciBody();b.replaceWith(n);
+ const c=n.closest('.card');
+ if(c){c.classList.remove('qok','qbad','fresh');const k=quizCls();if(k){c.classList.add(k.trim());if(qFresh)c.classList.add('fresh')}}
+ if(qFresh){const nb=n.querySelector('[data-nq]');if(nb)nb.focus({preventScroll:true})}
+ qFresh=false;
+ if(sciMode=='quiz')runCounters(n);
+}
 
 /* ============ count-up ============ */
 function countUp(el,to,ms=1100){
@@ -1583,12 +1749,12 @@ main.addEventListener('click',e=>{
  const f=e.target.closest('[data-f]');if(f){factI+=+f.dataset.f;return drawSci()}
  const a=e.target.closest('[data-a]');
  if(a&&!a.disabled){
-  const z=QZ[qi%QZ.length],ok=+a.dataset.a==z[1];score=[score[0]+(ok?1:0),score[1]+1];lsSet('score',score);
-  const box=a.closest('#sbody');
-  box.querySelector('.qr').innerHTML=`<b>${ok?'Correct.':'Not quite.'}</b> ${z[2]} <button class="pill dk" data-nq style="margin-top:12px">Next question</button>`;
-  box.querySelectorAll('.qb button').forEach(x=>x.disabled=true);$('#sc').textContent=`${score[0]} right of ${score[1]}`;return;
+  if(qs.a!=null||qs.i>=QZ.length)return;
+  const z=QZ[qs.o[qs.i]];qs.a=+a.dataset.a;if(qs.a==z[1])qs.r++;
+  qSave();qFresh=true;return drawSci();
  }
- if(e.target.closest('[data-nq]')){qi++;lsSet('qi',qi);return drawSci()}
+ if(e.target.closest('[data-nq]')){qs.i++;qs.a=null;qSave();return drawSci()}
+ if(e.target.closest('[data-qr]')){qs=qNew();qSave();return drawSci()}
  if(e.target.closest('#tk')&&data){factI=+$('#tk').dataset.i;sciMode='fact';setTab('sci');$('#tabs').scrollIntoView({behavior:'smooth',block:'start'});return}
  if(e.target.closest('#fav')){
   const same=x=>x.name==place.name&&x.sub==place.sub;
