@@ -781,7 +781,7 @@ const PT_RX=[
  [/^(Low|Moderate|High|Very high) pollen risk in (.+?)(?:, led by (.+?))?\. Keep windows closed if you are allergic\.$/,
   (m,l,p,t)=>`Risco de pólen ${(UVL[l]||l).toLowerCase()} em ${p}${t?', sobretudo de '+polN(t).toLowerCase():''}. Mantém as janelas fechadas se fores alérgico.`],
  [/^It is raining at (.+)\.$/,'Está a chover em $1.'],
- [/^Rain expected at (.+) in about (\d+) min\.$/,'Chuva prevista em $1 dentro de cerca de $2 min.']
+ [/^Rain expected at (.+) in about (\d+) min\.$/,'Chuva prevista em $1 dentro de cerca de $2 min.'],
  [/^Rain stops in about (\d+) min$/,'A chuva pára dentro de cerca de $1 min'],
 ];
 function trStr(s){
