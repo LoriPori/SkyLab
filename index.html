@@ -364,32 +364,8 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 @keyframes flagIn{from{transform:rotateY(90deg) scale(.5);opacity:0}}
 html[lang=pt] .rtime.buf::after{content:' · a carregar…'}
 
-/* ---- Setas de Vento no Radar ---- */
-.wind-arrow-icon {
-  background: transparent !important;
-  border: none !important;
-}
-.wind-arrow-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-.wind-arrow-box span {
-  font-size: 10px;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 3px #000, 0 0 2px #000;
-  margin-top: -2px;
-  white-space: nowrap;
-}
+.windfx{position:absolute;left:0;top:0;width:100%;height:100%;z-index:450;pointer-events:none}
 
-.wind-arrow-box{animation:wfade .5s both}
-.wa svg{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));animation:wflow 2.2s ease-in-out infinite}
-@keyframes wflow{0%,100%{transform:translateY(2px)}50%{transform:translateY(-2px)}}
-@keyframes wfade{from{opacity:0}}
-@media(prefers-reduced-motion:reduce){.wa svg{animation:none}}
 .ncbox .nct{display:flex;flex-direction:column;line-height:1.25}
 .ncbox .nct small{font-size:12px;opacity:.85}
 .ncbox .nb i.w{box-shadow:0 0 8px rgba(59,143,224,.7)}
@@ -731,7 +707,8 @@ QZ.forEach((z,i)=>{const p=z[3]||QZ_PT[i];if(p){PT[z[0]]=p[0];PT[z[2]]=p[1]}});
 Object.assign(PT,{'Biology':'Biologia','Climate':'Clima','Planetary science':'Ciência planetária',
  'Precipitation forecast for the next 2 hours':'Previsão de precipitação para as próximas 2 horas',
  'Rain for the next 2 hours':'Chuva nas próximas 2 horas','Light rain expected':'Chuva fraca prevista',
- 'Moderate rain expected':'Chuva moderada prevista','Heavy rain expected':'Chuva forte prevista'});
+ 'Moderate rain expected':'Chuva moderada prevista','Heavy rain expected':'Chuva forte prevista',
+ 'Wind speed (colours) and direction (moving particles) · OpenWeatherMap + Open-Meteo':'Velocidade do vento (cores) e direção (partículas em movimento) · OpenWeatherMap + Open-Meteo',});
 const LOW={};Object.values(LABEL).forEach(en=>{if(PT[en])LOW[en.toLowerCase()]=PT[en].toLowerCase()});
 const TW={Freezing:'Gelado',Cold:'Frio',Cool:'Fresco',Mild:'Ameno',Warm:'Quente',Hot:'Muito quente'};
 const WW={'calm':'calmo','a light breeze':'com brisa ligeira','breezy':'com vento moderado','windy':'ventoso','gusty':'com rajadas'};
@@ -840,7 +817,7 @@ function paintLang(swap){
 function setLang(l){
  if(l==LANG)return;
  LANG=l;lsSet('lang',l);document.documentElement.lang=l;
- if(!lsGet('unitPick'))setUnit(l=='pt'?'c':'f',false,true);   // segue o idioma, salvo escolha manual
+  setUnit(l=='pt'?'c':'f',true,true);   // o idioma define as unidades (o botão °C/°F continua a poder mudá-las)
  trTree(document.body);paintLang(true);
  if(data)render();else if(!place&&$('#hero')&&$('#hero').classList.contains('land'))landing();
 }
@@ -1693,37 +1670,129 @@ addEventListener('keydown',askNotif,{once:true});
 
 /* ============ Radar tab ============ */
 const RADAR_KINDS=[['nasa','Rain'],['wind','Wind'],['cloud','Clouds'],['sat','Satellite']];
-const OWM_KINDS={wind:{layer:'wind_new',note:'Wind speed · OpenWeatherMap · updated regularly',lo:'Calm',hi:'Storm',grad:'linear-gradient(90deg,#cfe6f5,#aacbe6,#b364bc,#7a4cac,#46009f)'}};
+const OWM_KINDS={wind:{layer:'wind_new',note:'Wind speed (colours) and direction (moving particles) · OpenWeatherMap + Open-Meteo',lo:'Calm',hi:'Storm',grad:'linear-gradient(90deg,#cfe6f5,#aacbe6,#b364bc,#7a4cac,#46009f)'}};
 let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='nasa',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
 let radarKT=0;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-let windMarkers=[],windTok=0,windT=0;
-function clearWindMarkers(){windMarkers.forEach(m=>{try{m.remove()}catch(e){}});windMarkers=[]}
-const windColor=k=>k<15?'#ffffff':k<30?'#ffe08a':k<50?'#ffb347':'#ff6b5e';
+/* ===== Vento: partículas animadas (substitui as setas) ===== */
+let windTok=0,windT=0,windCv=null,windCx=null,windRaf=0,windLast=0,windGrid=null,windFld=null,windP=[];
+const WGR={rows:7,cols:10},WSTEP=6,WK=.06,WFADE=.05,WBK=[[0,12,.45],[12,35,.75],[35,1e9,.95]];
+
+function windStopLoop(){cancelAnimationFrame(windRaf);windRaf=0}
+function windClear(){if(windCx&&windCv)windCx.clearRect(0,0,windCv.width,windCv.height)}
+function windPause(){windStopLoop();windClear()}                    // durante o arrasto/zoom o canvas fica limpo
+function windMoved(){clearTimeout(windT);windT=setTimeout(updateWindVectors,250)}
+function windStop(){
+  windTok++;windStopLoop();clearTimeout(windT);
+  if(radarMap){try{radarMap.off('movestart zoomstart',windPause);radarMap.off('moveend resize',windMoved)}catch(e){}}
+  if(windCv)windCv.remove();
+  windCv=windCx=windFld=null;windP=[];
+}
+function clearWindMarkers(){windStop()}                              // mantém o nome usado por clearRadarLayers()
+
+function windEnsure(){
+  const cont=radarMap.getContainer();
+  if(!windCv||windCv.parentNode!==cont){
+    windCv=document.createElement('canvas');windCv.className='windfx';windCv.setAttribute('aria-hidden','true');
+    cont.appendChild(windCv);windCx=windCv.getContext('2d');
+    radarMap.on('movestart zoomstart',windPause);radarMap.on('moveend resize',windMoved);
+  }
+  const dpr=Math.min(2,window.devicePixelRatio||1),W=cont.clientWidth,H=cont.clientHeight;
+  if(windCv.width!==Math.round(W*dpr)||windCv.height!==Math.round(H*dpr)){windCv.width=Math.round(W*dpr);windCv.height=Math.round(H*dpr)}
+  windCx.setTransform(dpr,0,0,dpr,0,0);
+  return{W,H};
+}
+
+/* grelha 10x7 de vento sobre a área visível (+30% de margem), numa só chamada à Open-Meteo */
+async function windFetchGrid(b){
+  const dl=b.getNorth()-b.getSouth(),dg=b.getEast()-b.getWest();
+  const s=Math.max(-80,b.getSouth()-dl*.3),n=Math.min(80,b.getNorth()+dl*.3),w=b.getWest()-dg*.3,e=b.getEast()+dg*.3;
+  const{rows,cols}=WGR,lats=[],lons=[];
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    lats.push((s+r*(n-s)/(rows-1)).toFixed(3));
+    lons.push(((((w+c*(e-w)/(cols-1))%360)+540)%360-180).toFixed(3));
+  }
+  const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=wind_speed_10m,wind_direction_10m`);
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const j=await res.json(),arr=Array.isArray(j)?j:[j],N=rows*cols,u=new Float32Array(N),v=new Float32Array(N);
+  for(let i=0;i<N;i++){
+    const c=arr[i]&&arr[i].current,sp=c?+c.wind_speed_10m||0:0,d=c?+c.wind_direction_10m||0:0;
+    const fl=((d+180)%360)*Math.PI/180;      // o vento VEM de d° (0° = Norte) e MOVE-SE para d+180° (→ Sul)
+    u[i]=sp*Math.sin(fl);v[i]=sp*Math.cos(fl);   // u = este, v = norte (km/h)
+  }
+  return{s,n,w,e,rows,cols,u,v,z:radarMap.getZoom(),t:Date.now()};
+}
+
+/* interpolação bilinear dos vetores (u,v) – nunca se interpolam ângulos */
+function windSample(g,lat,lng,o){
+  const span=g.e-g.w;
+  const x=Math.min(span,((lng-g.w)%360+360)%360);
+  const fx=span>0?x/span*(g.cols-1):0,fy=(Math.min(g.n,Math.max(g.s,lat))-g.s)/(g.n-g.s)*(g.rows-1);
+  const x0=Math.min(g.cols-2,Math.floor(fx)),y0=Math.min(g.rows-2,Math.floor(fy)),tx=fx-x0,ty=fy-y0,i=y0*g.cols+x0,c=g.cols;
+  const bl=a=>a[i]*(1-tx)*(1-ty)+a[i+1]*tx*(1-ty)+a[i+c]*(1-tx)*ty+a[i+c+1]*tx*ty;
+  o[0]=bl(g.u);o[1]=bl(g.v);
+}
+
+/* campo em pixéis: um vetor por cada 6 px do ecrã, recalculado só quando a vista muda */
+function windBuild(W,H){
+  const fw=Math.ceil(W/WSTEP)+2,fh=Math.ceil(H/WSTEP)+2,fu=new Float32Array(fw*fh),fv=new Float32Array(fw*fh),o=[0,0];
+  for(let j=0;j<fh;j++)for(let i=0;i<fw;i++){
+    const ll=radarMap.containerPointToLatLng([i*WSTEP,j*WSTEP]);
+    windSample(windGrid,ll.lat,ll.lng,o);fu[j*fw+i]=o[0];fv[j*fw+i]=o[1];
+  }
+  windFld={fw,fh,fu,fv,W,H};
+  const n=Math.max(300,Math.min(3500,Math.round(W*H/380)));
+  windP=Array.from({length:n},()=>{const p=windSpawn({});p.a=Math.random()*p.m;return p});
+}
+function windSpawn(p){
+  const f=windFld;p.x=Math.random()*(f?f.W:300);p.y=Math.random()*(f?f.H:200);
+  p.ox=p.x;p.oy=p.y;p.a=0;p.m=45+Math.random()*75;p.s=-1;return p;      // s=-1: não desenha o 1.º passo
+}
+function windAt(x,y,o){
+  const f=windFld,gx=x/WSTEP,gy=y/WSTEP,i=Math.min(f.fw-2,gx|0),j=Math.min(f.fh-2,gy|0),tx=gx-i,ty=gy-j,k=j*f.fw+i,c=f.fw;
+  const a=(1-tx)*(1-ty),b=tx*(1-ty),d=(1-tx)*ty,e=tx*ty;
+  o[0]=f.fu[k]*a+f.fu[k+1]*b+f.fu[k+c]*d+f.fu[k+c+1]*e;
+  o[1]=f.fv[k]*a+f.fv[k+1]*b+f.fv[k+c]*d+f.fv[k+c+1]*e;
+}
+function windStep(dt,fade){
+  const cx=windCx,f=windFld,o=[0,0];
+  if(fade){cx.globalCompositeOperation='destination-out';cx.fillStyle=`rgba(0,0,0,${WFADE})`;cx.fillRect(0,0,f.W,f.H);cx.globalCompositeOperation='source-over'}
+  for(const p of windP){
+    windAt(p.x,p.y,o);
+    const sp=Math.hypot(o[0],o[1]);
+    p.ox=p.x;p.oy=p.y;p.x+=o[0]*WK*dt;p.y-=o[1]*WK*dt;p.a+=dt;p.s=sp;     // no ecrã o Norte é y negativo
+    if(p.a>p.m||p.x<0||p.y<0||p.x>f.W||p.y>f.H||sp<.3)windSpawn(p);
+  }
+  cx.lineWidth=1.4;cx.lineCap='round';
+  for(const[lo,hi,al]of WBK){
+    cx.strokeStyle=`rgba(255,255,255,${al})`;cx.beginPath();
+    for(const p of windP)if(p.s>=lo&&p.s<hi){cx.moveTo(p.ox,p.oy);cx.lineTo(p.x,p.y)}
+    cx.stroke();
+  }
+}
+function windFrame(t){
+  if(!windCx||!windFld||radarKind!=='wind'||!radarMap){windRaf=0;return}
+  const dt=Math.min(2.5,(t-(windLast||t))/16.67);windLast=t;
+  windStep(dt||1,true);
+  windRaf=requestAnimationFrame(windFrame);
+}
+
 async function updateWindVectors(){
   const tok=++windTok;
-  if(!radarMap||radarKind!=='wind'){clearWindMarkers();return}
-  const b=radarMap.getBounds(),s=Math.max(-80,b.getSouth()),n=Math.min(80,b.getNorth()),w=b.getWest(),e=b.getEast();
-  const rows=5,cols=6,pts=[];
-  for(let r=1;r<=rows;r++)for(let c=1;c<=cols;c++)pts.push([+(s+r*(n-s)/(rows+1)).toFixed(3),+(w+c*(e-w)/(cols+1)).toFixed(3)]);
-  const wrap=x=>((x+540)%360)-180;
-  try{
-    const url=`https://api.open-meteo.com/v1/forecast?latitude=${pts.map(p=>p[0]).join(',')}&longitude=${pts.map(p=>wrap(p[1]).toFixed(3)).join(',')}&current=wind_speed_10m,wind_direction_10m`;
-    const res=await fetch(url);if(!res.ok)return;
-    const j=await res.json();
-    if(tok!==windTok||radarKind!=='wind'||!radarMap)return;      // trocou de camada ou mexeu no mapa entretanto
-    clearWindMarkers();
-    (Array.isArray(j)?j:[j]).forEach((it,i)=>{
-      if(!it.current||!pts[i])return;
-      const from=it.current.wind_direction_10m||0,spd=it.current.wind_speed_10m||0;
-      const flow=(from+180)%360;                                  // vem de 0° (Norte) → move-se para Sul
-      const sz=Math.round(Math.min(34,16+spd*.45));
-      const icon=L.divIcon({className:'wind-arrow-icon',iconSize:[sz+16,sz+16],iconAnchor:[(sz+16)/2,(sz+16)/2],
-        html:`<div class="wind-arrow-box"><div class="wa" style="width:${sz}px;height:${sz}px;transform:rotate(${flow}deg)"><svg viewBox="0 0 24 24" style="animation-delay:-${(i*.37)%2.2}s"><path d="M12 2L18 20L12 16L6 20Z" fill="${windColor(spd)}" stroke="#1d5f8c" stroke-width="1.6" stroke-linejoin="round"/></svg></div><span>${W(spd)}</span></div>`});
-      const m=L.marker(pts[i],{icon,interactive:false,keyboard:false,pane:'radar'}).addTo(radarMap);
-      windMarkers.push(m);
-    });
-  }catch(err){console.warn('[Wind vectors]',err)}
+  if(!radarMap||radarKind!=='wind'){windStop();return}
+  const b=radarMap.getBounds(),z=radarMap.getZoom(),g=windGrid;
+  const ok=g&&g.s<=b.getSouth()&&g.n>=b.getNorth()&&g.w<=b.getWest()&&g.e>=b.getEast()&&z-g.z<1&&Date.now()-g.t<9e5;
+  if(!ok){
+    try{
+      const ng=await windFetchGrid(b);
+      if(tok!==windTok||radarKind!=='wind'||!radarMap)return;     // trocou de camada entretanto
+      windGrid=ng;
+    }catch(err){console.warn('[Wind]',err.message);if(tok!==windTok||!windGrid)return}
+  }
+  const{W,H}=windEnsure();
+  windStopLoop();windClear();windBuild(W,H);
+  if(still){for(let i=0;i<70;i++)windStep(1,false)}                // movimento reduzido: linhas de corrente estáticas
+  else{windLast=0;windRaf=requestAnimationFrame(windFrame)}
 }
 
 /* ---- tile cache: every tile is downloaded once per session ---- */
@@ -1892,7 +1961,6 @@ async function radarInit(){
  $('#rsl').oninput=e=>{radarPlay=false;radarBtn();clearTimeout(radarTimer);radarShow(+e.target.value)};
  radarBtn();
  radarLoadKind(radarKind);
- radarMap.on('moveend',()=>{if(radarKind!=='wind')return;clearTimeout(windT);windT=setTimeout(updateWindVectors,350)});
 }
 /* NASA IMERG: find the newest available times, then build an animation */
 const nasaISO=t=>new Date(t).toISOString().slice(0,19)+'Z';
