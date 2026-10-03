@@ -207,15 +207,9 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)
 .st b{display:block;font-family:var(--serif);font-weight:400;font-size:26px;margin:2px 0}
 .st span{font-size:12px;color:var(--mut);line-height:1.35;display:block}
 /* ---- Imagem nos factos das curiosidades cientificas ---- */
-.fimg {
-  width: 100%;
-  max-height: 220px;
-  object-fit: cover;
-  border-radius: 18px;
-  margin: 12px 0 8px;
-  border: 1px solid rgba(20, 49, 79, .14);
-  box-shadow: 0 8px 24px rgba(10, 40, 90, .12);
-}
+.fimg{display:block;width:100%;aspect-ratio:16/10;max-height:240px;object-fit:cover;border-radius:18px;margin:12px 0 8px;border:1px solid rgba(20,49,79,.14);box-shadow:0 8px 24px rgba(10,40,90,.12);background:linear-gradient(100deg,rgba(20,49,79,.06) 30%,rgba(255,255,255,.6) 50%,rgba(20,49,79,.06) 70%) 0 0/250% 100%;animation:fshim 1.4s linear infinite}
+.fimg.ok{animation:none;background:none}
+@keyframes fshim{to{background-position:-150% 0}}
 
 /* landing */
 .land h1{font-family:var(--serif);font-weight:400;font-size:clamp(56px,10vw,108px);line-height:.95;letter-spacing:-.02em;
@@ -390,6 +384,16 @@ html[lang=pt] .rtime.buf::after{content:' · a carregar…'}
   margin-top: -2px;
   white-space: nowrap;
 }
+
+.wind-arrow-box{animation:wfade .5s both}
+.wa svg{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));animation:wflow 2.2s ease-in-out infinite}
+@keyframes wflow{0%,100%{transform:translateY(2px)}50%{transform:translateY(-2px)}}
+@keyframes wfade{from{opacity:0}}
+@media(prefers-reduced-motion:reduce){.wa svg{animation:none}}
+.ncbox .nct{display:flex;flex-direction:column;line-height:1.25}
+.ncbox .nct small{font-size:12px;opacity:.85}
+.ncbox .nb i.w{box-shadow:0 0 8px rgba(59,143,224,.7)}
+
 </style>
 </head>
 <body>
@@ -435,8 +439,8 @@ const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let LANG=lsGet('lang')||((navigator.language||'').toLowerCase().startsWith('pt')?'pt':'en');
 const LOC=()=>LANG=='pt'?'pt-PT':'en';
 document.documentElement.lang=LANG;
-//if(lsGet('unit')&&lsGet('unitManual')==null)lsSet('unitManual',1);   // quem já escolheu unidades fica como está
-let unit=lsGet('unit')||(LANG=='pt'?'c':'f'),data=null,place=null,tab='today',lastKey='',tickT;
+try{localStorage.removeItem('unit');localStorage.removeItem('unitManual')}catch(e){}   // limpa o estado antigo que bloqueava a mudança automática
+let unit=lsGet('unitPick')||(LANG=='pt'?'c':'f'),data=null,place=null,tab='today',lastKey='',tickT;
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const T=c=>Math.round(unit=='c'?c:c*9/5+32);
 const W=k=>unit=='c'?Math.round(k)+' km/h':Math.round(k*.621)+' mph';
@@ -502,7 +506,7 @@ function theme(tC,k){
 function tempColor(c){const t=Math.max(-10,Math.min(38,c)),hue=208-((t+10)/48)*182;return`hsl(${hue.toFixed(0)},72%,58%)`}
 
 /* ============ science facts ============ */
-/* ============ science facts ============ */
+const IMG_BASE='/facts';
 const FACTS = [
   // Factos originais
   ['clear','Why the sky is blue','Air molecules scatter short wavelengths of sunlight far more than long ones (Rayleigh scattering). Violet scatters even more, but the Sun emits less of it and our eyes respond weakly to it, so we see blue.','Optics'],
@@ -525,27 +529,34 @@ const FACTS = [
   ['cold','Why cold air feels dry','Cold air can hold far less water vapour. Warm it indoors without adding moisture and its relative humidity drops sharply.','Thermodynamics'],
   ['uv','Clouds don’t block all UV','Up to 80% of UV rays pass through light cloud cover, which is why overcast days can still burn skin.','Radiation'],
 
-  // Novos factos com imagens associadas aos ficheiros do GitHub
-  ['cold','Ice Bubbles Trapped in Frozen Lakes','Methane gas produced by bacterial decomposition gets trapped beneath frozen lake surfaces, forming glassy vertical pillars of ice bubbles.','Physics','air-ice.png'],
-  ['clear','Crepuscular Rays','Sunlight passing through gaps in clouds creates dramatic sunbeams that appear to radiate outward due to atmospheric perspective.','Optics','crepuscular-rays.png'],
-  ['storm','Raining Frogs and Fish','Strong tornadic waterspouts can vacuum up small aquatic animals like frogs or fish, carrying them miles before raining them down.','Meteorology','frog.png'],
-  ['cloud','Glory Rings around Shadows','A Glory is an optical halo produced when sunlight backscatters through tiny uniform cloud droplets directly surrounding an observer shadows.','Optics','glory.png'],
-  ['storm','Haboob Dust Storms','Powerful thunderstorm downdrafts hitting dry ground trigger violent haboobs—giant walls of sand and dust thousands of feet high.','Atmosphere','haboob.png'],
-  ['cloud','Von Kármán Vortices','Winds passing over isolated islands form swirling, street-like vortex chains in cloud patterns downwind, visible from space.','Fluid dynamics','landsat_art_karman.png'],
-  ['cloud','Lenticular UFO Clouds','Stationary lens-shaped clouds form downwind of mountain ridges as moist air moves in waves, often mistaken for flying saucers.','Atmosphere','lenticular-clouds.png'],
-  ['night','Light Pillars in Freezing Air','Vertical pillars of light appear to project upward from ground lights when light reflects off millions of flat hexagonal ice crystals.','Optics','light-pillars.png'],
-  ['night','Lunar Halo 22° Ring','Refraction of moonlight through millions of hexagonal ice crystals in high cirrus clouds creates a bright 22-degree halo.','Optics','lunar-halo.png'],
-  ['clear','Mock Suns and Sundogs','Párhelios or mock suns are bright optical spots appearing on either side of the Sun when light refracts through ice plates.','Optics','mock-suns.png'],
-  ['snow','Penitentes Snow Blades','High in dry alpine regions, direct solar sublimation turns snow into tall, spiky blade-like fields of ice pointing toward the sun.','Meteorology','nieve-penitente.png'],
-  ['snow','Natural Snow Rollers','Rare wind gusts rolling wet snow across frozen ground carve hollow snow donuts or cylinders that look like giant snow rolls.','Meteorology','snow-rolls.png'],
-  ['storm','Squall Line Shelf Clouds','A squall line is a continuous line of severe thunderstorms featuring dramatic, low shelf clouds and violent wind shifts.','Meteorology','squall-line.png'],
-  ['fog','Spectral Fogbows','Fogbows are ghostly white rainbows formed by tiny fog droplets that diffract sunlight, washing out distinct spectral colors.','Optics','strange-bows.png'],
-  ['clear','Solar Halos Predict Rain','Sun halos form as sunlight bends through high-altitude ice crystals, historically signaling an approaching warm front and rain.','Optics','sun-halos.png'],
-  ['rain','Virga: Rain That Never Hits Ground','Streaks of rain or snow falling from clouds evaporate in dry air layers long before touching the surface of the Earth.','Atmosphere','virga.png'],
-  ['storm','Volcanic Lightning','Volcanic plumes generate dramatic electrical storms as colliding ash particles generate massive static charges.','Physics','volcanic-lightning.png'],
-  ['storm','Waterspouts over Open Water','Whirling columns of wind and water mist form over oceans and lakes, spinning like aquatic tornadoes.','Meteorology','waterspouts.gif'],
-  ['storm','The Fujiwhara Cyclone Dance','When two tropical cyclones approach each other, they begin orbiting around a common center before merging or separating.','Meteorology','fujiwhara.gif'],
-  ['hot','Nocturnal Heat Bursts','Collapsing thunderstorms can trigger sudden heat bursts, causing ground temperatures to spike sharply within minutes at night.','Thermodynamics','heat-bursts.gif']
+    // Novos factos (5.º = imagem, 6.º = tradução PT)
+  ['cold','Hair ice grows on dead wood','On cold, humid nights in some forests, thin silky strands of ice sprout from rotting branches. A fungus on the wood shapes them, which is why scientists took almost a century to explain hair ice.','Biology','air-ice.png',['O gelo-cabelo cresce em madeira morta','Em noites frias e húmidas, alguns ramos podres de floresta enchem-se de fios finos e sedosos de gelo. Um fungo na madeira molda-os, e foi por isso que a ciência demorou quase um século a explicá-lo.']],
+  ['clear','Sunbeams are straight','Crepuscular rays look like they fan out, but they are parallel. Perspective makes them seem to spread from the Sun, and dust and moisture in the air make them visible.','Optics','crepuscular-rays.png',['Os raios de sol são retos','Os raios crepusculares parecem abrir-se em leque, mas são paralelos. A perspetiva faz com que pareçam sair do Sol, e a poeira e a humidade do ar tornam-nos visíveis.']],
+  ['storm','It can rain frogs','Waterspouts and strong storm updrafts can lift small animals such as fish and frogs, then drop them far away. It is rare, but it is real.','Meteorology','frog.png',['Pode chover rãs','As trombas-d’água e as correntes ascendentes fortes das tempestades conseguem levantar pequenos animais, como peixes e rãs, e largá-los longe dali. É raro, mas acontece.']],
+  ['fog','A rainbow halo around your shadow','A glory is a ring of colour around the shadow of your head, seen when you look down onto cloud or fog from a height. Droplets scatter the light straight back towards its source.','Optics','glory.png',['Um halo de arco-íris à volta da tua sombra','A glória é um anel de cores à volta da sombra da tua cabeça, visível quando olhas de um sítio alto para nuvens ou nevoeiro. As gotículas devolvem a luz diretamente para a sua origem.']],
+  ['storm','Haboobs are walls of dust','When a thunderstorm collapses, the cold air rushing out can lift dust into a wall hundreds of metres high and many kilometres across. Haboobs are most common in North Africa and the American Southwest.','Atmosphere','haboob.png',['Os haboobs são muralhas de pó','Quando uma trovoada colapsa, o ar frio que sai disparado pode levantar o pó numa muralha com centenas de metros de altura e muitos quilómetros de largura. Os haboobs são mais comuns no Norte de África e no sudoeste dos Estados Unidos.']],
+  ['cloud','Clouds make vortex streets','When wind-driven cloud flows around a tall island, it can peel off into long chains of swirling eddies called von Kármán vortices. Landsat 7 photographed them downwind of Alexander Selkirk Island in 1999.','Fluid dynamics','landsat_art_karman.png',['As nuvens formam ruas de vórtices','Quando as nuvens levadas pelo vento contornam uma ilha alta, podem desfazer-se em longas filas de remoinhos chamados vórtices de von Kármán. O Landsat 7 fotografou-os a sotavento da ilha Alexander Selkirk em 1999.']],
+  ['cloud','Some clouds never move','Lenticular clouds form where stable air is pushed up and over a mountain, creating a standing wave. The cloud stays put while air streams through it, and it has often been mistaken for a flying saucer.','Atmosphere','lenticular-clouds.png',['Algumas nuvens não se movem','As nuvens lenticulares formam-se quando o ar estável é empurrado por cima de uma montanha, criando uma onda estacionária. A nuvem fica no mesmo sítio enquanto o ar passa através dela, e já foi muitas vezes confundida com um disco voador.']],
+  ['cold','Light pillars stand on ice','Flat, hexagonal ice crystals drifting almost horizontally act like stacked mirrors. They stretch any strong light, from the Sun to street lamps, into a vertical column.','Optics','light-pillars.png',['Os pilares de luz assentam no gelo','Cristais de gelo hexagonais e achatados, a cair quase na horizontal, comportam-se como espelhos empilhados. Esticam qualquer luz forte, do Sol aos candeeiros de rua, numa coluna vertical.']],
+  ['night','The Moon wears a ring','A 22° halo is a ring of light caused by ice crystals in thin, high cloud. Its radius spans about 22°, roughly your hand held at arm’s length, and it does not reliably predict rain.','Optics','lunar-halo.png',['A Lua usa um anel','O halo de 22° é um anel de luz causado por cristais de gelo numa nuvem fina e alta. O seu raio mede cerca de 22°, mais ou menos a mão aberta com o braço esticado, e não prevê a chuva de forma fiável.']],
+  ['clear','The Sun can have fake twins','Mock suns, or sundogs, are bright spots on either side of the Sun. They appear when sunlight passes through hexagonal ice plates drifting nearly flat in high cloud.','Optics','mock-suns.png',['O Sol pode ter gémeos falsos','Os parélios, ou falsos sóis, são pontos brilhantes de cada lado do Sol. Aparecem quando a luz solar atravessa placas de gelo hexagonais que flutuam quase na horizontal em nuvens altas.']],
+  ['snow','Ice spikes taller than you','Nieves penitentes are blades of snow and ice, from a few centimetres to several metres tall, that point towards the Sun. Dry, high-altitude air makes the ice sublimate straight to vapour, carving deeper and deeper dimples.','Meteorology','nieve-penitente.png',['Espigões de gelo mais altos do que tu','Os nieves penitentes são lâminas de neve e gelo, de poucos centímetros a vários metros de altura, que apontam para o Sol. O ar seco de altitude faz o gelo sublimar diretamente em vapor, escavando covas cada vez mais fundas.']],
+  ['snow','Snow can roll itself up','Snow rollers are little doughnut-like cylinders of snow, shaped by wind rolling sticky snow across a surface it will not cling to. They need just the right mix of moisture, wind and temperature.','Meteorology','snow-rolls.png',['A neve consegue enrolar-se sozinha','Os rolos de neve são pequenos cilindros em forma de donut, moldados pelo vento ao fazer rolar neve pegajosa sobre uma superfície a que ela não se agarra. Precisam de uma mistura certa de humidade, vento e temperatura.']],
+  ['storm','Storms can line up for hundreds of kilometres','A squall line is a long row of thunderstorms, often pushed along by a cold front. Its outflow keeps triggering new storms, bringing strong straight-line winds, rain and hail.','Meteorology','squall-line.png',['As tempestades podem alinhar-se por centenas de quilómetros','Uma linha de borrasca é uma longa fila de trovoadas, muitas vezes empurrada por uma frente fria. O ar que sai dela vai desencadeando novas tempestades, com ventos fortes em linha reta, chuva e granizo.']],
+  ['fog','Rainbows can be white','A fogbow forms like a rainbow, but fog droplets are so tiny that they spread the colours out and wash them away. The result is a pale, ghostly arch.','Optics','strange-bows.png',['Os arco-íris podem ser brancos','Um arco de nevoeiro forma-se como um arco-íris, mas as gotículas do nevoeiro são tão pequenas que espalham as cores e as esbatem. O resultado é um arco pálido e fantasmagórico.']],
+  ['clear','A halo around the Sun','The Sun can have a halo too, made by the same ice crystals as the lunar one. Red sits on the inner edge, but never look straight at the Sun to see it.','Optics','sun-halos.png',['Um halo à volta do Sol','O Sol também pode ter halo, criado pelos mesmos cristais de gelo do halo lunar. O vermelho fica no bordo interior, mas nunca olhes diretamente para o Sol para o ver.']],
+  ['rain','Rain that never lands','Virga is rain or snow that evaporates in dry air before it reaches the ground. It looks like feathery streaks hanging under a cloud, and the evaporation chills the air around it.','Atmosphere','virga.png',['Chuva que nunca aterra','A virga é chuva ou neve que se evapora no ar seco antes de chegar ao chão. Parece fios plumosos pendurados sob uma nuvem, e a evaporação arrefece o ar à volta.']],
+  ['storm','Volcanoes make lightning','Colliding ash and rock fragments in an eruption plume build up static charge, so lightning flashes through the ash cloud. The heat can melt ash into tiny glass spheres.','Physics','volcanic-lightning.png',['Os vulcões fazem relâmpagos','Fragmentos de cinza e rocha a chocar numa nuvem eruptiva acumulam carga estática, e os relâmpagos disparam através da nuvem de cinza. O calor pode fundir a cinza em minúsculas esferas de vidro.']],
+  ['storm','Tornadoes over water','A waterspout is a rotating column of air over water. Fair-weather ones are usually weak and short-lived, rarely lasting beyond 20 minutes.','Meteorology','waterspouts.png',['Tornados sobre a água','Uma tromba-d’água é uma coluna de ar em rotação sobre a água. As de bom tempo costumam ser fracas e de curta duração, raramente passando dos 20 minutos.']],
+  ['storm','Hurricanes can dance','When two hurricanes spinning the same way pass close, they orbit a shared centre in the Fujiwhara effect. A much weaker storm can be swallowed, while similar ones may merge into one big storm.','Meteorology','fujiwhara.gif',['Os furacões podem dançar','Quando dois furacões que rodam no mesmo sentido passam perto, orbitam um centro comum, no efeito Fujiwhara. Uma tempestade muito mais fraca pode ser engolida, e duas parecidas podem fundir-se numa só.']],
+  ['hot','Night air can suddenly heat up','A heat burst happens when rain from a dying thunderstorm evaporates completely in hot, dry air. The dense air sinks and warms by compression, so temperatures can jump by many degrees within minutes and gusts can be strong.','Thermodynamics','heat-bursts.gif',['O ar da noite pode aquecer de repente','Uma explosão de calor acontece quando a chuva de uma trovoada em dissipação se evapora por completo em ar quente e seco. O ar denso desce e aquece por compressão, por isso a temperatura pode subir muitos graus em minutos e as rajadas podem ser fortes.']],
+
+  // Sem imagem
+  ['cold','The coldest air ever measured','The lowest officially recorded temperature on Earth is −89.2 °C, measured at Vostok Station in Antarctica in July 1983.','Climate',null,['O ar mais frio alguma vez medido','A temperatura mais baixa oficialmente registada na Terra é de −89,2 °C, medida na estação Vostok, na Antártida, em julho de 1983.']],
+  ['storm','Fire can make tornadoes','Big wildfires can spin up fire whirls, rotating columns of flame and hot air. They can be about 30 m tall, with winds that can reach about 240 km/h.','Meteorology',null,['O fogo também faz tornados','Grandes incêndios podem gerar remoinhos de fogo, colunas rotativas de chamas e ar quente. Podem ter cerca de 30 m de altura, com ventos que chegam a cerca de 240 km/h.']],
+  ['clear','The driest place on Earth is cold','The McMurdo Dry Valleys in Antarctica get only about 2 mm of precipitation a year. It is one of the most Mars-like places on our planet.','Climate',null,['O sítio mais seco da Terra é frio','Os Vales Secos de McMurdo, na Antártida, recebem apenas cerca de 2 mm de precipitação por ano. É um dos lugares mais parecidos com Marte no nosso planeta.']],
+  ['storm','The longest lightning flash','A single lightning flash in April 2020 stretched about 768 km across the southern United States, the longest ever verified. That is roughly the distance from New York to Columbus, Ohio.','Meteorology',null,['O relâmpago mais comprido','Um único relâmpago em abril de 2020 estendeu-se por cerca de 768 km no sul dos Estados Unidos, o mais longo alguma vez verificado. É mais ou menos a distância de Nova Iorque a Columbus, no Ohio.']],
+  ['rain','Diamond rain may fall on Saturn','Scientists think extreme pressure and heat deep in the atmospheres of Saturn and Jupiter could crush carbon from methane into diamonds that rain downward.','Planetary science',null,['Pode chover diamantes em Saturno','Os cientistas pensam que a pressão e o calor extremos nas profundezas das atmosferas de Saturno e Júpiter podem esmagar o carbono do metano em diamantes que caem como chuva.']]
 ];
 
 
@@ -569,11 +580,16 @@ const QZ = [
   ['You lose most of your body heat through your head.',0,'Myth. The head is about 7–10% of body surface, so it loses roughly that share of heat.'],
   ['A cloud is made of water vapour.',0,'Myth. Vapour is invisible. Clouds are tiny liquid droplets or ice crystals that formed from it.'],
   ['Dew forms when surfaces cool below the air’s dew point.',1,'Fact. Air at that temperature can no longer hold its vapour, so it condenses on the cold surface.'],
-  // Novas perguntas para o Verdadeiro ou Falso
-  ['Tornado winds can exceed 400 km/h.',1,'Fact. Violent tornadoes reach wind speeds above 400 km/h, capable of ripping structure foundations apart.'],
-  ['Volcanic eruptions can trigger their own lightning storms.',1,'Fact. Friction between colliding ash particles inside the plume generates massive static electricity.'],
-  ['Virga rain clouds are invisible to weather radars.',0,'Myth. Radars detect precipitation streaks of virga even when they evaporate before reaching the ground.'],
-  ['The Fujiwhara effect makes two close hurricanes dance around each other.',1,'Fact. When two cyclones come within close range, they orbit around a shared central point like binary stars.']
+    // Novas perguntas (4.º elemento = tradução PT)
+  ['The strongest tornado winds ever measured topped 450 km/h.',1,'Fact. A mobile Doppler radar clocked about 480 km/h in an Oklahoma tornado in 1999.',['Os ventos de tornado mais fortes alguma vez medidos ultrapassaram os 450 km/h.','Facto. Um radar Doppler móvel registou cerca de 480 km/h num tornado do Oklahoma em 1999.']],
+  ['Volcanic eruptions can produce their own lightning.',1,'Fact. Colliding ash and rock fragments in the plume build up static charge.',['As erupções vulcânicas podem produzir os seus próprios relâmpagos.','Facto. Fragmentos de cinza e rocha a chocar na nuvem acumulam carga estática.']],
+  ['Virga is invisible to weather radar.',0,'Myth. Radar sees the falling streaks like any shower, even though nothing reaches the ground.',['A virga é invisível para o radar meteorológico.','Mito. O radar vê as cortinas de precipitação como um aguaceiro qualquer, mesmo que nada chegue ao chão.']],
+  ['Two close hurricanes can orbit each other.',1,'Fact. This is the Fujiwhara effect: they circle a shared centre and may merge.',['Dois furacões próximos podem orbitar um ao outro.','Facto. É o efeito Fujiwhara: giram em torno de um centro comum e podem fundir-se.']],
+  ['A ring around the Moon means rain is on the way.',0,'Myth. Halos come from high ice cloud, which often precedes rain but does not guarantee it.',['Um anel à volta da Lua quer dizer que vem chuva.','Mito. Os halos vêm de nuvens altas de gelo, que muitas vezes antecedem a chuva mas não a garantem.']],
+  ['Hair ice is made by a fungus.',1,'Fact. A fungus on dead wood shapes the ice into fine strands.',['O gelo-cabelo é feito por um fungo.','Facto. Um fungo na madeira morta molda o gelo em fios finos.']],
+  ['It can really rain frogs.',1,'Fact. Waterspouts and strong updrafts can lift small animals and drop them elsewhere.',['Pode mesmo chover rãs.','Facto. As trombas-d’água e as correntes ascendentes fortes conseguem levantar pequenos animais e largá-los noutro sítio.']],
+  ['The driest place on Earth is a hot desert.',0,'Myth. The McMurdo Dry Valleys in Antarctica get only about 2 mm of precipitation a year.',['O sítio mais seco da Terra é um deserto quente.','Mito. Os Vales Secos de McMurdo, na Antártida, recebem só cerca de 2 mm de precipitação por ano.']],
+  ['A big cumulonimbus can weigh millions of tonnes.',1,'Fact. The water it holds as droplets and ice adds up to a huge mass, held aloft by updrafts.',['Um grande cumulonimbo pode pesar milhões de toneladas.','Facto. A água que contém em gotículas e gelo soma uma massa enorme, mantida no ar pelas correntes ascendentes.']]
 ];
 let qi=lsGet('qi')||0,score=lsGet('score')||[0,0],sciMode='fact',factI=0;
 
@@ -671,70 +687,46 @@ const PT={
  /* cartão de chuva */
  'Dismiss':'Fechar','Next 60 min':'Próximos 60 min'
 };
-const FACTS_PT = [
-  // (mantenha os 19 factos PT originais...)
-  ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos...'],
-  ['Os pores do sol são vermelhos por uma razão','Ao pôr do sol, a luz atravessa muito mais atmosfera...'],
-  ['A luz do Sol tem 8 minutos','A luz do Sol demora cerca de 8 minutos e 20 segundos a chegar à Terra...'],
-  ['A luz das estrelas é notícia velha','A luz da Lua demora cerca de 1,3 segundos a chegar até ti...'],
-  ['Porque é que as estrelas cintilam','O ar turbulento desvia a luz das estrelas na descida...'],
-  ['A Lua está a afastar-se','Afasta-se cerca de 3,8 cm da Terra por ano...'],
-  ['Uma nuvem é pesada','Um cúmulo típico de bom tempo contém cerca de 500 toneladas de água...'],
-  ['Porque é que as nuvens parecem brancas','As gotículas de água dispersam todos os comprimentos de onda visíveis...'],
-  ['As gotas de chuva não têm forma de lágrima','As gotas pequenas são quase esféricas...'],
-  ['O cheiro da chuva','O petricor vem dos óleos libertados pelas plantas...'],
-  ['As gotas de chuva caem depressa','Uma gota grande atinge cerca de 9 m/s...'],
-  ['A neve é branca, o gelo é azul','Os cristais de gelo dispersam todas as cores por igual...'],
-  ['Não há dois flocos de neve iguais','Cada cristal segue um caminho ligeiramente diferente...'],
-  ['O relâmpago é mais quente do que o Sol','Um canal de relâmpago atinge brevemente cerca de 30 000 °C...'],
-  ['Conta até ao trovão','O som percorre cerca de 1 km em 3 segundos...'],
-  ['O nevoeiro é uma nuvem ao nível do chão','Forma-se como qualquer nuvem: o ar arrefece até ao ponto de orvalho...'],
-  ['O calor húmido custa mais do que o calor seco','À mesma temperatura, a humidade elevada atrasa a evaporação do suor...'],
-  ['Porque é que o ar frio parece seco','O ar frio comporta muito menos vapor de água...'],
-  ['As nuvens não bloqueiam todos os UV','Até 80% dos raios UV atravessam uma cobertura de nuvens ligeira...'],
-
-  // Traduções para os factos com imagem
-  ['Bolhas de gelo presas em lagos congelados','O gás metano produzido pela decomposição é retido sob o gelo dos lagos, formando pilares verticais de bolhas.'],
-  ['Raios crepusculares','A luz solar ao passar por aberturas nas nuvens cria feixes de luz dramáticos que parecem convergir devido à perspetiva.'],
-  ['Chuva de sapos e peixes','Trombas d\'água intensas podem aspirar pequenos anfíbios e peixes, transportando-os por quilómetros antes de os precipitar.'],
-  ['A Glória à volta de sombras','A Glória é um halo ótico produzido quando a luz do sol se dispersa em gotículas de nuvens à volta da sombra do observador.'],
-  ['Tempestades de poeira Haboob','Fortes correntes descendentes de trovoadas criam haboobs—paredes gigantescas de areia e poeira com centenas de metros.'],
-  ['Vórtices de Von Kármán','O vento ao passar por ilhas altas forma padrões em espiral nas nuvens visíveis a partir do espaço.'],
-  ['Nuvens lenticulares em forma de OVNI','Nuvens estacionárias em forma de lente formam-se no topo das montanhas, muitas vezes confundidas com discos voadores.'],
-  ['Pilares de luz no ar congelado','Colunas verticais de luz parecem erguer-se no céu quando a luz reflete em milhões de cristais de gelo hexagonais.'],
-  ['Halo Lunar de 22°','A refração da luz da Lua em cristais de gelo de nuvens cirro cria um anel brilhante de 22 graus.'],
-  ['Párhelios ou Falsos Sóis','Os párhelios são pontos luminosos que aparecem em ambos os lados do Sol devido à refração em cristais de gelo.'],
-  ['Penitentes de neve nas alturas','Em regiões alpinas secas, a sublimação direta da neve cria campos de agulhas de gelo afiadas apontando para o Sol.'],
-  ['Rolos naturais de neve','Raios de vento a rolar neve húmida em solo congelado escavam rolos e rosquinhas de neve impressionantes.'],
-  ['Nuvens de prateleira em linhas de instabilidade','Uma linha de instabilidade de trovoadas apresenta nuvens de prateleira dramáticas e ventos violentos.'],
-  ['Arcos de nevoeiro espetrais','Os arcos de nevoeiro são arcos-íris brancos fantasmagóricos formados por gotículas tão pequenas que esbatem as cores.'],
-  ['Halos solares preveem chuva','Os halos solares formam-se quando a luz atravessa cristais de gelo no alto da atmosfera, sinalizando chuva próxima.'],
-  ['Virga: a chuva que não toca no chão','A precipitação que cai de nuvens altas evapora-se no ar seco antes de conseguir chegar à superfície.'],
-  ['Relâmpagos vulcânicos','Nuvens vulcânicas geram trovoadas elétricas impressionantes devido ao atrito constante entre partículas de cinza.'],
-  ['Trombas d\'água no mar','Colunas giratórias de vento e névoa formam-se sobre o mar ou lagos, girando como tornados aquáticos.'],
-  ['A dança ciclónica de Fujiwhara','Quando dois ciclones tropicais se aproximam, orbitam em redor de um centro comum antes de se fundirem ou afastarem.'],
-  ['Explosões noturnas de calor','Trovoadas em colapso podem libertar explosões de calor, fazendo a temperatura no solo subir subitamente em poucos minutos.']
+const FACTS_PT=[
+ ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos (dispersão de Rayleigh). O violeta dispersa-se ainda mais, mas o Sol emite menos dele e os nossos olhos respondem-lhe pouco, por isso vemos azul.'],
+ ['Os pores do sol são vermelhos por uma razão','Ao pôr do sol, a luz atravessa muito mais atmosfera. A maior parte do azul é dispersada para fora do feixe pelo caminho, deixando os vermelhos e laranjas chegarem aos teus olhos.'],
+ ['A luz do Sol tem 8 minutos','A luz do Sol demora cerca de 8 minutos e 20 segundos a chegar à Terra, por isso vês sempre o Sol como ele era há pouco tempo.'],
+ ['A luz das estrelas é notícia velha','A luz da Lua demora cerca de 1,3 segundos a chegar até ti. A da estrela mais próxima, além do Sol, demora mais de quatro anos, por isso estás a ver o passado.'],
+ ['Porque é que as estrelas cintilam','O ar turbulento desvia a luz das estrelas na descida, fazendo o ponto de luz tremeluzir. Os planetas cintilam menos porque são pequenos discos, não pontos.'],
+ ['A Lua está a afastar-se','Afasta-se cerca de 3,8 cm da Terra por ano, mais ou menos à velocidade a que crescem as unhas.'],
+ ['Uma nuvem é pesada','Um cúmulo típico de bom tempo contém cerca de 500 toneladas de água, sustentadas por ar ascendente e por gotículas tão pequenas que caem muito lentamente.'],
+ ['Porque é que as nuvens parecem brancas','As gotículas de água dispersam todos os comprimentos de onda visíveis de forma quase igual, por isso a luz solar continua branca. As nuvens espessas parecem cinzentas porque pouca luz atravessa a base.'],
+ ['As gotas de chuva não têm forma de lágrima','As gotas pequenas são quase esféricas. As maiores achatam-se numa forma de pão de hambúrguer à medida que o ar as empurra por baixo.'],
+ ['O cheiro da chuva','O petricor vem dos óleos libertados pelas plantas e da geosmina, um composto produzido por bactérias do solo. As gotas, ao bater no chão seco, lançam-no para o ar.'],
+ ['As gotas de chuva caem depressa','Uma gota grande atinge cerca de 9 m/s, aproximadamente 30 km/h. O chuvisco desce a menos de 1 m/s.'],
+ ['A neve é branca, o gelo é azul','Os cristais de gelo dispersam todas as cores por igual, por isso a neve parece branca. O gelo espesso e transparente absorve um pouco de luz vermelha e mostra um azul ténue.'],
+ ['Não há dois flocos de neve iguais','Cada cristal segue um caminho ligeiramente diferente de temperatura e humidade na queda, o que lhe dá uma forma única.'],
+ ['O relâmpago é mais quente do que o Sol','Um canal de relâmpago atinge brevemente cerca de 30 000 °C, aproximadamente cinco vezes mais do que a superfície do Sol. O ar explode para fora: isso é o trovão.'],
+ ['Conta até ao trovão','O som percorre cerca de 1 km em 3 segundos. Conta os segundos entre o clarão e o estrondo, divide por três e tens a distância em quilómetros.'],
+ ['O nevoeiro é uma nuvem ao nível do chão','Forma-se como qualquer nuvem: o ar arrefece até ao ponto de orvalho e o vapor de água condensa-se em partículas minúsculas.'],
+ ['O calor húmido custa mais do que o calor seco','À mesma temperatura, a humidade elevada atrasa a evaporação do suor, e o corpo não consegue libertar calor com tanta eficiência.'],
+ ['Porque é que o ar frio parece seco','O ar frio comporta muito menos vapor de água. Se o aqueceres dentro de casa sem lhe juntar humidade, a humidade relativa desce bastante.'],
+ ['As nuvens não bloqueiam todos os UV','Até 80% dos raios UV atravessam uma cobertura de nuvens ligeira, por isso dias nublados também podem queimar a pele.']
 ];
 
-const QZ_PT = [
-  // (mantenha os 8 originais...)
-  ['O raio nunca cai duas vezes no mesmo sítio.','Mito. O Empire State Building é atingido cerca de 20 vezes por ano...'],
-  ['As gotas de chuva caem em forma de lágrima.','Mito. As gotas pequenas são esferas; as grandes achatam-se...'],
-  ['Os flocos de neve têm seis braços por causa da estrutura hexagonal do gelo.','Facto. As moléculas de água encaixam numa rede hexagonal...'],
-  ['A Terra está mais perto do Sol durante o verão no Hemisfério Norte.','Mito. A Terra está mais perto no início de janeiro...'],
-  ['O trovão é o som do ar a expandir-se violentamente à volta de um relâmpago.','Facto. O canal aquece a cerca de 30 000 °C...'],
-  ['Perdes a maior parte do calor do corpo pela cabeça.','Mito. A cabeça é cerca de 7–10% da superfície do corpo...'],
-  ['Uma nuvem é feita de vapor de água.','Mito. O vapor é invisível. As nuvens são gotículas líquidas minúsculas...'],
-  ['O orvalho forma-se quando as superfícies arrefecem abaixo do ponto de orvalho do ar.','Facto. A essa temperatura o ar já não consegue reter o vapor...'],
-  // Traduções das novas perguntas
-  ['Os ventos num tornado podem ultrapassar os 400 km/h.','Facto. Os tornados mais violentos atingem velocidades acima dos 400 km/h, capazes de arrancar fundações.'],
-  ['Erupções vulcânicas podem gerar as suas próprias trovoadas de relâmpagos.','Facto. O atrito entre partículas de cinza na nuvem vulcânica gera eletricidade estática massiva.'],
-  ['A chuva virga é invisível para os radares meteorológicos.','Mito. Os radares detetam as cortinas de precipitação virga mesmo que se evaporem antes de chegar ao solo.'],
-  ['O efeito Fujiwhara faz dois furacões próximos orbitarem um à volta do outro.','Facto. Quando dois ciclones se aproximam, orbitam em redor de um ponto central comum como estrelas binárias.']
+const QZ_PT=[
+ ['O raio nunca cai duas vezes no mesmo sítio.','Mito. O Empire State Building é atingido cerca de 20 vezes por ano. Objetos altos, pontiagudos e condutores são alvos repetidos.'],
+ ['As gotas de chuva caem em forma de lágrima.','Mito. As gotas pequenas são esferas; as grandes achatam-se como um pão à medida que o ar as empurra por baixo.'],
+ ['Os flocos de neve têm seis braços por causa da estrutura hexagonal do gelo.','Facto. As moléculas de água encaixam numa rede hexagonal, por isso os cristais de neve clássicos têm simetria de ordem seis.'],
+ ['A Terra está mais perto do Sol durante o verão no Hemisfério Norte.','Mito. A Terra está mais perto no início de janeiro. As estações vêm da inclinação do eixo de 23,4°, não da distância.'],
+ ['O trovão é o som do ar a expandir-se violentamente à volta de um relâmpago.','Facto. O canal aquece a cerca de 30 000 °C em microssegundos e o ar rebenta para fora como uma onda de choque.'],
+ ['Perdes a maior parte do calor do corpo pela cabeça.','Mito. A cabeça é cerca de 7–10% da superfície do corpo, por isso perde aproximadamente essa parte do calor.'],
+ ['Uma nuvem é feita de vapor de água.','Mito. O vapor é invisível. As nuvens são gotículas líquidas minúsculas ou cristais de gelo que se formaram a partir dele.'],
+ ['O orvalho forma-se quando as superfícies arrefecem abaixo do ponto de orvalho do ar.','Facto. A essa temperatura o ar já não consegue reter o vapor, que se condensa na superfície fria.']
 ];
+
 const firstS=s=>s.split('. ')[0].replace(/\.$/,'')+'.';          // o ticker mostra só a 1.ª frase do facto
-FACTS.forEach((f,i)=>{const p=FACTS_PT[i];if(p){PT[f[1]]=p[0];PT[f[2]]=p[1];PT[firstS(f[2])]=firstS(p[1])}});
-QZ.forEach((z,i)=>{const p=QZ_PT[i];if(p){PT[z[0]]=p[0];PT[z[2]]=p[1]}});
+FACTS.forEach((f,i)=>{const p=f[5]||FACTS_PT[i];if(p){PT[f[1]]=p[0];PT[f[2]]=p[1];PT[firstS(f[2])]=firstS(p[1])}});
+QZ.forEach((z,i)=>{const p=z[3]||QZ_PT[i];if(p){PT[z[0]]=p[0];PT[z[2]]=p[1]}});
+Object.assign(PT,{'Biology':'Biologia','Climate':'Clima','Planetary science':'Ciência planetária',
+ 'Precipitation forecast for the next 2 hours':'Previsão de precipitação para as próximas 2 horas',
+ 'Rain for the next 2 hours':'Chuva nas próximas 2 horas','Light rain expected':'Chuva fraca prevista',
+ 'Moderate rain expected':'Chuva moderada prevista','Heavy rain expected':'Chuva forte prevista'});
 const LOW={};Object.values(LABEL).forEach(en=>{if(PT[en])LOW[en.toLowerCase()]=PT[en].toLowerCase()});
 const TW={Freezing:'Gelado',Cold:'Frio',Cool:'Fresco',Mild:'Ameno',Warm:'Quente',Hot:'Muito quente'};
 const WW={'calm':'calmo','a light breeze':'com brisa ligeira','breezy':'com vento moderado','windy':'ventoso','gusty':'com rajadas'};
@@ -785,6 +777,7 @@ const PT_RX=[
   (m,l,p,t)=>`Risco de pólen ${(UVL[l]||l).toLowerCase()} em ${p}${t?', sobretudo de '+polN(t).toLowerCase():''}. Mantém as janelas fechadas se fores alérgico.`],
  [/^It is raining at (.+)\.$/,'Está a chover em $1.'],
  [/^Rain expected at (.+) in about (\d+) min\.$/,'Chuva prevista em $1 dentro de cerca de $2 min.']
+ [/^Rain stops in about (\d+) min$/,'A chuva pára dentro de cerca de $1 min'],
 ];
 function trStr(s){
  if(LANG!='pt'||!/[A-Za-z]/.test(s))return s;
@@ -842,9 +835,7 @@ function paintLang(swap){
 function setLang(l){
  if(l==LANG)return;
  LANG=l;lsSet('lang',l);document.documentElement.lang=l;
- if(!lsGet('unitManual')){
-   setUnit(l=='pt'?'c':'f', false, false);
- }
+ if(!lsGet('unitPick'))setUnit(l=='pt'?'c':'f',false,true);   // segue o idioma, salvo escolha manual
  trTree(document.body);paintLang(true);
  if(data)render();else if(!place&&$('#hero')&&$('#hero').classList.contains('land'))landing();
 }
@@ -950,9 +941,14 @@ function nowcastHTML(){
   const i0=idx0(),r=Math.max(...data.hourly.precipitation_probability.slice(i0,i0+3));
   return`<div class="ncbox">${ic('drop')}<span>${r}% rain chance in the next 3 hours</span></div>`;
  }
- const first=p.findIndex(x=>x>=.05),mx=Math.max(...p,.5);
- const head=first<0?'Dry for the next 2 hours':first==0?'Raining now':`Rain in about ${first*15} min`;
- return`<div class="ncbox" title="Precipitation forecast for the next 2 hours"><div class="nb">${p.map((x,i)=>`<i style="height:${Math.max(14,x/mx*100)}%;animation-delay:${i*60}ms;background:${x>=.05?'#3b8fe0':'rgba(255,255,255,.6)'}"></i>`).join('')}</div><span><b>${head}</b></span></div>`;
+ const wet=x=>x>=.05,first=p.findIndex(wet),mx=Math.max(...p,.5),pk=Math.max(...p)*4;   // pico em mm/h
+ const col=x=>!wet(x)?'rgba(255,255,255,.6)':x*4<.5?'#7fc1ff':x*4<4?'#3b8fe0':'#1d5fc4';
+ const i0=idx0(),r3=Math.max(...data.hourly.precipitation_probability.slice(i0,i0+3));
+ let head,sub;
+ if(first<0){head='Dry for the next 2 hours';sub=`${r3}% rain chance in the next 3 hours`}
+ else if(first==0){const end=p.findIndex(x=>!wet(x));head='Raining now';sub=end<0?'Rain for the next 2 hours':`Rain stops in about ${end*15} min`}
+ else{head=`Rain in about ${first*15} min`;sub=pk<.5?'Light rain expected':pk<4?'Moderate rain expected':'Heavy rain expected'}
+ return`<div class="ncbox" title="Precipitation forecast for the next 2 hours"><div class="nb">${p.map((x,i)=>`<i class="${wet(x)?'w':''}" style="height:${Math.max(14,x/mx*100)}%;animation-delay:${i*60}ms;background:${col(x)}"></i>`).join('')}</div><div class="nct"><b>${head}</b><small>${sub}</small></div></div>`;
 }
 function heroHTML(){
  const c=data.current,d=data.daily;
@@ -1262,7 +1258,7 @@ function sciBody() {
     return `<p class="qs">${z[0]}</p><div class="qb"><button class="pill dk" data-a="0">Myth</button><button class="pill dk" data-a="1">Fact</button></div><p class="qr" aria-live="polite"></p><div class="sc" id="sc">${score[0]} right of ${score[1]}</div>`;
   }
   const pool = factPool(), f = pool[((factI % pool.length) + pool.length) % pool.length];
-  const imgHTML = f[4] ? `<img class="fimg" src="${f[4]}" alt="${f[1]}" loading="lazy">` : '';
+  const imgHTML = f[4] ? `<img class="fimg" src="${IMG_BASE}${f[4]}" alt="${tr(f[1]).replace(/"/g,'&quot;')}" loading="lazy" decoding="async" onload="this.classList.add('ok')" onerror="this.remove()">` : '';
   return `<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2>${imgHTML}<p class="fp">${f[2]}</p><div class="fnav"><button class="pill dk" data-f="-1">Previous</button><button class="pill dk" data-f="1">Another</button></div>`;
 }
 function sciPane(){
@@ -1619,7 +1615,7 @@ main.addEventListener('click',e=>{
 });
 $('#loc').onclick=locate;$('#sur').onclick=surprise;
 function setUnit(u,manual,skipRender){
- unit=u;lsSet('unit',u);if(manual)lsSet('unitManual',1);
+ unit=u;if(manual)lsSet('unitPick',u);
  $$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.u==unit));
  if(data&&!skipRender)render();
 }
@@ -1657,7 +1653,6 @@ const ALERTS=[
  ['heat',d=>d.current.temperature_2m>=35,d=>['Extreme heat',`${T(d.current.temperature_2m)}° at ${place.name}. Drink water and avoid the midday sun.`]],
  ['cold',d=>d.current.temperature_2m<=-10,d=>['Extreme cold',`${T(d.current.temperature_2m)}° at ${place.name}. Limit time outside and cover exposed skin.`]],
  ['uv',d=>d.current.is_day&&d.daily.uv_index_max[0]>=9,d=>['Very high UV',`UV index ${Math.round(d.daily.uv_index_max[0])} today in ${place.name}. Use sunscreen and seek shade.`]],
- ['rain60',d=>!!rain60(d),d=>{const r=rain60(d);return['Rain in the next hour',r.mins<=0?`It is raining at ${place.name}.`:`Rain expected at ${place.name} in about ${r.mins} min.`]}],
  ['rainsoon',d=>{
    const h=d.hourly,i=idx0();
    return h.precipitation_probability[i]<40&&h.precipitation_probability.slice(i+1,i+5).some(p=>p>=70);
@@ -1695,72 +1690,35 @@ addEventListener('keydown',askNotif,{once:true});
 const RADAR_KINDS=[['nasa','Rain'],['wind','Wind'],['cloud','Clouds'],['sat','Satellite']];
 const OWM_KINDS={wind:{layer:'wind_new',note:'Wind speed · OpenWeatherMap · updated regularly',lo:'Calm',hi:'Storm',grad:'linear-gradient(90deg,#cfe6f5,#aacbe6,#b364bc,#7a4cac,#46009f)'}};
 let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='nasa',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
+let radarKT=0;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-let windMarkers = [];
-
-function clearWindMarkers(){
-  windMarkers.forEach(m=>{ try{ radarMap.removeLayer(m); }catch(e){} });
-  windMarkers = [];
-}
-
+let windMarkers=[],windTok=0,windT=0;
+function clearWindMarkers(){windMarkers.forEach(m=>{try{m.remove()}catch(e){}});windMarkers=[]}
+const windColor=k=>k<15?'#ffffff':k<30?'#ffe08a':k<50?'#ffb347':'#ff6b5e';
 async function updateWindVectors(){
-  if(!radarMap || radarKind !== 'wind') {
+  const tok=++windTok;
+  if(!radarMap||radarKind!=='wind'){clearWindMarkers();return}
+  const b=radarMap.getBounds(),s=Math.max(-80,b.getSouth()),n=Math.min(80,b.getNorth()),w=b.getWest(),e=b.getEast();
+  const rows=5,cols=6,pts=[];
+  for(let r=1;r<=rows;r++)for(let c=1;c<=cols;c++)pts.push([+(s+r*(n-s)/(rows+1)).toFixed(3),+(w+c*(e-w)/(cols+1)).toFixed(3)]);
+  const wrap=x=>((x+540)%360)-180;
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${pts.map(p=>p[0]).join(',')}&longitude=${pts.map(p=>wrap(p[1]).toFixed(3)).join(',')}&current=wind_speed_10m,wind_direction_10m`;
+    const res=await fetch(url);if(!res.ok)return;
+    const j=await res.json();
+    if(tok!==windTok||radarKind!=='wind'||!radarMap)return;      // trocou de camada ou mexeu no mapa entretanto
     clearWindMarkers();
-    return;
-  }
-  clearWindMarkers();
-
-  const bounds = radarMap.getBounds();
-  const s = bounds.getSouth(), n = bounds.getNorth();
-  const w = bounds.getWest(), e = bounds.getEast();
-
-  // Cria uma grelha de 5x5 pontos sobre a área visível do mapa
-  const lats = [], lons = [];
-  const rows = 5, cols = 5;
-  const latStep = (n - s) / (rows + 1);
-  const lonStep = (e - w) / (cols + 1);
-
-  for(let r = 1; r <= rows; r++){
-    for(let c = 1; c <= cols; c++){
-      lats.push(+(s + r * latStep).toFixed(3));
-      lons.push(+(w + c * lonStep).toFixed(3));
-    }
-  }
-
-  try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=wind_speed_10m,wind_direction_10m`;
-    const res = await fetch(url);
-    if(!res.ok) return;
-    const j = await res.json();
-    const dataArr = Array.isArray(j) ? j : [j];
-
-    dataArr.forEach((item, idx) => {
-      if(!item.current) return;
-      const deg = item.current.wind_direction_10m || 0;
-      const spd = item.current.wind_speed_10m || 0;
-      const lat = lats[idx], lon = lons[idx];
-
-      // Conversão Azimutal para direção do fluxo: (graus + 180) % 360
-      const flowDeg = (deg + 180) % 360;
-
-      const arrowSvg = `<svg viewBox="0 0 24 24" style="width:20px;height:20px;transform:rotate(${flowDeg}deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));">
-        <path d="M12 2L18 20L12 16L6 20L12 2Z" fill="#ffffff" stroke="#1d5f8c" stroke-width="1.8" stroke-linejoin="round"/>
-      </svg>`;
-
-      const icon = L.divIcon({
-        className: 'wind-arrow-icon',
-        html: `<div class="wind-arrow-box">${arrowSvg}<span>${W(spd)}</span></div>`,
-        iconSize: [30, 36],
-        iconAnchor: [15, 18]
-      });
-
-      const marker = L.marker([lat, lon], {icon, interactive: false, pane: 'radar'});
-      marker.addTo(radarMap);
-      windMarkers.push(marker);
+    (Array.isArray(j)?j:[j]).forEach((it,i)=>{
+      if(!it.current||!pts[i])return;
+      const from=it.current.wind_direction_10m||0,spd=it.current.wind_speed_10m||0;
+      const flow=(from+180)%360;                                  // vem de 0° (Norte) → move-se para Sul
+      const sz=Math.round(Math.min(34,16+spd*.45));
+      const icon=L.divIcon({className:'wind-arrow-icon',iconSize:[sz+16,sz+16],iconAnchor:[(sz+16)/2,(sz+16)/2],
+        html:`<div class="wind-arrow-box"><div class="wa" style="width:${sz}px;height:${sz}px;transform:rotate(${flow}deg)"><svg viewBox="0 0 24 24" style="animation-delay:-${(i*.37)%2.2}s"><path d="M12 2L18 20L12 16L6 20Z" fill="${windColor(spd)}" stroke="#1d5f8c" stroke-width="1.6" stroke-linejoin="round"/></svg></div><span>${W(spd)}</span></div>`});
+      const m=L.marker(pts[i],{icon,interactive:false,keyboard:false,pane:'radar'}).addTo(radarMap);
+      windMarkers.push(m);
     });
-  } catch(err) {
-    console.warn('[Wind vectors]', err);
-  }
+  }catch(err){console.warn('[Wind vectors]',err)}
 }
 
 /* ---- tile cache: every tile is downloaded once per session ---- */
@@ -1833,6 +1791,7 @@ function radarPane(){
 }
 function clearRadarLayers(){
   if(!radarMap)return;
+  windTok++;   // cancela pedidos de vento a meio
   clearWindMarkers();
   radarMap.eachLayer(l=>{
     if(l.options && (l.options.pane === 'radar' || (l.options.className && l.options.className.includes('rlayer')))){
@@ -1928,9 +1887,7 @@ async function radarInit(){
  $('#rsl').oninput=e=>{radarPlay=false;radarBtn();clearTimeout(radarTimer);radarShow(+e.target.value)};
  radarBtn();
  radarLoadKind(radarKind);
- radarMap.on('moveend', () => {
-  if(radarKind === 'wind') updateWindVectors();
-});
+ radarMap.on('moveend',()=>{if(radarKind!=='wind')return;clearTimeout(windT);windT=setTimeout(updateWindVectors,350)});
 }
 /* NASA IMERG: find the newest available times, then build an animation */
 const nasaISO=t=>new Date(t).toISOString().slice(0,19)+'Z';
@@ -2027,12 +1984,13 @@ async function nasaLegend(){
 
 async function radarLoadKind(k){
   if(!radarMap)return;
-  const tok=radarTok,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  const tok=radarTok,kt=++radarKT,stale=()=>tok!==radarTok||kt!==radarKT||!radarMap,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
   clearTimeout(radarTimer);
   clearRadarLayers(); // Limpa garantidamente todas as camadas do mapa anterior
   radarLayers=[];radarFrames=[];
   radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
-   $('#rmap').classList.toggle('cloudy',k=='cloud'||!!OWM_KINDS[k]);   // mapa escuro também no vento
+  radarPlay=!still&&k!='sat';radarBtn();   // o NASA volta a animar depois do satélite
+  $('#rmap').classList.toggle('cloudy',k=='cloud'||!!OWM_KINDS[k]);   // mapa escuro também no vento
   $('#rleg').hidden=!OWM_KINDS[k];
   $('#rleg2').hidden=k!='nasa';
   if(k=='nasa')nasaLegend();
@@ -2045,7 +2003,7 @@ async function radarLoadKind(k){
     note.textContent='Loading cloud layer…';
     let ok=false;
     try{ok=(await fetch(WORKER+'/clouds/0/0/0.png')).ok}catch(e){}
-    if(tok!==radarTok||!radarMap)return;
+    if(stale())return;
     if(ok){
       radarLayers=[mkLayer(WORKER+'/clouds/{z}/{x}/{y}.png',{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
       radarFrames=[{}];sl.max=0;
@@ -2065,10 +2023,10 @@ async function radarLoadKind(k){
     let j;
     try{j=await satInfo(SAT_ID)}catch(e){
       console.warn('[SAT]',e.message);
-      if(tok===radarTok&&note)note.textContent='Satellite imagery unavailable right now.';
+      if(!stale()&&note)note.textContent='Satellite imagery unavailable right now.';
       return;
     }
-    if(tok!==radarTok||!radarMap)return;
+    if(stale())return;
     const daily=j.stepMs>=864e5;
     let end=Date.parse(j.end);const start=Date.parse(j.start),N=daily?7:12;
     if(daily)end-=j.stepMs;                       // today's mosaic is still incomplete: start at yesterday
@@ -2090,7 +2048,7 @@ async function radarLoadKind(k){
     sl.disabled=true;pl.disabled=true;
     note.textContent='Checking the latest satellite frames…';
     const times=await nasaTimes();
-    if(tok!==radarTok||!radarMap)return;
+    if(stale())return;
     if(times.length<2){
       radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate_30min/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',
         {pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9,errorTileUrl:BLANK}).addTo(radarMap)];
@@ -2113,7 +2071,7 @@ async function radarLoadKind(k){
   note.textContent='Loading wind layer…';
   let owOk=false;
   try{owOk=(await fetch(`${WORKER}/owm/${ow.layer}/0/0/0.png`)).ok}catch(e){}
-  if(tok!==radarTok||!radarMap)return;
+  if(stale())return;
    if(!owOk){note.textContent='Wind layer needs OWM_KEY in the worker.';return}
   radarLayers=[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
   radarFrames=[{}];sl.max=0;
