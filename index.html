@@ -506,7 +506,12 @@ function theme(tC,k){
 function tempColor(c){const t=Math.max(-10,Math.min(38,c)),hue=208-((t+10)/48)*182;return`hsl(${hue.toFixed(0)},72%,58%)`}
 
 /* ============ science facts ============ */
-const IMG_BASE='/facts';
+const IMG_BASE='facts/';
+const IMG_DIR=IMG_BASE&&!IMG_BASE.endsWith('/')?IMG_BASE+'/':IMG_BASE;   // garante a barra final
+function imgFB(el){   // se falhar, tenta outros sítios antes de desistir
+ const n=el.dataset.n,tries=[IMG_DIR+n,n,'facts'+n,'img/'+n],i=+(el.dataset.t||0)+1;
+ if(i<tries.length){el.dataset.t=i;el.src=tries[i]}else el.remove();
+}
 const FACTS = [
   // Factos originais
   ['clear','Why the sky is blue','Air molecules scatter short wavelengths of sunlight far more than long ones (Rayleigh scattering). Violet scatters even more, but the Sun emits less of it and our eyes respond weakly to it, so we see blue.','Optics'],
@@ -1258,7 +1263,7 @@ function sciBody() {
     return `<p class="qs">${z[0]}</p><div class="qb"><button class="pill dk" data-a="0">Myth</button><button class="pill dk" data-a="1">Fact</button></div><p class="qr" aria-live="polite"></p><div class="sc" id="sc">${score[0]} right of ${score[1]}</div>`;
   }
   const pool = factPool(), f = pool[((factI % pool.length) + pool.length) % pool.length];
-  const imgHTML = f[4] ? `<img class="fimg" src="${IMG_BASE}${f[4]}" alt="${tr(f[1]).replace(/"/g,'&quot;')}" loading="lazy" decoding="async" onload="this.classList.add('ok')" onerror="this.remove()">` : '';
+  const imgHTML = f[4] ? `<img class="fimg" src="${IMG_DIR}${f[4]}" data-n="${f[4]}" alt="${tr(f[1]).replace(/"/g,'&quot;')}" loading="lazy" decoding="async" onload="this.classList.add('ok')" onerror="imgFB(this)">` : '';
   return `<span class="tag">${f[3]}</span><h2 class="fh">${f[1]}</h2>${imgHTML}<p class="fp">${f[2]}</p><div class="fnav"><button class="pill dk" data-f="-1">Previous</button><button class="pill dk" data-f="1">Another</button></div>`;
 }
 function sciPane(){
