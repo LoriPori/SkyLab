@@ -513,6 +513,61 @@ html[lang=pt] .rtime.buf::after{content:' · a carregar…'}
 .ncbox .nct small{font-size:12px;opacity:.85}
 .ncbox .nb i.w{box-shadow:0 0 8px rgba(59,143,224,.7)}
 
+/* ---- seguimento de furacões ---- */
+@keyframes hspin{to{transform:rotate(360deg)}}
+@keyframes hspinC{to{transform:rotate(-360deg)}}
+.pill.hbtn{position:relative;width:42px;height:42px;padding:0;border-radius:50%;display:inline-grid;place-items:center;flex:none}
+.hbtn img{width:26px;height:26px;object-fit:contain;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(10,30,60,.3))}
+.hbtn:hover img{animation:hspin 1.2s linear infinite}
+.hbtn.hot img{animation:hspin 5s linear infinite}
+.hbtn.hot::before{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid rgba(255,255,255,.75);animation:haloP 2.2s ease-out infinite;pointer-events:none}
+.hbtn::after{content:attr(data-n);position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e5652e;color:#fff;font:600 11px/18px var(--sans);text-align:center;box-shadow:0 0 0 2px rgba(255,255,255,.85);transform:scale(0);transition:transform .4s cubic-bezier(.3,1.5,.4,1);pointer-events:none}
+.hbtn[data-n]:not([data-n=""])::after{transform:scale(1)}
+
+html.hlock{overflow:hidden}
+.hov{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:clamp(10px,3vw,28px);background:rgba(8,26,52,.34);-webkit-backdrop-filter:blur(0);backdrop-filter:blur(0);opacity:0;overscroll-behavior:contain;transition:opacity .35s ease,backdrop-filter .5s ease,-webkit-backdrop-filter .5s ease}
+.hov[hidden]{display:none}
+.hov.on{opacity:1;-webkit-backdrop-filter:blur(16px) saturate(1.15);backdrop-filter:blur(16px) saturate(1.15)}
+.hcard{position:relative;width:min(760px,100%);max-height:min(88vh,860px);overflow:auto;padding:20px;border-radius:28px;background:rgba(255,255,255,.94);color:var(--ink);text-shadow:none;border:1px solid rgba(255,255,255,.85);box-shadow:0 40px 90px -30px rgba(5,25,55,.6);opacity:0;transform:translateY(28px) scale(.94);transition:transform .55s cubic-bezier(.2,.9,.3,1.15),opacity .35s ease}
+.hov.on .hcard{opacity:1;transform:none}
+.hh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.hht{display:flex;gap:12px;align-items:center;min-width:0}
+.hico{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,var(--a),var(--acc));box-shadow:0 8px 22px -8px var(--acc)}
+.hico img{width:30px;height:30px;object-fit:contain;animation:hspin 9s linear infinite}
+.hh h2{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1.05}
+.hh p{font-size:13px;color:var(--mut);margin-top:3px}
+.hx{flex:none;width:38px;height:38px;border-radius:50%;background:rgba(20,49,79,.08);font-size:15px;transition:background .2s,transform .3s}
+.hx:hover{background:rgba(20,49,79,.16);transform:rotate(90deg)}
+#hmap{height:clamp(220px,36vh,330px);border-radius:20px;overflow:hidden;isolation:isolate;background:#dfe9ef;display:grid;place-items:center;color:var(--mut);font-size:14px}
+#hmap.leaflet-container{display:block}
+.hmk{background:none;border:0}
+.hmk svg{width:46px;height:46px;display:block;filter:drop-shadow(0 4px 10px rgba(10,30,60,.45));cursor:pointer}
+.hspin{transform-box:view-box;transform-origin:50% 50%;animation:hspinC var(--hs,6s) linear infinite}
+.hdet{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;margin-top:10px;padding:10px 14px;border-radius:14px;background:rgba(20,49,79,.05);font-size:13px;color:var(--mut)}
+.hdet a{color:var(--acc);font-weight:600;text-decoration:none}
+.hdet a:hover{text-decoration:underline}
+.hlist{display:grid;gap:10px;margin-top:12px}
+.hrow{--hc:#5aa7ff;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 14px;border-radius:18px;background:rgba(20,49,79,.05);border:1px solid transparent;border-left:5px solid var(--hc);transition:background .25s,transform .25s,border-color .25s;animation:rise .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*70ms)}
+.hrow:hover{background:rgba(20,49,79,.09);transform:translateY(-2px)}
+.hrow.on{background:color-mix(in srgb,var(--hc) 14%,#fff);border-color:color-mix(in srgb,var(--hc) 45%,transparent);border-left-color:var(--hc)}
+.hsp svg{width:44px;height:44px;display:block}
+.hmain{min-width:0}
+.hmain b{display:block;font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.1}
+.hmain em{font-style:normal;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:color-mix(in srgb,var(--hc) 65%,#14314f)}
+.hmain small{display:block;font-size:12.5px;color:var(--mut);margin-top:2px}
+.hstat{display:grid;grid-template-columns:repeat(3,auto);gap:4px 18px;text-align:right;font-size:13.5px;font-weight:600}
+.hstat span{display:flex;flex-direction:column}
+.hstat i{font-style:normal;font-size:11px;font-weight:500;color:var(--mut);letter-spacing:.04em;text-transform:uppercase}
+.hnote{margin-top:12px;font-size:12px;line-height:1.5;color:var(--mut)}
+.hfoot{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:12px;color:var(--mut)}
+.hfoot a{color:var(--acc)}
+.hempty{text-align:center;padding:22px 10px 12px}
+.hempty .hico{width:68px;height:68px;margin:0 auto 12px}
+.hempty .hico img{width:44px;height:44px;animation-duration:14s}
+.hempty h3{font-family:var(--serif);font-weight:400;font-size:26px;letter-spacing:0;text-transform:none;color:var(--ink);margin-bottom:6px}
+.hempty p{max-width:44ch;margin:0 auto 14px;font-size:14px;line-height:1.55;color:var(--mut)}
+@media(max-width:620px){.hrow{grid-template-columns:auto 1fr}.hstat{grid-column:1/-1;text-align:left}.hcard{padding:16px;border-radius:24px}.hh h2{font-size:24px}}
+
 </style>
 </head>
 <body>
@@ -535,6 +590,7 @@ html[lang=pt] .rtime.buf::after{content:' · a carregar…'}
  <button class="pill sndb" id="snd" aria-pressed="false" title="Ambient weather sound">Sound</button>
  <button class="pill lang" id="lng"><img id="lngi" alt="" width="20" height="20"><span id="lngt"></span></button>
  <div class="seg" role="group" aria-label="Units"><button data-u="c">°C</button><button data-u="f">°F</button></div>
+  <button class="pill hbtn" id="hbtn" aria-haspopup="dialog" aria-expanded="false" title="Hurricane tracker" aria-label="Hurricane tracker"><img src="hurricane.png" alt="" width="26" height="26" onerror="this.replaceWith(document.createTextNode('🌀'))"></button>
  <div class="wpop" id="wpop" hidden role="dialog" aria-label="IPMA warnings"></div>
 </header>
 <main id="main"></main>
@@ -1157,8 +1213,8 @@ function heroHTML(){
  const local=new Date(c.time).toLocaleString('en',{weekday:'long',hour:'numeric',minute:'2-digit'});
  return`<section class="hero" id="hero">
 <div class="now">
- <div class="place"><h1>${place.name}</h1><button class="star" id="fav" aria-label="Save place"></button></div>
- <div class="sub">${place.sub?place.sub+' · ':''}${local}</div>
+ <div class="place"><h1>${escH(place.name)}</h1><button class="star" id="fav" aria-label="Save place"></button></div>
+ <div class="sub">${place.sub?escH(place.sub)+' · ':''}${local}</div>
  <div class="temp"><span id="tn">${T(c.temperature_2m)}</span><sup>°</sup></div>
  <div class="cond" id="cond"><span class="em">${emoji(c.weather_code,c.is_day)}</span>
 ${LABEL[c.weather_code]||'—'}</div>
@@ -1873,23 +1929,26 @@ function toast(m){
 }
 
 /* ============ search ============ */
-let timer,items=[],sel=-1;
+let timer,items=[],sel=-1,sgTok=0;
 const favs=()=>lsGet('favs')||[];
 const openSg=h=>{sg.innerHTML=h;sg.classList.add('on')};
 const closeSg=()=>{sg.classList.remove('on');sel=-1};
 function recents(){
  const f=favs(),r=(lsGet('recent')||[]).filter(x=>!f.some(y=>y.name==x.name&&y.sub==x.sub));
  items=[...f,...r];if(!items.length)return closeSg();
- openSg(items.map((p,i)=>`<button role="option" data-i="${i}">${i<f.length?'★ ':''}${p.name}<small>${p.sub||''}</small></button>`).join(''));
+ openSg(items.map((p,i)=>`<button role="option" data-i="${i}">${i<f.length?'★ ':''}${escH(p.name)}<small>${escH(p.sub||'')}</small></button>`).join(''));
 }
 q.addEventListener('focus',()=>{if(!q.value)recents()});
 q.addEventListener('input',()=>{
  clearTimeout(timer);const v=q.value.trim();if(v.length<2)return v?closeSg():recents();
  timer=setTimeout(async()=>{
+  const tk=++sgTok;
   try{
-   items=await geo(v,6);
-   openSg(items.length?items.map((p,i)=>`<button role="option" data-i="${i}">${p.name}<small>${p.sub}</small></button>`).join(''):'<div class="hd">No matches. Check the spelling.</div>');
-  }catch(e){openSg('<div class="hd">Search is unavailable right now.</div>')}
+   const res=await geo(v,6);
+   if(tk!==sgTok||q.value.trim()!==v)return;       // resposta antiga de uma pesquisa já substituída
+   items=res;
+   openSg(items.length?items.map((p,i)=>`<button role="option" data-i="${i}">${escH(p.name)}<small>${escH(p.sub)}</small></button>`).join(''):'<div class="hd">No matches. Check the spelling.</div>');
+  }catch(e){if(tk===sgTok)openSg('<div class="hd">Search is unavailable right now.</div>')}
  },250);
 });
 sg.addEventListener('click',e=>{const b=e.target.closest('button');if(b)pick(+b.dataset.i)});
@@ -1953,7 +2012,7 @@ document.addEventListener('keydown',e=>{
  if(data&&'12345'.includes(e.key)&&e.key)setTab(TABS[+e.key-1][0]);
 });
 addEventListener('load',moveInd);
-setInterval(()=>{if(place&&!document.hidden)show(place.lat,place.lon,place.name,place.sub)},6e5);
+setInterval(()=>{if(place&&!document.hidden&&tab!='radar')show(place.lat,place.lon,place.name,place.sub)},6e5);   // não reconstrói o radar a meio
 addEventListener('online',()=>{if(place)show(place.lat,place.lon,place.name,place.sub)});
 
 /* ============ silent severe-weather alerts (no UI) ============ */
@@ -2505,7 +2564,7 @@ async function ipmaLoad(){
 function ipmaClose(){const p=$('#wpop'),b=$('#wrn');if(p)p.hidden=true;if(b)b.setAttribute('aria-expanded','false')}
 function ipmaPaint(){
  const p=$('#wpop');if(!p||!ipmaCur)return;
- const fmt=s=>new Date(s).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'});
+ const fmt=s=>new Date(s).toLocaleString(LANG=='pt'?'pt-PT':'en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})
  const L=ipmaCur.list;
  p.innerHTML=`<div class="wh"><b>IPMA warnings</b><span>${escH(ipmaCur.area)}</span></div>`+
   (L.length?L.map((w,i)=>`<div class="wi" style="--wc:${IPMA_COL[w.awarenessLevelID]||'#999'};--n:${i}"><i class="wdot"></i><div><b>${escH(w.awarenessTypeName)}</b><em>${escH(w.awarenessLevelID)}</em><p>${escH(w.text)}</p><small>${fmt(w.startTime)} → ${fmt(w.endTime)}</small></div></div>`).join(''):'<p class="wnone">No active warnings for this area. ☀️</p>')+
@@ -2541,6 +2600,220 @@ $('#wrn').onclick=e=>{
 addEventListener('click',e=>{if(!e.target.closest('#wpop,#wrn'))ipmaClose()});
 addEventListener('keydown',e=>{if(e.key=='Escape')ipmaClose()});
 setInterval(()=>{if(ipmaPl)ipmaUpdate(ipmaPl)},6e5);
+/* ============ Seguimento de furacões (botão na topbar + cartão com a página desfocada) ============ */
+const hT=(en,pt)=>LANG=='pt'?pt:en;
+Object.assign(PT,{'Hurricane tracker':'Seguimento de furacões'});
+const HC=['#5aa7ff','#4fd18b','#f0cf45','#f59a3a','#e5652e','#e0352b','#b4208f'],HS=[9,9,7,6,5,4,3.2,2.6],HGREY='#8aa0b5';
+let hurrD=null,hurrAt=0,hurrP=null,hOpen=false,hView='load',hSel=0,hMap=null,hMk=[],hTok=0,hFocus=null;
+
+/* categoria pelo vento sustentado (nós): -1 desconhecida, 0 DT, 1 TS, 2..6 = cat. 1..5 */
+const hCat=kt=>kt==null||!isFinite(kt)?-1:kt<34?0:kt<64?1:kt<83?2:kt<96?3:kt<113?4:kt<137?5:6;
+const hCol=c=>c<0?HGREY:HC[c];
+const hKind=s=>s.lat<0?'cy':s.lon>=100&&s.lon<180?'ty':s.lon>=30&&s.lon<100?'cy':'hu';   // tufão / ciclone / furacão
+function hLabel(s){
+ const c=hCat(s.windKt);
+ if(c<0)return hT('Tropical cyclone','Ciclone tropical');
+ if(c==0)return hT('Tropical depression','Depressão tropical');
+ if(c==1)return hT('Tropical storm','Tempestade tropical');
+ const k={hu:['Hurricane','Furacão'],ty:['Typhoon','Tufão'],cy:['Cyclone','Ciclone']}[hKind(s)];
+ return hT(k[0],k[1])+' · Cat. '+(c-1);
+}
+const hWind=kt=>kt==null?'—':unit=='c'?Math.round(kt*1.852).toLocaleString(LOC())+' km/h':Math.round(kt*1.15078)+' mph';
+const hDist=km=>unit=='c'?Math.round(km).toLocaleString(LOC())+' km':Math.round(km*.621371).toLocaleString(LOC())+' mi';
+const hDir=d=>hT('N,NE,E,SE,S,SW,W,NW','N,NE,E,SE,S,SO,O,NO').split(',')[Math.round((((d%360)+360)%360)/45)%8];
+function hMove(s){
+ if(s.moveDir==null||s.moveMph==null)return'—';
+ if(s.moveMph<1)return hT('Stationary','Quase parado');
+ return hDir(s.moveDir)+' · '+(unit=='c'?Math.round(s.moveMph*1.609)+' km/h':Math.round(s.moveMph)+' mph');
+}
+function hAgo(ms){
+ const m=Math.max(0,Math.round((Date.now()-ms)/6e4));
+ if(m<2)return hT('just now','agora mesmo');
+ if(m<90)return hT(m+' min ago','há '+m+' min');
+ const h=Math.round(m/60);return hT(h+' h ago','há '+h+' h');
+}
+function hDest(lat,lon,brg,km){       // onde estaria a tempestade se mantivesse rumo e velocidade
+ const r=Math.PI/180,d=km/6371,b=brg*r,la=lat*r;
+ const la2=Math.asin(Math.sin(la)*Math.cos(d)+Math.cos(la)*Math.sin(d)*Math.cos(b));
+ const dl=Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(la),Math.cos(d)-Math.sin(la)*Math.sin(la2));
+ return[la2/r,lon+dl/r];             // longitude contínua: não salta no meridiano 180
+}
+function hSpiral(col,c,nh){           // espiral que roda: anti-horário no hemisfério norte, horário no sul
+ const arm=a0=>{let d='';for(let k=0;k<=24;k++){const t=k/24,r=3+17*t,a=a0+t*3.4;d+=(k?'L':'M')+(24+r*Math.cos(a)).toFixed(1)+' '+(24+r*Math.sin(a)).toFixed(1)}return d};
+ const p=arm(0)+arm(Math.PI);
+ return`<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="${col}" opacity=".2"/><g${nh?'':' transform="translate(48 0) scale(-1 1)"'}><g class="hspin" style="--hs:${HS[c+1]}s"><path d="${p}" fill="none" stroke="#fff" stroke-width="6.5" stroke-linecap="round"/><path d="${p}" fill="none" stroke="${col}" stroke-width="3.6" stroke-linecap="round"/></g></g><circle cx="24" cy="24" r="3.4" fill="#fff" stroke="${col}" stroke-width="1.6"/></svg>`;
+}
+const hImg=()=>`<img src="hurricane.png" alt="" onerror="this.replaceWith(document.createTextNode('🌀'))">`;
+
+/* ---- dados: worker /storms (NHC + GDACS) e, se faltar, GDACS diretamente ---- */
+const hNum=v=>v==null||v===''||!isFinite(+v)?null:+v;
+const hName=n=>String(n||'').replace(/-\d{2}$/,'').toLowerCase().replace(/(^|[\s-])\w/g,m=>m.toUpperCase());
+const hSafe=u=>/^https:\/\/([a-z0-9-]+\.)*(nhc\.noaa\.gov|hurricanes\.gov|gdacs\.org)\//i.test(u||'')?u:null;
+function hClean(s){
+ if(!s||!isFinite(+s.lat)||!isFinite(+s.lon)||Math.abs(+s.lat)>90)return null;
+ return{id:String(s.id||s.name),name:s.name?String(s.name):hT('Unnamed','Sem nome'),lat:+s.lat,lon:+s.lon,windKt:hNum(s.windKt),pressure:hNum(s.pressure),moveDir:hNum(s.moveDir),moveMph:hNum(s.moveMph),src:String(s.src||''),url:hSafe(s.url),updated:s.updated||null};
+}
+async function hurrFetch(){
+ try{
+  const j=await fetchJSON(WORKER+'/storms');
+  if(j&&Array.isArray(j.storms))return{storms:j.storms.map(hClean).filter(Boolean),at:Date.parse(j.updated)||Date.now()};
+ }catch(e){console.info('[Hurricanes] rota /storms indisponível no worker ('+e.message+'); a tentar o GDACS diretamente')}
+ const j=await fetchJSON('https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP');
+ const by=new Map();
+ for(const f of(j&&j.features)||[]){
+  const p=f.properties||{},g=f.geometry&&f.geometry.coordinates;
+  if(p.eventtype!=='TC'||String(p.iscurrent)!=='true'||!g)continue;
+  const old=by.get(p.eventid);if(old&&old.ep>=p.episodeid)continue;
+  const sv=p.severitydata||{};
+  by.set(p.eventid,{ep:p.episodeid,s:{id:'gdacs'+p.eventid,name:hName(p.eventname||p.name),lat:g[1],lon:g[0],windKt:hNum(sv.severity)==null?null:sv.severity/1.852,src:'GDACS',url:p.url&&p.url.report,updated:p.datemodified?p.datemodified+'Z':null}});
+ }
+ return{storms:[...by.values()].map(x=>hClean(x.s)).filter(Boolean).sort((a,b)=>(b.windKt||0)-(a.windKt||0)),at:Date.now()};
+}
+function hurrGet(force){
+ if(!force&&hurrD&&Date.now()-hurrAt<6e5)return Promise.resolve(hurrD);
+ return hurrP||(hurrP=hurrFetch().then(d=>{hurrD=d;hurrAt=Date.now();return d}).finally(()=>{hurrP=null}));
+}
+function hurrBadge(){                  // contador no botão (e anel a pulsar se houver furacão a sério)
+ const b=$('#hbtn');if(!b)return;
+ const n=hurrD?hurrD.storms.length:0;
+ b.dataset.n=n||'';
+ b.classList.toggle('hot',!!(hurrD&&hurrD.storms.some(s=>hCat(s.windKt)>=2)));
+ const t=n?hT(n+(n==1?' active tropical cyclone':' active tropical cyclones'),n+(n==1?' ciclone tropical ativo':' ciclones tropicais ativos')):hT('Hurricane tracker','Seguimento de furacões');
+ b.title=t;b.setAttribute('aria-label',t);
+}
+
+/* ---- cartão ---- */
+function hurrShell(){
+ let o=$('#hov');if(o)return o;
+ o=document.createElement('div');o.id='hov';o.className='hov';o.hidden=true;
+ o.innerHTML='<div class="hcard" role="dialog" aria-modal="true" aria-labelledby="htt"><div id="hbody"></div></div>';
+ document.body.appendChild(o);
+ o.addEventListener('click',e=>{
+  if(e.target===o||e.target.closest('[data-hx]'))return hurrClose();      // clicar no fundo desfocado também fecha
+  const r=e.target.closest('[data-hi]');if(r)return hurrSel(+r.dataset.hi,true);
+  if(e.target.closest('[data-hr]'))return hurrRetry();
+ });
+ return o;
+}
+function hurrPaint(){
+ const b=$('#hbody');if(!b)return;
+ hTok++;
+ if(hMap){try{hMap.remove()}catch(e){}hMap=null}hMk=[];
+ const D=hurrD,list=D?D.storms:[];
+ if(hSel>=list.length)hSel=0;
+ const sub=!D?(hView=='load'?hT('Loading storms…','A carregar tempestades…'):hT('Storm data unavailable','Dados indisponíveis')):
+  list.length?`${list.length} ${list.length==1?hT('active storm','tempestade ativa'):hT('active storms','tempestades ativas')} · ${hT('updated','atualizado')} ${hAgo(D.at)}`:hT('All quiet for now','Tudo calmo por agora');
+ let h=`<div class="hh"><div class="hht"><span class="hico">${hImg()}</span><div><h2 id="htt">${hT('Hurricane tracker','Seguimento de furacões')}</h2><p>${sub}</p></div></div><button class="hx" data-hx aria-label="${hT('Close','Fechar')}">✕</button></div>`;
+ if(!D&&hView=='load')h+=`<p class="note sk">${hT('Fetching the latest advisories…','A obter os boletins mais recentes…')}</p>`;
+ else if(!D)h+=`<div class="hempty"><span class="hico">${hImg()}</span><h3>${hT('Couldn’t load the storms','Não foi possível carregar as tempestades')}</h3><p>${hT('The data sources didn’t answer. Check your connection and try again.','As fontes de dados não responderam. Verifica a ligação e tenta outra vez.')}</p><button class="pill dk" data-hr>${hT('Try again','Tentar outra vez')}</button></div>`;
+ else if(!list.length)h+=`<div class="hempty"><span class="hico">${hImg()}</span><h3>${hT('No active tropical cyclones','Sem ciclones tropicais ativos')}</h3><p>${hT('The oceans are quiet right now. When a new storm forms it shows up here and the button gets a counter.','Os oceanos estão calmos por agora. Quando se formar uma nova tempestade aparece aqui e o botão ganha um contador.')}</p></div>`;
+ else{
+  const here=place&&isFinite(place.lat)?place:null,proj=list.some(s=>s.moveDir!=null&&s.moveMph>=1);
+  h+=`<div id="hmap" role="application" aria-label="${hT('Map of active tropical cyclones','Mapa dos ciclones tropicais ativos')}">${hT('Loading map…','A carregar o mapa…')}</div><div class="hdet" id="hdet"></div><div class="hlist">`+
+  list.map((s,i)=>{
+   const c=hCat(s.windKt),col=hCol(c);
+   const dist=here?`${hDist(hav(here.lat,here.lon,s.lat,s.lon))} ${hT('from','de')} ${escH(here.name)}`:'';
+   return`<button class="hrow${i==hSel?' on':''}" data-hi="${i}" style="--hc:${col};--n:${i}"><span class="hsp">${hSpiral(col,c,s.lat>=0)}</span><span class="hmain"><b>${escH(s.name)}</b><em>${hLabel(s)}</em>${dist?`<small>${dist}</small>`:''}</span><span class="hstat"><span><i>${hT('Winds','Ventos')}</i>${hWind(s.windKt)}</span><span><i>${hT('Pressure','Pressão')}</i>${s.pressure!=null?s.pressure+' hPa':'—'}</span><span><i>${hT('Moving','Movimento')}</i>${hMove(s)}</span></span></button>`;
+  }).join('')+
+  `</div><p class="hnote">${hT('Category from sustained wind only (Saffir–Simpson scale).','Categoria só pelo vento sustentado (escala Saffir–Simpson).')}${proj?' '+hT('The dashed line shows where the storm would be in 24 h if it kept its current heading and speed. It is not an official forecast.','A linha tracejada mostra onde estaria a tempestade daqui a 24 h se mantivesse o rumo e a velocidade atuais. Não é uma previsão oficial.'):''}</p>`+
+  `<div class="hfoot"><span>${hT('Sources','Fontes')}:</span><a href="https://www.nhc.noaa.gov/" target="_blank" rel="noopener">NHC / CPHC ↗</a><a href="https://www.gdacs.org/" target="_blank" rel="noopener">GDACS ↗</a></div>`;
+ }
+ b.innerHTML=h;
+ if(list.length){hurrDet();hurrMap()}
+ const fx=$('#hbody [data-hx]');if(fx&&!$('#hov').contains(document.activeElement))fx.focus({preventScroll:true});
+}
+function hurrDet(){
+ const el=$('#hdet'),s=hurrD&&hurrD.storms[hSel];if(!el||!s)return;
+ const t=Date.parse(s.updated),when=isFinite(t)?' · '+hAgo(t):'';
+ el.innerHTML=`<span><b>${escH(s.name)}</b> · ${hT('source','fonte')} ${escH(s.src||'—')}${when}</span>`+(s.url?`<a href="${escH(s.url)}" target="_blank" rel="noopener">${/^NHC/.test(s.src)?hT('Official advisory ↗','Boletim oficial ↗'):hT('Event report ↗','Relatório do evento ↗')}</a>`:'');
+}
+async function hurrMap(){
+ const list=hurrD?hurrD.storms:[];if(!$('#hmap')||!list.length)return;
+ const tok=hTok;
+ try{await loadLeaflet()}catch(e){const m=$('#hmap');if(m)m.textContent=hT('The map library couldn’t load.','Não foi possível carregar o mapa.');return}
+ const box=$('#hmap');if(tok!==hTok||!hOpen||!box)return;
+ box.textContent='';if(box._leaflet_id)delete box._leaflet_id;
+ hMap=L.map(box,{minZoom:2,maxZoom:8,worldCopyJump:true,scrollWheelZoom:false});
+ L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_4644_2_e1ddc0590e0bf3595329dba5',{maxZoom:19}).addTo(hMap);
+ hMap.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>');
+ hMap.on('click focus',()=>hMap.scrollWheelZoom.enable());
+ hMap.on('mouseout',()=>hMap.scrollWheelZoom.disable());
+ const pts=[];
+ list.forEach((s,i)=>{
+  const c=hCat(s.windKt),col=hCol(c);
+  if(s.moveDir!=null&&s.moveMph>=1){
+   const e=hDest(s.lat,s.lon,s.moveDir,s.moveMph*1.609*24);
+   L.polyline([[s.lat,s.lon],e],{color:col,weight:3,opacity:.9,dashArray:'6 9',interactive:false}).addTo(hMap);
+   L.circleMarker(e,{radius:4,color:'#fff',weight:2,fillColor:col,fillOpacity:1,interactive:false}).addTo(hMap);
+  }
+  const m=L.marker([s.lat,s.lon],{icon:L.divIcon({className:'hmk',html:hSpiral(col,c,s.lat>=0),iconSize:[46,46],iconAnchor:[23,23]}),keyboard:false,riseOnHover:true}).addTo(hMap);
+  m.bindTooltip(`<b>${escH(s.name)}</b> · ${hWind(s.windKt)}`,{direction:'top',offset:[0,-22]});
+  m.on('click',()=>hurrSel(i,false));
+  hMk[i]=m;pts.push([s.lat,s.lon]);
+ });
+ if(place&&isFinite(place.lat))L.marker([place.lat,place.lon],{keyboard:false,interactive:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(hMap);
+ if(pts.length==1)hMap.setView(pts[0],5);else hMap.fitBounds(pts,{padding:[50,50],maxZoom:5});
+ setTimeout(()=>{if(hMap&&tok===hTok)hMap.invalidateSize()},450);   // o cartão ainda está a animar quando o mapa nasce
+}
+function hurrSel(i,fly){
+ const s=hurrD&&hurrD.storms[i];if(!s)return;
+ hSel=i;
+ $$('#hov .hrow').forEach((r,j)=>r.classList.toggle('on',j==i));
+ hurrDet();
+ if(hMap){
+  if(fly){still?hMap.setView([s.lat,s.lon],Math.max(hMap.getZoom(),4)):hMap.flyTo([s.lat,s.lon],Math.max(hMap.getZoom(),4),{duration:1.1});const m=$('#hmap');if(m)m.scrollIntoView({behavior:still?'auto':'smooth',block:'nearest'})}
+  if(hMk[i])hMk[i].openTooltip();
+ }
+}
+async function hurrOpen(){
+ const o=hurrShell();
+ hOpen=true;ipmaClose();closeSg();
+ hFocus=document.activeElement;hSel=0;
+ hView=hurrD?'ok':'load';
+ hurrPaint();
+ o.hidden=false;document.documentElement.classList.add('hlock');
+ void o.offsetWidth;o.classList.add('on');
+ $('#hbtn').setAttribute('aria-expanded','true');
+ const prev=hurrD,pv=hView;
+ try{await hurrGet();hView='ok'}catch(e){console.warn('[Hurricanes]',e.message);if(!hurrD)hView='err'}
+ hurrBadge();
+ if(hOpen&&(hurrD!==prev||hView!==pv))hurrPaint();
+}
+function hurrClose(){
+ const o=$('#hov');if(!o||o.hidden)return;
+ hOpen=false;hTok++;
+ o.classList.remove('on');document.documentElement.classList.remove('hlock');
+ $('#hbtn').setAttribute('aria-expanded','false');
+ const done=()=>{if(!hOpen){o.hidden=true;if(hMap){try{hMap.remove()}catch(e){}hMap=null}}};
+ still?done():setTimeout(done,360);
+ if(hFocus&&hFocus.focus)hFocus.focus({preventScroll:true});
+}
+function hurrRetry(){
+ hView='load';hurrPaint();
+ hurrGet(true).then(()=>{hView='ok'}).catch(e=>{console.warn('[Hurricanes]',e.message);hView='err'}).finally(()=>{hurrBadge();if(hOpen)hurrPaint()});
+}
+$('#hbtn').onclick=()=>hOpen?hurrClose():hurrOpen();
+addEventListener('keydown',e=>{        // captura: com o cartão aberto os atalhos do site (u, r, l, h, 1-5, /) não disparam
+ if(!hOpen)return;
+ if(e.key=='Escape'){e.preventDefault();e.stopPropagation();hurrClose();return}
+ if(e.key=='Tab'){
+  const f=$$('#hov button,#hov a[href]').filter(x=>!x.disabled&&x.getClientRects().length);
+  if(!f.length)return;
+  const a=f[0],z=f[f.length-1];
+  if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}
+  else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}
+  return;
+ }
+ if(!e.metaKey&&!e.ctrlKey&&!e.altKey&&e.key.length==1)e.stopPropagation();
+},true);
+document.addEventListener('keydown',e=>{      // atalho: T abre o seguimento de furacões
+ if(hOpen||e.metaKey||e.ctrlKey||e.altKey||e.target.matches('input,textarea,select'))return;
+ if(e.key=='t'||e.key=='T')hurrOpen();
+});
+new MutationObserver(()=>hurrBadge()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});   // muda o idioma do tooltip do botão
+trTree($('#hbtn'));
+hurrGet().then(hurrBadge).catch(e=>console.info('[Hurricanes]',e.message));
+setInterval(()=>{if(!document.hidden&&!hOpen)hurrGet(true).then(hurrBadge).catch(()=>{})},9e5);
 
 /* ============ PWA install ============ */
 let installEv=null;
