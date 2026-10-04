@@ -959,6 +959,10 @@ let atmoDead=false;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const main=$('#main'),q=$('#q'),sg=$('#sg');
 const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
+const lsSet=(k,v)=>{
+  try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}
+  if(typeof prefsSchedulePush==='function' && typeof SYNC_KEYS!=='undefined' && SYNC_KEYS.includes(k)) prefsSchedulePush();
+};
 let LANG=lsGet('lang')||((navigator.language||'').toLowerCase().startsWith('pt')?'pt':'en');
 const LOC=()=>LANG=='pt'?'pt-PT':'en';
 document.documentElement.lang=LANG;
