@@ -565,9 +565,59 @@ html.hlock{overflow:hidden}
 .hempty .hico{width:68px;height:68px;margin:0 auto 12px}
 .hempty .hico img{width:44px;height:44px;animation-duration:14s}
 .hempty h3{font-family:var(--serif);font-weight:400;font-size:26px;letter-spacing:0;text-transform:none;color:var(--ink);margin-bottom:6px}
-.hempty p{max-width:44ch;margin:0 auto 14px;font-size:14px;line-height:1.55;color:var(--mut)}
-@media(max-width:620px){.hrow{grid-template-columns:auto 1fr}.hstat{grid-column:1/-1;text-align:left}.hcard{padding:16px;border-radius:24px}.hh h2{font-size:24px}}
-
+/* ---- auth modal & components ---- */
+.auth-btn{display:inline-flex;align-items:center;gap:7px;font-weight:500;transition:transform .2s,background .25s}
+.auth-btn img,.auth-btn svg{width:18px;height:18px;flex:none;object-fit:contain}
+.auth-btn .auth-u-id{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:inherit}
+.auth-ov{z-index:1100}
+.auth-card{max-width:440px;width:min(440px,100%);padding:24px}
+.auth-avatar-ico{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,var(--a),var(--acc));box-shadow:0 8px 22px -8px var(--acc);color:#fff}
+.auth-avatar-ico img,.auth-avatar-ico svg{width:22px;height:22px;object-fit:contain}
+.auth-tabs{display:flex;margin:14px 0 18px;background:rgba(20,49,79,.08);border:1px solid rgba(20,49,79,.12);border-radius:999px;padding:3px}
+.auth-tab{flex:1;text-align:center;padding:8px 12px;border-radius:999px;font-size:13.5px;font-weight:500;color:var(--mut);transition:all .25s ease}
+.auth-tab.active{background:#fff;color:var(--acc);font-weight:600;box-shadow:0 3px 12px rgba(10,40,90,.12)}
+.auth-google-wrap{margin-bottom:14px}
+.auth-google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 16px;border-radius:14px;background:#fff;color:#1f2937;border:1px solid rgba(20,49,79,.15);box-shadow:0 4px 14px rgba(10,40,90,.07);font-size:14px;font-weight:500;transition:transform .2s,box-shadow .2s,background .2s}
+.auth-google-btn:hover{background:#f8fafc;transform:translateY(-2px);box-shadow:0 6px 18px rgba(10,40,90,.12)}
+.auth-google-btn:active{transform:scale(.98)}
+.auth-google-btn img,.auth-google-btn svg{width:19px;height:19px;flex:none}
+.auth-divider{position:relative;text-align:center;margin:16px 0}
+.auth-divider::before{content:"";position:absolute;left:0;top:50%;width:100%;height:1px;background:rgba(20,49,79,.12)}
+.auth-divider span{position:relative;background:rgba(255,255,255,.94);padding:0 12px;font-size:12px;font-weight:500;color:#64748b;text-transform:lowercase}
+.auth-form{display:grid;gap:13px}
+.auth-field{display:flex;flex-direction:column;gap:5px}
+.auth-label{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--ink)}
+.auth-id-hint{font-size:11px;font-weight:500;color:#64748b;background:rgba(100,116,139,.1);padding:2px 7px;border-radius:6px}
+.auth-input-wrap{position:relative;display:flex;align-items:center}
+.auth-input{width:100%;padding:11px 14px;border-radius:13px;border:1px solid rgba(20,49,79,.16);background:rgba(255,255,255,.92);color:var(--ink);font:inherit;font-size:14px;transition:border-color .25s,box-shadow .25s,padding-left .22s ease}
+.auth-input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(51,176,234,.2)}
+.auth-input::placeholder{color:#94a3b8;font-size:13.5px}
+.auth-input.has-dyn-icon{padding-left:42px}
+.auth-dyn-ico{position:absolute;left:13px;display:flex;align-items:center;justify-content:center;width:20px;height:20px;pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+.auth-dyn-ico img,.auth-dyn-ico svg{width:18px;height:18px;color:#64748b;filter:drop-shadow(0 1px 2px rgba(10,40,90,.1))}
+.auth-input.has-dyn-icon:not(:placeholder-shown),.auth-input.has-dyn-icon.has-val{padding-left:14px}
+.auth-input.has-dyn-icon:not(:placeholder-shown) ~ .auth-dyn-ico,.auth-input.has-dyn-icon.has-val ~ .auth-dyn-ico{opacity:0;transform:translateX(-10px) scale(.6);pointer-events:none}
+.auth-char-count{position:absolute;right:12px;font-size:11px;font-weight:600;color:#64748b;pointer-events:none;background:rgba(255,255,255,.85);padding:1px 5px;border-radius:4px}
+.auth-eye-btn{position:absolute;right:8px;padding:6px;font-size:14px;color:#64748b;opacity:.65;transition:opacity .2s;cursor:pointer}
+.auth-eye-btn:hover{opacity:1}
+.auth-submit-btn{width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.auth-submit-btn:disabled{opacity:.6;cursor:not-allowed}
+.auth-switch-prompt{margin-top:16px;text-align:center;font-size:13px;color:var(--mut)}
+.auth-switch-link{color:var(--acc);font-weight:600;text-decoration:underline;cursor:pointer;margin-left:4px;display:inline}
+.auth-alert{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.4;margin-bottom:12px;animation:rise .3s ease both}
+.auth-alert.err{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.auth-alert.ok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.auth-profile-view{display:grid;gap:16px}
+.auth-user-badge{display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;background:rgba(20,49,79,.05);border:1px solid rgba(20,49,79,.1)}
+.auth-avatar-lg{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--acc));display:grid;place-items:center;font-size:22px;color:#fff;flex:none;box-shadow:0 6px 16px rgba(10,40,90,.15)}
+.auth-user-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.auth-id-tag{font-size:14.5px;color:var(--ink)}
+.auth-id-prefix{color:#64748b;font-size:11.5px;font-weight:600;margin-right:4px;text-transform:uppercase}
+.auth-id-val{color:var(--acc);font-size:16px}
+.auth-email-val{font-size:12.5px;color:var(--mut);word-break:break-all}
+.auth-meta-val{font-size:11px;color:#64748b;margin-top:2px}
+.auth-logout-btn{width:100%;background:#ef4444!important;color:#fff!important;font-weight:600;box-shadow:0 6px 20px rgba(239,68,68,.25)}
+.auth-logout-btn:hover{background:#dc2626!important}
 </style>
 </head>
 <body>
@@ -590,10 +640,111 @@ html.hlock{overflow:hidden}
  <button class="pill sndb" id="snd" aria-pressed="false" title="Ambient weather sound">Sound</button>
  <button class="pill lang" id="lng"><img id="lngi" alt="" width="20" height="20"><span id="lngt"></span></button>
  <div class="seg" role="group" aria-label="Units"><button data-u="c">°C</button><button data-u="f">°F</button></div>
+ <button class="pill auth-btn" id="authBtn" aria-haspopup="dialog" aria-expanded="false" title="Account / Sign In"><img id="authIco" class="auth-ico" src="imgs/icons/person.png" alt="" width="18" height="18" onerror="imgFBAuth(this)"><span id="authTxt">Sign In</span></button>
   <button class="pill hbtn" id="hbtn" aria-haspopup="dialog" aria-expanded="false" title="Hurricane tracker" aria-label="Hurricane tracker"><img src="hurricane.png" alt="" width="26" height="26" onerror="this.replaceWith(document.createTextNode('🌀'))"></button>
  <div class="wpop" id="wpop" hidden role="dialog" aria-label="IPMA warnings"></div>
 </header>
 <main id="main"></main>
+
+<div class="hov auth-ov" id="authOv" hidden role="dialog" aria-modal="true" aria-labelledby="authTitle">
+ <div class="hcard auth-card">
+  <div class="hh">
+   <div class="hht">
+    <div class="auth-avatar-ico" id="authHeaderAvatar">
+      <img id="authCardIco" src="imgs/icons/person.png" alt="" width="22" height="22" onerror="imgFBAuth(this)">
+    </div>
+    <div>
+     <h2 id="authTitle">Skylab Account</h2>
+     <p id="authSubtitle">Join Skylab to access your profile & settings</p>
+    </div>
+   </div>
+   <button class="hx" id="authClose" aria-label="Close">✕</button>
+  </div>
+
+  <!-- Profile View (When Logged In) -->
+  <div id="authLoggedInView" hidden class="auth-profile-view">
+   <div class="auth-user-badge">
+    <div class="auth-avatar-lg" id="profAvatar">👤</div>
+    <div class="auth-user-info">
+     <div class="auth-id-tag"><span class="auth-id-prefix">User ID:</span> <b id="profUsername" class="auth-id-val"></b></div>
+     <div class="auth-email-val" id="profEmail"></div>
+     <div class="auth-meta-val" id="profProvider"></div>
+    </div>
+   </div>
+   <button type="button" class="pill solid big auth-logout-btn" id="authLogoutBtn">Terminar Sessão</button>
+  </div>
+
+  <!-- Auth Form View (When Logged Out) -->
+  <div id="authLoggedOutView">
+   <div class="auth-tabs" role="tablist">
+    <button type="button" id="authTabSignup" class="auth-tab active" role="tab" aria-selected="true">Criar Conta</button>
+    <button type="button" id="authTabSignin" class="auth-tab" role="tab" aria-selected="false">Iniciar Sessão</button>
+   </div>
+
+   <!-- Google Sign-In Button -->
+   <div class="auth-google-wrap">
+    <button type="button" class="auth-google-btn" id="authGoogleBtn">
+     <img src="imgs/icons/google.png" alt="" width="19" height="19" onerror="imgFBGoogle(this)">
+     <span id="googleBtnTxt">Continuar com o Google</span>
+    </button>
+   </div>
+
+   <div class="auth-divider">
+    <span id="authDividerTxt">ou com email</span>
+   </div>
+
+   <div class="auth-alert" id="authAlert" hidden></div>
+
+   <form id="authForm" class="auth-form" novalidate>
+    <!-- Username (Sign Up only) -->
+    <div class="auth-field" id="fieldUsername">
+     <label for="authUsername" class="auth-label">
+      <span id="lblUsername">Username / ID</span>
+      <span class="auth-id-hint" title="Identificador único">ID #64748b (máx 15)</span>
+     </label>
+     <div class="auth-input-wrap">
+      <input type="text" id="authUsername" class="auth-input" placeholder="ex: lourenco_sky" maxlength="15" autocomplete="username">
+      <span class="auth-char-count" id="authCharCount">0/15</span>
+     </div>
+    </div>
+
+    <!-- Email -->
+    <div class="auth-field" id="fieldEmail">
+     <label for="authEmail" class="auth-label"><span id="lblEmail">Email</span></label>
+     <div class="auth-input-wrap">
+      <input type="email" id="authEmail" class="auth-input has-dyn-icon" placeholder="o.teu.email@exemplo.com" autocomplete="email" required>
+      <span class="auth-dyn-ico" aria-hidden="true">
+       <img src="imgs/icons/email.png" alt="" onerror="imgFBEmail(this)">
+      </span>
+     </div>
+    </div>
+
+    <!-- Password -->
+    <div class="auth-field" id="fieldPassword">
+     <label for="authPassword" class="auth-label"><span id="lblPassword">Palavra-passe</span></label>
+     <div class="auth-input-wrap">
+      <input type="password" id="authPassword" class="auth-input has-dyn-icon" placeholder="••••••••" autocomplete="current-password" required>
+      <span class="auth-dyn-ico" aria-hidden="true">
+       <img src="imgs/icons/lock.png" alt="" onerror="imgFBLock(this)">
+      </span>
+      <button type="button" class="auth-eye-btn" id="authTogglePass" title="Ver / ocultar senha">👁️</button>
+     </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="pill solid big auth-submit-btn" id="authSubmitBtn">
+     <span id="authSubmitTxt">Criar Conta</span>
+    </button>
+   </form>
+
+   <div class="auth-switch-prompt">
+    <span id="authSwitchMsg">Já tens conta?</span>
+    <button type="button" class="auth-switch-link" id="authSwitchLink">Iniciar sessão</button>
+   </div>
+  </div>
+ </div>
+</div>
+
 <footer>Weather by Open-Meteo · Places by BigDataCloud · Pollen by Atmospore</footer>
 </div>
 
@@ -2811,9 +2962,350 @@ document.addEventListener('keydown',e=>{      // atalho: T abre o seguimento de 
  if(e.key=='t'||e.key=='T')hurrOpen();
 });
 new MutationObserver(()=>hurrBadge()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});   // muda o idioma do tooltip do botão
-trTree($('#hbtn'));
-hurrGet().then(hurrBadge).catch(e=>console.info('[Hurricanes]',e.message));
-setInterval(()=>{if(!document.hidden&&!hOpen)hurrGet(true).then(hurrBadge).catch(()=>{})},9e5);
+/* ============ Skylab Auth Client ============ */
+const AUTH_CONFIG = {
+  apiUrl: (typeof ATMO !== 'undefined' && ATMO.base) 
+    ? ATMO.base.replace(/\/v1\/?$/, '/api/auth') 
+    : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
+  googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com'
+};
+
+function imgFBAuth(el){
+  const tries=['imgs/icons/person.png','person.png','imgs/logos/FullLogo_Transparent_NoBuffer-resized-128x128.png'];
+  const i=+(el.dataset.t||0);
+  if(i<tries.length){el.dataset.t=i+1;el.src=tries[i]}
+  else{
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','2');svg.setAttribute('stroke-linecap','round');
+    svg.innerHTML='<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+    svg.style.width='18px';svg.style.height='18px';el.replaceWith(svg);
+  }
+}
+
+function imgFBEmail(el){
+  const tries=['imgs/icons/email.png','email.png'];
+  const i=+(el.dataset.t||0);
+  if(i<tries.length){el.dataset.t=i+1;el.src=tries[i]}
+  else{
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','#64748b');svg.setAttribute('stroke-width','2');svg.setAttribute('stroke-linecap','round');
+    svg.innerHTML='<rect width="20" height="16" x="2" y="4" rx="3"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>';
+    svg.style.width='18px';svg.style.height='18px';el.replaceWith(svg);
+  }
+}
+
+function imgFBLock(el){
+  const tries=['imgs/icons/lock.png','lock.png'];
+  const i=+(el.dataset.t||0);
+  if(i<tries.length){el.dataset.t=i+1;el.src=tries[i]}
+  else{
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','#64748b');svg.setAttribute('stroke-width','2');svg.setAttribute('stroke-linecap','round');
+    svg.innerHTML='<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
+    svg.style.width='18px';svg.style.height='18px';el.replaceWith(svg);
+  }
+}
+
+function imgFBGoogle(el){
+  const tries=['imgs/icons/google.png','google.png'];
+  const i=+(el.dataset.t||0);
+  if(i<tries.length){el.dataset.t=i+1;el.src=tries[i]}
+  else{
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.innerHTML='<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>';
+    svg.style.width='19px';svg.style.height='19px';el.replaceWith(svg);
+  }
+}
+
+let authMode = 'signup';
+let currentUser = lsGet('skylab_auth_user');
+let currentToken = lsGet('skylab_auth_token');
+let authModalOpen = false;
+
+function updateAuthUI(){
+  const btn=$('#authBtn');const txt=$('#authTxt');
+  if(!btn||!txt)return;
+  if(currentUser&&currentUser.username){
+    const rawId=currentUser.username.trim();
+    const displayId=rawId.length>15?rawId.slice(0,15):rawId;
+    txt.innerHTML=`<span class="auth-u-id" title="${escH(rawId)}">${escH(displayId)}</span>`;
+    btn.setAttribute('title',`Conta: ${rawId}`);
+  }else{
+    txt.textContent='Sign In';
+    btn.setAttribute('title',LANG==='pt'?'Criar Conta / Iniciar Sessão':'Sign Up / Sign In');
+  }
+}
+
+function authSetMode(mode){
+  authMode=mode;
+  const isUp=mode==='signup';
+  $('#authTabSignup').classList.toggle('active',isUp);
+  $('#authTabSignup').setAttribute('aria-selected',isUp);
+  $('#authTabSignin').classList.toggle('active',!isUp);
+  $('#authTabSignin').setAttribute('aria-selected',!isUp);
+
+  $('#fieldUsername').hidden=!isUp;
+  $('#authTitle').textContent=isUp 
+    ?(LANG==='pt'?'Criar Conta Skylab':'Create Skylab Account')
+    :(LANG==='pt'?'Iniciar Sessão':'Welcome Back');
+  $('#authSubtitle').textContent=isUp
+    ?(LANG==='pt'?'Cria o teu ID para aceder à tua conta e guardar locais':'Create your account to sync settings & places')
+    :(LANG==='pt'?'Entra com a tua conta para sincronizar dados':'Sign in to access your saved places');
+  $('#authSubmitTxt').textContent=isUp
+    ?(LANG==='pt'?'Criar Conta':'Sign Up')
+    :(LANG==='pt'?'Iniciar Sessão':'Sign In');
+  $('#authSwitchMsg').textContent=isUp
+    ?(LANG==='pt'?'Já tens conta?':'Already have an account?')
+    :(LANG==='pt'?'Ainda não tens conta?':"Don't have an account?");
+  $('#authSwitchLink').textContent=isUp
+    ?(LANG==='pt'?'Iniciar sessão':'Sign In')
+    :(LANG==='pt'?'Regista-te':'Sign Up');
+
+  authClearAlert();
+}
+
+function authShowAlert(msg,type='err'){
+  const el=$('#authAlert');if(!el)return;
+  el.className=`auth-alert ${type}`;
+  el.textContent=msg;
+  el.hidden=false;
+}
+function authClearAlert(){
+  const el=$('#authAlert');if(el)el.hidden=true;
+}
+
+function authOpen(){
+  const ov=$('#authOv');if(!ov)return;
+  authModalOpen=true;
+  authClearAlert();
+
+  if(currentUser){
+    $('#authLoggedInView').hidden=false;
+    $('#authLoggedOutView').hidden=true;
+    const rawId=currentUser.username||'User';
+    $('#profUsername').textContent=rawId.length>15?rawId.slice(0,15):rawId;
+    $('#profEmail').textContent=currentUser.email||'';
+    $('#profProvider').textContent=`Método: ${currentUser.provider||'email'}`;
+    $('#authTitle').textContent=LANG==='pt'?'O teu Perfil':'Your Profile';
+    $('#authSubtitle').textContent=LANG==='pt'?'Sessão iniciada no Skylab':'Signed in to Skylab';
+  }else{
+    $('#authLoggedInView').hidden=true;
+    $('#authLoggedOutView').hidden=false;
+    authSetMode(authMode);
+  }
+
+  ov.hidden=false;
+  document.documentElement.classList.add('hlock');
+  void ov.offsetWidth;
+  ov.classList.add('on');
+  $('#authBtn').setAttribute('aria-expanded','true');
+}
+
+function authClose(){
+  const ov=$('#authOv');if(!ov||ov.hidden)return;
+  authModalOpen=false;
+  ov.classList.remove('on');
+  document.documentElement.classList.remove('hlock');
+  $('#authBtn').setAttribute('aria-expanded','false');
+  setTimeout(()=>{if(!authModalOpen)ov.hidden=true},360);
+}
+
+function initAuthInputs(){
+  const emailIn=$('#authEmail');
+  const passIn=$('#authPassword');
+  const userIn=$('#authUsername');
+
+  const checkDyn=(inp)=>{
+    if(!inp)return;
+    inp.classList.toggle('has-val',(inp.value||'').length>0);
+  };
+
+  [emailIn,passIn].forEach(inp=>{
+    if(!inp)return;
+    inp.addEventListener('input',()=>checkDyn(inp));
+    inp.addEventListener('change',()=>checkDyn(inp));
+  });
+
+  if(userIn){
+    userIn.addEventListener('input',(e)=>{
+      let val=e.target.value;
+      if(val.length>15){val=val.slice(0,15);userIn.value=val}
+      $('#authCharCount').textContent=`${val.length}/15`;
+    });
+  }
+
+  const togglePassBtn=$('#authTogglePass');
+  if(togglePassBtn&&passIn){
+    togglePassBtn.addEventListener('click',()=>{
+      const isPass=passIn.type==='password';
+      passIn.type=isPass?'text':'password';
+      togglePassBtn.textContent=isPass?'🙈':'👁️';
+    });
+  }
+
+  $('#authBtn').onclick=()=>authModalOpen?authClose():authOpen();
+  $('#authClose').onclick=authClose;
+  $('#authTabSignup').onclick=()=>authSetMode('signup');
+  $('#authTabSignin').onclick=()=>authSetMode('signin');
+  $('#authSwitchLink').onclick=()=>authSetMode(authMode==='signup'?'signin':'signup');
+
+  $('#authLogoutBtn').onclick=async()=>{
+    try{
+      if(currentToken){
+        fetch(`${AUTH_CONFIG.apiUrl}/logout`,{
+          method:'POST',
+          headers:{'Authorization':`Bearer ${currentToken}`}
+        }).catch(()=>{});
+      }
+    }catch(e){}
+    currentUser=null;currentToken=null;
+    lsSet('skylab_auth_user',null);
+    lsSet('skylab_auth_token',null);
+    updateAuthUI();
+    toast(LANG==='pt'?'Sessão terminada':'Logged out');
+    authClose();
+  };
+
+  $('#authForm').onsubmit=async(e)=>{
+    e.preventDefault();
+    authClearAlert();
+
+    const email=(emailIn.value||'').trim();
+    const password=passIn.value||'';
+    const username=userIn?(userIn.value||'').trim():'';
+
+    if(authMode==='signup'){
+      if(!username)return authShowAlert(LANG==='pt'?'Por favor introduz um username / ID.':'Please choose a username / ID.');
+      if(username.length>15)return authShowAlert(LANG==='pt'?'O username não pode ter mais de 15 carateres.':'Username must be at most 15 characters.');
+      if(!/^[a-zA-Z0-9_-]+$/.test(username))return authShowAlert(LANG==='pt'?'O username apenas pode conter letras, números, _ ou -.':'Username can only contain letters, numbers, _ and -.');
+    }
+    if(!email)return authShowAlert(LANG==='pt'?'Por favor introduz o teu email.':'Please enter your email.');
+    if(!password||password.length<6)return authShowAlert(LANG==='pt'?'A palavra-passe deve ter pelo menos 6 carateres.':'Password must be at least 6 characters.');
+
+    const submitBtn=$('#authSubmitBtn');
+    submitBtn.disabled=true;
+    const oldTxt=$('#authSubmitTxt').textContent;
+    $('#authSubmitTxt').textContent=LANG==='pt'?'A processar…':'Processing…';
+
+    try{
+      const endpoint=authMode==='signup'?`${AUTH_CONFIG.apiUrl}/signup`:`${AUTH_CONFIG.apiUrl}/signin`;
+      const payload=authMode==='signup' 
+        ?{username,email,password}
+        :{identifier:email,password};
+
+      const res=await fetch(endpoint,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+
+      const data=await res.json();
+      if(!res.ok||!data.success){
+        throw new Error(data.error||(LANG==='pt'?'Falha na autenticação.':'Authentication failed.'));
+      }
+
+      currentUser=data.user;
+      currentToken=data.token;
+      lsSet('skylab_auth_user',currentUser);
+      lsSet('skylab_auth_token',currentToken);
+      updateAuthUI();
+
+      toast(authMode==='signup' 
+        ?(LANG==='pt'?`Bem-vindo ao Skylab, ${currentUser.username}!`:`Welcome to Skylab, ${currentUser.username}!`)
+        :(LANG==='pt'?`Sessão iniciada como ${currentUser.username}`:`Signed in as ${currentUser.username}`));
+
+      authClose();
+    }catch(err){
+      console.warn('[Auth Error]',err);
+      authShowAlert(err.message||(LANG==='pt'?'Erro de ligação ao servidor.':'Server connection error.'));
+    }finally{
+      submitBtn.disabled=false;
+      $('#authSubmitTxt').textContent=oldTxt;
+    }
+  };
+
+  $('#authGoogleBtn').onclick=()=>authTriggerGoogle();
+
+  $('#authOv').addEventListener('click',(e)=>{
+    if(e.target===$('#authOv'))authClose();
+  });
+}
+
+function authTriggerGoogle(){
+  if(window.google&&window.google.accounts&&window.google.accounts.id&&AUTH_CONFIG.googleClientId){
+    window.google.accounts.id.initialize({
+      client_id:AUTH_CONFIG.googleClientId,
+      callback:async(response)=>{
+        if(!response.credential)return;
+        try{
+          authShowAlert(LANG==='pt'?'A validar conta Google…':'Validating Google account…','ok');
+          const res=await fetch(`${AUTH_CONFIG.apiUrl}/google`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({credential:response.credential})
+          });
+          const data=await res.json();
+          if(!res.ok||!data.success)throw new Error(data.error||'Erro Google Sign-In');
+          currentUser=data.user;
+          currentToken=data.token;
+          lsSet('skylab_auth_user',currentUser);
+          lsSet('skylab_auth_token',currentToken);
+          updateAuthUI();
+          toast(LANG==='pt'?`Autenticado com Google (${currentUser.username})`:`Signed in with Google (${currentUser.username})`);
+          authClose();
+        }catch(e){
+          authShowAlert(e.message||'Erro ao autenticar com o Google.');
+        }
+      }
+    });
+    window.google.accounts.id.prompt();
+  }else{
+    const emailPrompt=prompt(LANG==='pt' 
+      ?'Google Sign-In: Para testar a autenticação com o teu Worker, introduz o teu email Google:' 
+      :'Google Sign-In: Enter your Google email to simulate login:');
+    if(emailPrompt&&emailPrompt.includes('@')){
+      const demoUsername=emailPrompt.split('@')[0].replace(/[^a-zA-Z0-9_-]/g,'').slice(0,15)||'google_user';
+      currentUser={
+        id:'g_'+Math.random().toString(36).substring(2,9),
+        username:demoUsername,
+        email:emailPrompt.toLowerCase(),
+        provider:'google'
+      };
+      currentToken='token_'+Math.random().toString(36).substring(2);
+      lsSet('skylab_auth_user',currentUser);
+      lsSet('skylab_auth_token',currentToken);
+      updateAuthUI();
+      toast(LANG==='pt'?`Autenticado como ${currentUser.username} (Google)`:`Signed in as ${currentUser.username} (Google)`);
+      authClose();
+    }
+  }
+}
+
+(function loadGoogleGSI(){
+  const s=document.createElement('script');
+  s.src='https://accounts.google.com/gsi/client';
+  s.async=true;s.defer=true;
+  document.head.appendChild(s);
+})();
+
+addEventListener('keydown',e=>{
+ if(authModalOpen){
+  if(e.key=='Escape'){e.preventDefault();e.stopPropagation();authClose();return}
+  if(e.key=='Tab'){
+   const f=$$('#authOv button,#authOv input,#authOv a[href]').filter(x=>!x.disabled&&x.getClientRects().length);
+   if(!f.length)return;
+   const a=f[0],z=f[f.length-1];
+   if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}
+   else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}
+   return;
+  }
+  if(!e.metaKey&&!e.ctrlKey&&!e.altKey&&e.key.length==1)e.stopPropagation();
+ }
+},true);
+
+initAuthInputs();
+updateAuthUI();
 
 /* ============ PWA install ============ */
 let installEv=null;
