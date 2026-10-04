@@ -52,11 +52,112 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .sugg button small{color:var(--mut);margin-left:6px}
 .sugg button:hover,.sugg button[aria-selected=true]{background:rgba(20,49,79,.08)}
 .sugg .hd{padding:10px 16px;font-size:13px;color:var(--mut)}
-.pill{padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.24);backdrop-filter:blur(12px);font-size:14px;font-weight:500;white-space:nowrap;transition:transform .2s,background .25s,box-shadow .3s}
-.pill:hover{background:rgba(255,255,255,.38);transform:translateY(-2px)}
-.pill:active{transform:scale(.95)}
-.pill.solid{background:#fff;color:var(--acc);font-weight:600}
-.pill.big{padding:15px 26px;font-size:16px}
+/* ============ BOTÕES PREMIUM SKYLAB (Topbar & Hero) ============ */
+.pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:10px 18px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.45);
+  background:linear-gradient(180deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.16) 100%);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  font-size:13.5px;
+  font-weight:600;
+  letter-spacing:.015em;
+  white-space:nowrap;
+  box-shadow:0 4px 14px rgba(10,30,60,.12), inset 0 1px 0 rgba(255,255,255,.6);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1), background .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.pill:hover{
+  background:linear-gradient(180deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.26) 100%);
+  border-color:rgba(255,255,255,.8);
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(10,30,60,.2), inset 0 1px 0 #fff;
+}
+.pill:active{
+  transform:scale(.96) translateY(0);
+  box-shadow:0 2px 8px rgba(10,30,60,.16);
+}
+
+/* Botão principal sólido (Hero e Destaques) */
+.pill.solid{
+  background:#ffffff;
+  color:var(--acc);
+  border-color:#ffffff;
+  font-weight:700;
+  box-shadow:0 6px 20px rgba(10,30,60,.22), 0 0 12px rgba(255,255,255,.4);
+}
+.pill.solid:hover{
+  background:#f8fafc;
+  border-color:#ffffff;
+  box-shadow:0 10px 28px rgba(10,30,60,.28), 0 0 18px rgba(255,255,255,.6);
+  transform:translateY(-2px) scale(1.02);
+}
+
+/* Botões grandes no Hero */
+.pill.big{
+  padding:14px 28px;
+  font-size:15.5px;
+}
+
+/* Unidades °C / °F */
+.seg{
+  display:flex;
+  padding:3px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.45);
+  background:rgba(255,255,255,.22);
+  backdrop-filter:blur(14px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4);
+}
+.seg button{
+  padding:7px 14px;
+  border-radius:999px;
+  font-size:13.5px;
+  font-weight:600;
+  transition:all .25s ease;
+}
+.seg button[aria-pressed=true]{
+  background:#fff;
+  color:var(--acc);
+  box-shadow:0 3px 10px rgba(10,40,90,.16);
+}
+
+/* Botão da Conta / Sign Up na Topbar */
+.auth-btn{
+  background:linear-gradient(180deg, rgba(255,255,255,.32) 0%, rgba(255,255,255,.18) 100%);
+  border:1px solid rgba(255,255,255,.65);
+}
+.auth-btn.pulse-btn{
+  background:linear-gradient(135deg, rgba(255,255,255,.4), rgba(255,255,255,.2));
+  border-color:#ffffff;
+  box-shadow:0 0 18px rgba(255,255,255,.45);
+}
+
+/* Botão do Furacão */
+.pill.hbtn{
+  width:42px;
+  height:42px;
+  padding:0;
+  border-radius:50%;
+  display:inline-grid;
+  place-items:center;
+}
+
+/* Estrela de Favorito no Hero */
+.star{
+  font-size:24px;
+  color:#fff3b0;
+  filter:drop-shadow(0 2px 8px rgba(255,243,176,.4));
+  transition:transform .3s cubic-bezier(.3,1.4,.4,1), filter .3s ease;
+}
+.star:hover{
+  transform:rotate(72deg) scale(1.3);
+  filter:drop-shadow(0 0 14px #fff3b0);
+}
 .pill.dk{background:rgba(20,49,79,.07);border-color:rgba(20,49,79,.14);color:var(--ink)}
 .pill.dk:hover{background:rgba(20,49,79,.13)}
 .pill[aria-pressed=true].sndb{background:#fff;color:var(--acc)}
@@ -665,6 +766,40 @@ html.hlock{overflow:hidden}
   background:rgba(255,255,255,.42);
 }
 .card-search-trigger svg{width:15px;height:15px;flex:none}
+/* Lupa flutuante no cartão que surge apenas no scroll */
+.hero-scroll-search{
+  position:absolute;
+  top:16px;
+  right:16px;
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:rgba(255,255,255,.32);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.65);
+  color:#fff;
+  cursor:pointer;
+  box-shadow:0 4px 14px rgba(10,30,60,.16);
+  opacity:0;
+  transform:scale(.8);
+  pointer-events:none;
+  transition:opacity .35s ease, transform .35s cubic-bezier(.2,.8,.2,1), background .25s ease;
+  z-index:8;
+}
+.hero-scroll-search.visible{
+  opacity:1;
+  transform:scale(1);
+  pointer-events:auto;
+}
+.hero-scroll-search:hover{
+  background:rgba(255,255,255,.5);
+  transform:scale(1.1);
+  box-shadow:0 6px 20px rgba(10,30,60,.22);
+}
+.hero-scroll-search svg{width:18px;height:18px}
 </style>
 </head>
 <body>
@@ -1296,7 +1431,7 @@ paintLang();trTree(document.body);
 
 /* ============ fetching ============ */
 async function getWeather(lat,lon){
- const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,dew_point_2m&hourly=temperature_2m,weather_code,precipitation_probability,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max&minutely_15=precipitation&forecast_minutely_15=8&timezone=auto&forecast_days=7`;
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,dew_point_2m&hourly=temperature_2m,weather_code,precipitation_probability,is_day,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max&minutely_15=precipitation&forecast_minutely_15=8&timezone=auto&forecast_days=7`;
  const r=await fetch(u);if(!r.ok)throw new Error('Weather service unavailable');return r.json();
 }
 async function reverse(lat,lon){
@@ -1384,15 +1519,18 @@ function lab(){
  const feel=chill!==null?['Wind chill',T(chill)+'°','Wind strips heat from skin']:heat!==null?['Heat index',T(heat)+'°','Humidity slows sweat']:['Body heat','Neutral','No chill or heat stress'];
  const dl=(new Date(d.sunset[0])-new Date(d.sunrise[0]))/6e4,dl2=(new Date(d.sunset[1])-new Date(d.sunrise[1]))/6e4,df=Math.round((dl2-dl)*60);
 
- // 1. Densidade do ar (Equação de estado dos gases)
+ // 1. Densidade do ar
  const pVal = c.surface_pressure || 1013.25;
  const rho=(pVal*100/(287.058*(tC+273.15))).toFixed(3);
  const rhoSub=rho<1.18?'Thin, low lift':rho>1.25?'Dense, high lift':'Standard atmosphere';
 
- // 2. Nova Feature: Tendência Barométrica das últimas 3 horas (WMO 0200)
+ // 2. Tendência Barométrica Real das últimas 3 horas (WMO)
  const pastIdx = Math.max(0, i0 - 3);
- const pPast = (h.surface_pressure && h.surface_pressure[pastIdx]) || pVal;
+ const pPast = (h.surface_pressure && isFinite(h.surface_pressure[pastIdx])) ? h.surface_pressure[pastIdx] : pVal;
  const deltaP = +(pVal - pPast).toFixed(1);
+ 
+ const pArrow = deltaP > 0.4 ? '↗ ' : deltaP < -0.4 ? '↘ ' : '→ ';
+ const pTrendVal = `${pArrow}${deltaP > 0 ? '+' : ''}${deltaP} hPa/3h`;
  const pTrendTxt = deltaP <= -1.5 
    ? 'Falling rapidly (Front approaching)' 
    : deltaP <= -0.5 
@@ -1402,7 +1540,6 @@ function lab(){
    : deltaP >= 0.5 
    ? 'Rising (Clearing)' 
    : 'Steady (Stable mass)';
- const pTrendVal = `${deltaP > 0 ? '+' : ''}${deltaP} hPa/3h`;
 
  const tiles=[
   ['Dew point',T(td)+'°',comfort],
@@ -1438,6 +1575,9 @@ function heroHTML(){
  const c=data.current,d=data.daily;
  const local=new Date(c.time).toLocaleString('en',{weekday:'long',hour:'numeric',minute:'2-digit'});
  return`<section class="hero" id="hero">
+<button class="hero-scroll-search" id="cardSearchBtn" title="${tr('Search a city')}" aria-label="${tr('Search a city')}">
+ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+</button>
 <div class="now">
  <div class="place"><h1>${escH(place.name)}</h1><button class="star" id="fav" aria-label="Save place"></button></div>
  <div class="sub">${place.sub?escH(place.sub)+' · ':''}${local}</div>
@@ -2231,11 +2371,19 @@ $$('.seg button').forEach(b=>{
 });
 $('#logo').onclick=()=>{lsSet('place',null);landing()};
 addEventListener('scroll',()=>{
-  const scrolled = scrollY > 40;
+  const isScrolled = scrollY > 60;
   $('#hd').classList.toggle('stuck', scrollY > 20);
-  const cst = $('#cardSearchTrigger');
-  if (cst) cst.classList.toggle('scrolled', scrolled);
+  const btn = $('#cardSearchBtn');
+  if(btn) btn.classList.toggle('visible', isScrolled);
 },{passive:true});
+
+// Delegação de clique da lupa para focar na pesquisa
+document.addEventListener('click', e => {
+  if (e.target.closest('#cardSearchBtn')) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => $('#q').focus(), 300);
+  }
+});
 document.addEventListener('pointermove',e=>{
  const hero=$('#hero');if(hero){hero.style.setProperty('--px',((e.clientX/innerWidth-.5)*2).toFixed(2));hero.style.setProperty('--py',((e.clientY/innerHeight-.5)*2).toFixed(2))}
  const el=e.target.closest&&e.target.closest('.card');
@@ -3129,21 +3277,22 @@ let currentToken = lsGet('skylab_auth_token');
 let authModalOpen = false;
 
 function updateAuthUI(){
-  const btn=$('#authBtn');const txt=$('#authTxt');const ico=$('#authIco');
-  if(!btn||!txt)return;
-  if(currentUser&&currentUser.username){
-    btn.classList.remove('pulse-btn');
-    if(ico)ico.style.display='none';
-    const rawName=currentUser.username.trim();
-    const displayName=rawName.length>15?rawName.slice(0,15):rawName;
-    txt.innerHTML=`<span class="auth-u-id" title="${escH(rawName)}">${escH(displayName)}</span>`;
-    btn.setAttribute('title',`Conta: ${rawName}`);
-  }else{
-    btn.classList.add('pulse-btn');
-    if(ico)ico.style.display='inline-block';
-    txt.textContent=LANG==='pt'?'Entrar':'Sign In';
-    btn.setAttribute('title',LANG==='pt'?'Criar Conta / Iniciar Sessão':'Sign Up / Sign In');
-  }
+ const btn=$('#authBtn');const txt=$('#authTxt');const ico=$('#authIco');
+ if(!btn||!txt)return;
+ if(currentUser&&currentUser.username){
+  btn.classList.remove('pulse-btn');
+  if(ico)ico.style.display='none';
+  const rawName=currentUser.username.trim();
+  const displayName=rawName.length>15?rawName.slice(0,15):rawName;
+  txt.innerHTML=`<span class="auth-u-id" title="${escH(rawName)}">${escH(displayName)}</span>`;
+  btn.setAttribute('title',`Conta: ${rawName}`);
+ }else{
+  btn.classList.add('pulse-btn');
+  if(ico)ico.style.display='inline-block';
+  // Destaque limpo de Sign Up / Criar Conta
+  txt.textContent=LANG==='pt'?'Criar Conta':'Sign Up';
+  btn.setAttribute('title',LANG==='pt'?'Criar Conta / Iniciar Sessão':'Sign Up / Sign In');
+ }
 }
 
 /* ============ Notificações Periódicas de 10 em 10 min (Apenas Logged In) ============ */
@@ -3331,7 +3480,8 @@ function initAuthInputs(){
   $('#authSwitchLink').onclick=()=>authSetMode(authMode==='signup'?'signin':'signup');
 
   // Terminar Sessão
-  $('#authLogoutBtn').onclick=async()=>{
+  $('#authLogoutBtn').onclick=async()=>{y
+    if(userNotifyTimer) { clearInterval(userNotifyTimer); userNotifyTimer = null; }
     stopUserWeatherLoop();
     const tok=currentToken;
     currentUser=null;
@@ -3599,6 +3749,10 @@ function initAutoStorms(){
   }, 10 * 60 * 1000);
 }
 initAutoStorms();
+
+// Carrega automaticamente os ciclones e furacões ativos em background
+hurrGet().then(() => hurrBadge()).catch(() => {});
+setInterval(() => { hurrGet(true).then(() => hurrBadge()).catch(() => {}); }, 10 * 60 * 1000);
 
 /* ============ boot ============ */
 const saved=lsGet('place'); 
