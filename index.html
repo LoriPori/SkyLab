@@ -789,6 +789,24 @@ html.hlock{overflow:hidden}
   box-shadow:0 6px 20px rgba(10,30,60,.22);
 }
 .hero-scroll-search svg{width:18px;height:18px}
+
+/* ==== fontes & atribuições ==== */
+.src-line{display:flex;gap:6px;align-items:center;margin-top:10px;font-size:12px;color:rgba(255,255,255,.8);text-shadow:0 1px 6px rgba(10,30,60,.3)}
+.src-line a{color:#fff;text-decoration:underline;text-underline-offset:2px}
+.db-badge{display:inline-flex;align-items:center;gap:5px;margin-left:10px;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);font-size:11px}
+.db-badge svg{color:#F6821F;flex:none}
+.db-badge strong{font-weight:600}
+.src-badge{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(20,49,79,.08)}
+.src-dot{width:8px;height:8px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+.src-dot.live{animation:dotPulse 2s ease-in-out infinite}
+@keyframes dotPulse{50%{opacity:.4;transform:scale(.85)}}
+.src-sep{opacity:.4}
+.src-coords{font-variant-numeric:tabular-nums}
+.station-row{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:14px;background:rgba(20,49,79,.05);font-size:13px}
+.station-info{flex:1;min-width:0}
+.station-info b{display:block;font-weight:600;font-size:13.5px}
+.station-info small{font-size:11.5px;color:var(--mut)}
+.station-src{font-size:11px;color:var(--mut);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -920,7 +938,12 @@ html.hlock{overflow:hidden}
  </div>
 </div>
 
-<footer>Weather by Open-Meteo · Places by BigDataCloud · Pollen by Atmospore</footer>
+<footer>Weather by Open-Meteo · Places by BigDataCloud · Pollen by Atmospore
+  <span class="db-badge">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+    <span>Data stored on <strong>Cloudflare D1</strong></span>
+  </span>
+</footer>
 </div>
 
 <script>
@@ -936,7 +959,14 @@ let atmoDead=false;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const main=$('#main'),q=$('#q'),sg=$('#sg');
 const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
-const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+      currentUser=data.user;
+      currentToken=data.token;
+      lsSet('skylab_auth_user',currentUser);
+      lsSet('skylab_auth_token',currentToken);
+      updateAuthUI();
+      startUserWeatherLoop();
+      const serverPrefs = await prefsPull();
+      if(prefsMerge(serverPrefs) && data) render();
 let LANG=lsGet('lang')||((navigator.language||'').toLowerCase().startsWith('pt')?'pt':'en');
 const LOC=()=>LANG=='pt'?'pt-PT':'en';
 document.documentElement.lang=LANG;
@@ -1265,6 +1295,9 @@ const PT={
  'Rising rapidly (High pressure)':'Subida rápida (Crista anticiclónica)',
  'Rising (Clearing)':'A subir (Céu a desanuviar)',
  'Steady (Stable mass)':'Estável (Massa de ar calma)',
+
+ 'Data by':'Dados por','Places by':'Locais por',
+ 'Source':'Fonte','Live':'Em direto','Stale data':'Dados desatualizados',
 };
 const FACTS_PT=[
  ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos (dispersão de Rayleigh). O violeta dispersa-se ainda mais, mas o Sol emite menos dele e os nossos olhos respondem-lhe pouco, por isso vemos azul.'],
@@ -1578,7 +1611,13 @@ ${LABEL[c.weather_code]||'—'}</div>
  <div class="tt"><input type="range" id="tr" min="0" max="24" value="0" aria-label="Travel through the next 24 hours"><div class="tl" id="tlab" aria-live="polite">Drag to travel through the next 24 hours</div></div>
 </div>
 <div class="scene"><div class="bigwrap"><i class="halo"></i><div class="bigic" id="bigic">
-${emoji(c.weather_code,c.is_day)}</div></div>${nowcastHTML()}</div>
+${emoji(c.weather_code,c.is_day)}</div></div>${nowcastHTML()}
+ <div class="src-line">
+  <span>${tr('Data by')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></span>
+  <span>·</span>
+  <span>${tr('Places by')} <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a></span>
+ </div>
+</div>
 </section>`;
 }
 function timeTravel(){
@@ -1686,12 +1725,56 @@ function ephemerisData(){
  };
 }
 
+function sourceBadge(){
+ if(!data||!place)return'';
+ const c=data.current;
+ const stale = Date.now() - new Date(c.time).getTime() > 60*60*1000;
+ const dot = stale ? '#f59a3a' : '#2fb34a';
+ const label = stale ? tr('Stale data') : tr('Live');
+ return`<div class="src-badge">
+   <span class="src-dot${stale?'':' live'}" style="background:${dot}"></span>
+   <span>${label}</span>
+   <span class="src-sep">·</span>
+   <span>${tr('Source')}: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></span>
+   ${place.lat!=null?`<span class="src-sep">·</span><span class="src-coords">${place.lat.toFixed(2)}, ${place.lon.toFixed(2)}</span>`:''}
+ </div>`;
+}
+function stationHTML(){
+ const s = extras.station;
+ if(!s) return '';
+ const fresh = data && (Date.now() - new Date(data.current.time).getTime()) < 30*60*1000;
+ return`<div class="station-row">
+   <span class="src-dot${fresh?' live':''}" style="background:${fresh?'#2fb34a':'#f59a3a'}"></span>
+   <div class="station-info">
+     <b>${escH(s.name)}</b>
+     <small>${s.lat!=null?s.lat.toFixed(2):'—'}, ${s.lon!=null?s.lon.toFixed(2):'—'}${s.id?' · ID '+escH(s.id):''}</small>
+   </div>
+   <span class="station-src">NOAA ISD</span>
+ </div>`;
+}
+async function loadStation(){
+ const key = place.lat+','+place.lon;
+ if(extras.stationKey===key && extras.station) return;
+ extras.stationKey = key;
+ extras.station = null;
+ try{
+  const r = await fetch(`https://www.ncei.noaa.gov/access/services/search/v1/data?dataset=global-hourly&bbox=${(place.lon-1).toFixed(2)},${(place.lat-1).toFixed(2)},${(place.lon+1).toFixed(2)},${(place.lat+1).toFixed(2)}&limit=1&format=json`);
+  if(!r.ok) throw 0;
+  const j = await r.json();
+  const s = j.results && j.results[0];
+  if(!s) throw 0;
+  extras.station = { id: s.station || '', name: s.name || s.station || '—', lat: +s.latitude, lon: +s.longitude };
+  putExtra('station', stationHTML());
+ }catch(e){ /* sem estação disponível: não mostra nada */ }
+}
+
 function todayPane(){
  const c=data.current,d=data.daily,m=moon(),uv=d.uv_index_max[0],ci=comfortInfo(),h=data.hourly;
  const uvl=uv<3?'Low':uv<6?'Moderate':uv<8?'High':uv<11?'Very high':'Extreme';
  const best=ci.best<0?'Daylight has passed for today.':`Best time outside: <b>${new Date(h.time[ci.best]).toLocaleTimeString('en',{hour:'numeric'})}</b> · ${T(h.temperature_2m[ci.best])}° · ${h.precipitation_probability[ci.best]}% rain`;
  return`<div class="pane g2">
  <section class="card">
+  ${sourceBadge()}
   <div class="strip">
    ${ringHTML(ci)}
    <div class="mini"><span>Wind</span><b><svg class="wind" style="--r:${(c.wind_direction_10m||0)+180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>${W(c.wind_speed_10m)}</b></div>
@@ -1713,6 +1796,7 @@ function todayPane(){
 
  <p class="best">${best}</p>
  <div class="chips">${advice()}</div>
+ <div id="station">${stationHTML()}</div>
 </section></div>`;
 }
 function scrub(){
@@ -3193,6 +3277,61 @@ const AUTH_CONFIG = {
     : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
   googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com'
 };
+/* ==== sync de preferências ==== */
+const SYNC_KEYS = ['favs','unitPick','lang','place'];
+let syncT = null;
+async function prefsPush(){
+  if(!currentToken) return;
+  const payload = {};
+  for(const k of SYNC_KEYS){ const v = lsGet(k); if(v!=null) payload[k]=v; }
+  if(!Object.keys(payload).length) return;
+  try{
+    await fetch(`${AUTH_CONFIG.apiUrl.replace('/auth','')}/prefs`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentToken}`},
+      body:JSON.stringify(payload)
+    });
+  }catch(e){}
+}
+function prefsSchedulePush(){
+  clearTimeout(syncT);
+  syncT = setTimeout(prefsPush, 800);
+}
+async function prefsPull(){
+  if(!currentToken) return null;
+  try{
+    const r = await fetch(`${AUTH_CONFIG.apiUrl.replace('/auth','')}/prefs`,{
+      headers:{'Authorization':`Bearer ${currentToken}`}
+    });
+    if(!r.ok) return null;
+    const j = await r.json();
+    return j.prefs || null;
+  }catch(e){ return null; }
+}
+function prefsMerge(server){
+  if(!server) return false;
+  let changed = false;
+  for(const k of SYNC_KEYS){
+    if(!(k in server)) continue;
+    if(k==='favs'){
+      const local = lsGet('favs')||[];
+      const remote = Array.isArray(server.favs)?server.favs:[];
+      const seen = new Set(), merged = [];
+      for(const f of [...remote,...local]){
+        const id = f.name+'|'+(f.sub||'');
+        if(seen.has(id)) continue;
+        seen.add(id); merged.push(f);
+      }
+      if(merged.length !== local.length){ lsSet('favs', merged.slice(0,20)); changed = true; }
+    }else{
+      const local = lsGet(k);
+      if(JSON.stringify(local) !== JSON.stringify(server[k])){
+        lsSet(k, server[k]); changed = true;
+      }
+    }
+  }
+  return changed;
+}
 
 function imgFBAuth(el){
   const tries=['imgs/icons/person.png','person.png','imgs/logos/FullLogo_Transparent_NoBuffer-resized-128x128.png'];
@@ -3475,7 +3614,9 @@ function initAuthInputs(){
     try{
       localStorage.removeItem('skylab_auth_user');
       localStorage.removeItem('skylab_auth_token');
+      for(const k of SYNC_KEYS) localStorage.removeItem(k);
     }catch(e){}
+    if(data){ place=null; data=null; landing(); }
 
     if(tok){
       fetch(`${AUTH_CONFIG.apiUrl}/logout`,{
@@ -3537,7 +3678,9 @@ function initAuthInputs(){
         try {
           localStorage.removeItem('skylab_auth_user');
           localStorage.removeItem('skylab_auth_token');
+          for(const k of SYNC_KEYS) localStorage.removeItem(k);
         } catch(e) {}
+        if(data){ place=null; data=null; landing(); }
 
         updateAuthUI();
         startUserWeatherLoop();
@@ -3609,6 +3752,8 @@ function initAuthInputs(){
       lsSet('skylab_auth_token',currentToken);
       updateAuthUI();
       startUserWeatherLoop();
+      const serverPrefs = await prefsPull();
+      if(prefsMerge(serverPrefs) && data) render();
 
       toast(authMode==='signup' 
         ?(LANG==='pt'?`Bem-vindo ao Skylab, ${currentUser.username}!`:`Welcome to Skylab, ${currentUser.username}!`)
@@ -3741,8 +3886,14 @@ hurrGet().then(() => hurrBadge()).catch(() => {});
 setInterval(() => { hurrGet(true).then(() => hurrBadge()).catch(() => {}); }, 10 * 60 * 1000);
 
 /* ============ boot ============ */
-const saved=lsGet('place'); 
-if(saved)show(saved.lat,saved.lon,saved.name,saved.sub);else landing();
+(async()=>{
+  if(currentToken){
+    const serverPrefs = await prefsPull();
+    prefsMerge(serverPrefs);
+  }
+  const saved=lsGet('place');
+  if(saved)show(saved.lat,saved.lon,saved.name,saved.sub);else landing();
+})();
 </script>
 </body>
 </html>
