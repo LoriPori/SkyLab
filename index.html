@@ -41,7 +41,7 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .logo{font-family:var(--serif);font-size:28px;margin-right:auto;cursor:pointer;display:flex;align-items:center;gap:9px;text-shadow:0 2px 14px rgba(10,30,60,.25)}
 .lg{width:14px;height:14px;border-radius:50%;background:#fff3b0;box-shadow:0 0 0 0 rgba(255,243,176,.8);animation:ping2 2.6s infinite}
 @keyframes ping2{70%{box-shadow:0 0 0 12px rgba(255,243,176,0)}100%{box-shadow:0 0 0 0 rgba(255,243,176,0)}}
-.search{position:relative;flex:1 1 280px;max-width:420px}
+.search{position:relative;flex:1 1 180px;max-width:360px}
 .search input{width:100%;padding:11px 40px 11px 40px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.26);backdrop-filter:blur(14px);color:#fff;font:inherit;font-size:15px}
 .search input::placeholder{color:rgba(255,255,255,.85)}
 .search>svg{position:absolute;left:14px;top:12px;width:18px}
@@ -52,7 +52,7 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .sugg button small{color:var(--mut);margin-left:6px}
 .sugg button:hover,.sugg button[aria-selected=true]{background:rgba(20,49,79,.08)}
 .sugg .hd{padding:10px 16px;font-size:13px;color:var(--mut)}
-.pill{padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.24);backdrop-filter:blur(12px);font-size:14px;font-weight:500;white-space:nowrap;transition:transform .2s,background .25s}
+.pill{padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.24);backdrop-filter:blur(12px);font-size:14px;font-weight:500;white-space:nowrap;transition:transform .2s,background .25s,box-shadow .3s}
 .pill:hover{background:rgba(255,255,255,.38);transform:translateY(-2px)}
 .pill:active{transform:scale(.95)}
 .pill.solid{background:#fff;color:var(--acc);font-weight:600}
@@ -63,6 +63,7 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .seg{display:flex;padding:3px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.24)}
 .seg button{padding:7px 12px;border-radius:999px;font-size:14px;transition:background .25s,color .25s}
 .seg button[aria-pressed=true]{background:#fff;color:var(--acc);font-weight:600}
+
 
 /* hero */
 .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;align-items:center;min-height:clamp(290px,42vh,410px);margin-top:10px;--px:0;--py:0;text-shadow:0 2px 16px rgba(10,30,60,.26)}
@@ -566,7 +567,9 @@ html.hlock{overflow:hidden}
 .hempty .hico img{width:44px;height:44px;animation-duration:14s}
 .hempty h3{font-family:var(--serif);font-weight:400;font-size:26px;letter-spacing:0;text-transform:none;color:var(--ink);margin-bottom:6px}
 /* ---- auth modal & components ---- */
-.auth-btn{display:inline-flex;align-items:center;gap:7px;font-weight:500;transition:transform .2s,background .25s}
+.auth-btn{display:inline-flex;align-items:center;gap:7px;font-weight:500;white-space:nowrap;flex:0 0 auto;transition:transform .2s,background .25s,box-shadow .3s}
+.auth-btn.pulse-btn{background:rgba(255,255,255,.34);border-color:rgba(255,255,255,.85);font-weight:600;animation:authPulse 2.6s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes authPulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.75),0 0 14px rgba(51,176,234,.45)}60%{box-shadow:0 0 0 10px rgba(255,255,255,0),0 0 22px rgba(51,176,234,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0),0 0 0 rgba(51,176,234,0)}}
 .auth-btn img,.auth-btn svg{width:18px;height:18px;flex:none;object-fit:contain}
 .auth-btn .auth-u-id{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:inherit}
 .auth-ov{z-index:1100}
@@ -587,7 +590,6 @@ html.hlock{overflow:hidden}
 .auth-form{display:grid;gap:13px}
 .auth-field{display:flex;flex-direction:column;gap:5px}
 .auth-label{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--ink)}
-.auth-id-hint{font-size:11px;font-weight:500;color:#64748b;background:rgba(100,116,139,.1);padding:2px 7px;border-radius:6px}
 .auth-input-wrap{position:relative;display:flex;align-items:center}
 .auth-input{width:100%;padding:11px 14px;border-radius:13px;border:1px solid rgba(20,49,79,.16);background:rgba(255,255,255,.92);color:var(--ink);font:inherit;font-size:14px;transition:border-color .25s,box-shadow .25s,padding-left .22s ease}
 .auth-input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(51,176,234,.2)}
@@ -598,8 +600,9 @@ html.hlock{overflow:hidden}
 .auth-input.has-dyn-icon:not(:placeholder-shown),.auth-input.has-dyn-icon.has-val{padding-left:14px}
 .auth-input.has-dyn-icon:not(:placeholder-shown) ~ .auth-dyn-ico,.auth-input.has-dyn-icon.has-val ~ .auth-dyn-ico{opacity:0;transform:translateX(-10px) scale(.6);pointer-events:none}
 .auth-char-count{position:absolute;right:12px;font-size:11px;font-weight:600;color:#64748b;pointer-events:none;background:rgba(255,255,255,.85);padding:1px 5px;border-radius:4px}
-.auth-eye-btn{position:absolute;right:8px;padding:6px;font-size:14px;color:#64748b;opacity:.65;transition:opacity .2s;cursor:pointer}
-.auth-eye-btn:hover{opacity:1}
+.auth-eye-btn{position:absolute;right:8px;padding:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:none;border:none}
+.auth-eye-btn img,.auth-eye-btn svg{width:18px;height:18px;object-fit:contain;opacity:.75;transition:opacity .2s,transform .2s}
+.auth-eye-btn:hover img,.auth-eye-btn:hover svg{opacity:1;transform:scale(1.08)}
 .auth-submit-btn{width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 .auth-submit-btn:disabled{opacity:.6;cursor:not-allowed}
 .auth-switch-prompt{margin-top:16px;text-align:center;font-size:13px;color:var(--mut)}
@@ -612,14 +615,10 @@ html.hlock{overflow:hidden}
 .auth-avatar-lg{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--acc));display:grid;place-items:center;font-size:22px;color:#fff;flex:none;box-shadow:0 6px 16px rgba(10,40,90,.15)}
 .auth-user-info{display:flex;flex-direction:column;gap:2px;min-width:0}
 .auth-id-tag{font-size:14.5px;color:var(--ink)}
-.auth-id-prefix{color:#64748b;font-size:11.5px;font-weight:600;margin-right:4px;text-transform:uppercase}
+.auth-id-prefix{color:#64748b;font-size:12px;font-weight:600;margin-right:4px}
 .auth-id-val{color:var(--acc);font-size:16px}
 .auth-email-val{font-size:12.5px;color:var(--mut);word-break:break-all}
-.auth-meta-val{font-size:11px;color:#64748b;margin-top:2px}
 [hidden], #authLoggedInView[hidden], #authLoggedOutView[hidden]{display:none!important}
-.auth-eye-btn{position:absolute;right:8px;padding:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:none;border:none}
-.auth-eye-btn img,.auth-eye-btn svg{width:18px;height:18px;object-fit:contain;opacity:.75;transition:opacity .2s,transform .2s}
-.auth-eye-btn:hover img,.auth-eye-btn:hover svg{opacity:1;transform:scale(1.08)}
 .auth-logout-btn{width:100%;background:#ef4444!important;color:#fff!important;font-weight:600;box-shadow:0 6px 20px rgba(239,68,68,.25)}
 .auth-logout-btn:hover{background:#dc2626!important}
 </style>
@@ -670,7 +669,7 @@ html.hlock{overflow:hidden}
    <div class="auth-user-badge">
     <div class="auth-avatar-lg" id="profAvatar">👤</div>
     <div class="auth-user-info">
-     <div class="auth-id-tag"><span class="auth-id-prefix">USER ID:</span> <b id="profUsername" class="auth-id-val"></b></div>
+     <div class="auth-id-tag"><span class="auth-id-prefix" id="profUserLbl">Nome de utilizador:</span> <b id="profUsername" class="auth-id-val"></b></div>
      <div class="auth-email-val" id="profEmail"></div>
     </div>
    </div>
@@ -702,11 +701,10 @@ html.hlock{overflow:hidden}
     <!-- Username (Sign Up only) -->
     <div class="auth-field" id="fieldUsername">
      <label for="authUsername" class="auth-label">
-      <span id="lblUsername">Username / ID</span>
-      <span class="auth-id-hint" title="Identificador único">ID #64748b (máx 15)</span>
+      <span id="lblUsername">Nome de utilizador</span>
      </label>
      <div class="auth-input-wrap">
-      <input type="text" id="authUsername" class="auth-input" placeholder="ex: lourenco_sky" maxlength="15" autocomplete="username">
+      <input type="text" id="authUsername" class="auth-input" placeholder="ex: sky_explorer" maxlength="15" autocomplete="username">
       <span class="auth-char-count" id="authCharCount">0/15</span>
      </div>
     </div>
@@ -730,9 +728,7 @@ html.hlock{overflow:hidden}
       <span class="auth-dyn-ico" aria-hidden="true">
        <img src="imgs/icons/lock.png" alt="" onerror="imgFBLock(this)">
       </span>
-      <button type="button" class="auth-eye-btn" id="authTogglePass" title="Ver / ocultar senha" aria-label="Ver / ocultar senha">
-        <img id="authEyeIco" src="imgs/icons/eye-slash.png" alt="" width="18" height="18" onerror="imgFBEye(this,false)">
-      </button>
+      <button type="button" class="auth-eye-btn" id="authTogglePass" title="Ver / ocultar senha" aria-label="Ver / ocultar senha"></button>
      </div>
     </div>
 
@@ -2968,9 +2964,10 @@ document.addEventListener('keydown',e=>{      // atalho: T abre o seguimento de 
 });
 new MutationObserver(()=>hurrBadge()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});   // muda o idioma do tooltip do botão
 /* ============ Skylab Auth Client ============ */
+/* Fix: the previous auth config block had been duplicated and cut off, which caused the script parser to hit a stray `const` after an unfinished object literal. Keep a single complete AUTH_CONFIG definition. */
 const AUTH_CONFIG = {
-  apiUrl: (typeof ATMO !== 'undefined' && ATMO.base) 
-    ? ATMO.base.replace(/\/v1\/?$/, '/api/auth') 
+  apiUrl: (typeof ATMO !== 'undefined' && ATMO.base)
+    ? ATMO.base.replace(/\/v1\/?$/, '/api/auth')
     : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
   googleClientId: ''
 };
@@ -3023,19 +3020,20 @@ function imgFBGoogle(el){
   }
 }
 
-function imgFBEye(el,isOpen){
-  const tries=isOpen
-    ?['imgs/icons/eye-open.png','eye-open.png']
-    :['imgs/icons/eye-slash.png','eye-slash.png'];
-  const i=+(el.dataset.t||0);
-  if(i<tries.length){el.dataset.t=i+1;el.src=tries[i]}
-  else{
+function renderEyeIcon(isOpen){
+  const btn=$('#authTogglePass');if(!btn)return;
+  const img=document.createElement('img');
+  img.src=isOpen?'imgs/icons/eye-open.png':'imgs/icons/eye-slash.png';
+  img.alt='';img.width=18;img.height=18;
+  img.onerror=()=>{
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
     svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','#64748b');svg.setAttribute('stroke-width','2');svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');
+    svg.style.width='18px';svg.style.height='18px';
     if(isOpen){svg.innerHTML='<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>'}
     else{svg.innerHTML='<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>'}
-    svg.style.width='18px';svg.style.height='18px';el.replaceWith(svg);
-  }
+    img.replaceWith(svg);
+  };
+  btn.innerHTML='';btn.appendChild(img);
 }
 
 let authMode = 'signup';
@@ -3047,11 +3045,13 @@ function updateAuthUI(){
   const btn=$('#authBtn');const txt=$('#authTxt');
   if(!btn||!txt)return;
   if(currentUser&&currentUser.username){
-    const rawId=currentUser.username.trim();
-    const displayId=rawId.length>15?rawId.slice(0,15):rawId;
-    txt.innerHTML=`<span class="auth-u-id" title="${escH(rawId)}">${escH(displayId)}</span>`;
-    btn.setAttribute('title',`Conta: ${rawId}`);
+    btn.classList.remove('pulse-btn');
+    const rawName=currentUser.username.trim();
+    const displayName=rawName.length>15?rawName.slice(0,15):rawName;
+    txt.innerHTML=`<span class="auth-u-id" title="${escH(rawName)}">${escH(displayName)}</span>`;
+    btn.setAttribute('title',`Conta: ${rawName}`);
   }else{
+    btn.classList.add('pulse-btn');
     txt.textContent='Sign In';
     btn.setAttribute('title',LANG==='pt'?'Criar Conta / Iniciar Sessão':'Sign Up / Sign In');
   }
@@ -3070,7 +3070,7 @@ function authSetMode(mode){
     ?(LANG==='pt'?'Criar Conta Skylab':'Create Skylab Account')
     :(LANG==='pt'?'Iniciar Sessão':'Welcome Back');
   $('#authSubtitle').textContent=isUp
-    ?(LANG==='pt'?'Cria o teu ID para aceder à tua conta e guardar locais':'Create your account to sync settings & places')
+    ?(LANG==='pt'?'Cria a tua conta para guardar locais e preferências':'Create your account to sync settings & places')
     :(LANG==='pt'?'Entra com a tua conta para sincronizar dados':'Sign in to access your saved places');
   $('#authSubmitTxt').textContent=isUp
     ?(LANG==='pt'?'Criar Conta':'Sign Up')
@@ -3081,6 +3081,8 @@ function authSetMode(mode){
   $('#authSwitchLink').textContent=isUp
     ?(LANG==='pt'?'Iniciar sessão':'Sign In')
     :(LANG==='pt'?'Regista-te':'Sign Up');
+  if($('#lblUsername'))$('#lblUsername').textContent=LANG==='pt'?'Nome de utilizador':'Username';
+  if($('#profUserLbl'))$('#profUserLbl').textContent=LANG==='pt'?'Nome de utilizador:':'Username:';
 
   authClearAlert();
 }
@@ -3106,8 +3108,8 @@ function authOpen(){
     $('#authLoggedOutView').hidden=true;
     $('#authLoggedOutView').style.display='none';
 
-    const rawId=currentUser.username||'User';
-    $('#profUsername').textContent=rawId.length>15?rawId.slice(0,15):rawId;
+    const rawName=currentUser.username||'User';
+    $('#profUsername').textContent=rawName.length>15?rawName.slice(0,15):rawName;
     $('#profEmail').textContent=currentUser.email||'';
     $('#authTitle').textContent=LANG==='pt'?'A tua Conta':'Your Account';
     $('#authSubtitle').textContent=LANG==='pt'?'Sessão iniciada no Skylab':'Signed in to Skylab';
@@ -3159,17 +3161,16 @@ function initAuthInputs(){
     });
   }
 
+  let passVisible=false;
+  renderEyeIcon(false);
   const togglePassBtn=$('#authTogglePass');
-  const eyeIco=$('#authEyeIco');
   if(togglePassBtn&&passIn){
-    togglePassBtn.addEventListener('click',()=>{
-      const isPass=passIn.type==='password';
-      passIn.type=isPass?'text':'password';
-      if(eyeIco){
-        eyeIco.src=isPass?'imgs/icons/eye-open.png':'imgs/icons/eye-slash.png';
-        eyeIco.onerror=()=>imgFBEye(eyeIco,isPass);
-      }
-    });
+    togglePassBtn.onclick=(e)=>{
+      e.preventDefault();e.stopPropagation();
+      passVisible=!passVisible;
+      passIn.type=passVisible?'text':'password';
+      renderEyeIcon(passVisible);
+    };
   }
 
   $('#authBtn').onclick=()=>authModalOpen?authClose():authOpen();
@@ -3220,9 +3221,9 @@ function initAuthInputs(){
     const username=userIn?(userIn.value||'').trim():'';
 
     if(authMode==='signup'){
-      if(!username)return authShowAlert(LANG==='pt'?'Por favor introduz um username / ID.':'Please choose a username / ID.');
-      if(username.length>15)return authShowAlert(LANG==='pt'?'O username não pode ter mais de 15 carateres.':'Username must be at most 15 characters.');
-      if(!/^[a-zA-Z0-9_-]+$/.test(username))return authShowAlert(LANG==='pt'?'O username apenas pode conter letras, números, _ ou -.':'Username can only contain letters, numbers, _ and -.');
+      if(!username)return authShowAlert(LANG==='pt'?'Por favor introduz o nome de utilizador.':'Please choose a username.');
+      if(username.length>15)return authShowAlert(LANG==='pt'?'O nome de utilizador não pode ter mais de 15 carateres.':'Username must be at most 15 characters.');
+      if(!/^[a-zA-Z0-9_-]+$/.test(username))return authShowAlert(LANG==='pt'?'O nome de utilizador apenas pode conter letras, números, _ ou -.':'Username can only contain letters, numbers, _ and -.');
     }
     if(!email)return authShowAlert(LANG==='pt'?'Por favor introduz o teu email.':'Please enter your email.');
     if(!password||password.length<6)return authShowAlert(LANG==='pt'?'A palavra-passe deve ter pelo menos 6 carateres.':'Password must be at least 6 characters.');
@@ -3276,21 +3277,13 @@ function initAuthInputs(){
   });
 }
 
+// Fluxo de Autenticação Oficial da Google (Janela/Popup OAuth)
 function authTriggerGoogle(){
-  let desiredUsername = ($('#authUsername') ? $('#authUsername').value.trim() : '');
-  if(!desiredUsername){
-    const promptUser = prompt(LANG==='pt'
-      ?'Escolhe o teu USER ID / Username para a conta Google (máx 15 carateres):'
-      :'Choose your USER ID / Username for your Google account (max 15 chars):');
-    if(!promptUser) return;
-    desiredUsername = promptUser.trim().slice(0, 15);
-  }
-  if(!desiredUsername || desiredUsername.length > 15 || !/^[a-zA-Z0-9_-]+$/.test(desiredUsername)){
-    authShowAlert(LANG==='pt'?'O USER ID deve ter entre 1 e 15 carateres (letras, números, _ ou -).':'User ID must be 1-15 chars (letters, numbers, _ or -).');
-    return;
-  }
+  authClearAlert();
+  const rawInput = $('#authUsername') ? $('#authUsername').value.trim() : '';
+  const chosenUsername = (rawInput && rawInput.length <= 15 && /^[a-zA-Z0-9_-]+$/.test(rawInput)) ? rawInput : '';
 
-  if(window.google&&window.google.accounts&&window.google.accounts.oauth2&&AUTH_CONFIG.googleClientId){
+  if(window.google && window.google.accounts && window.google.accounts.oauth2 && AUTH_CONFIG.googleClientId){
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: AUTH_CONFIG.googleClientId,
       scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
@@ -3302,6 +3295,9 @@ function authTriggerGoogle(){
             headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
           }).then(r => r.json());
 
+          const defaultName = (gUserInfo.name || gUserInfo.email || 'user').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 15) || 'google_user';
+          const finalUsername = chosenUsername || defaultName;
+
           const res = await fetch(`${AUTH_CONFIG.apiUrl}/google`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3309,7 +3305,7 @@ function authTriggerGoogle(){
               credential: tokenResponse.access_token,
               email: gUserInfo.email,
               google_id: gUserInfo.sub,
-              username: desiredUsername,
+              username: finalUsername,
               picture: gUserInfo.picture
             })
           });
@@ -3327,53 +3323,21 @@ function authTriggerGoogle(){
         }
       }
     });
-    client.requestAccessToken();
+    client.requestAccessToken({ prompt: 'select_account' });
   } else {
-    // Redirecionamento direto / fluxo OAuth seguro para testes
-    const emailPrompt = prompt(LANG==='pt' 
-      ? 'Introduz o teu email da Google para vincular ao teu USER ID (' + desiredUsername + '):' 
-      : 'Enter your Google email to link with your USER ID (' + desiredUsername + '):');
-    if (emailPrompt && emailPrompt.includes('@')) {
-      fetch(`${AUTH_CONFIG.apiUrl}/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: emailPrompt.trim().toLowerCase(),
-          google_id: 'g_' + Math.random().toString(36).substring(2, 10),
-          username: desiredUsername
-        })
-      }).then(r => r.json()).then(data => {
-        if(data && data.success && data.user) {
-          currentUser = data.user;
-          currentToken = data.token;
-        } else {
-          currentUser = {
-            id: 'g_' + Math.random().toString(36).substring(2, 9),
-            username: desiredUsername,
-            email: emailPrompt.toLowerCase(),
-            provider: 'google'
-          };
-          currentToken = 'token_' + Math.random().toString(36).substring(2);
-        }
-        lsSet('skylab_auth_user', currentUser);
-        lsSet('skylab_auth_token', currentToken);
-        updateAuthUI();
-        toast(LANG==='pt'?`Autenticado como ${currentUser.username} (Google)`:`Signed in as ${currentUser.username} (Google)`);
-        authClose();
-      }).catch(() => {
-        currentUser = {
-          id: 'g_' + Math.random().toString(36).substring(2, 9),
-          username: desiredUsername,
-          email: emailPrompt.toLowerCase(),
-          provider: 'google'
-        };
-        currentToken = 'token_' + Math.random().toString(36).substring(2);
-        lsSet('skylab_auth_user', currentUser);
-        lsSet('skylab_auth_token', currentToken);
-        updateAuthUI();
-        toast(LANG==='pt'?`Autenticado como ${currentUser.username} (Google)`:`Signed in as ${currentUser.username} (Google)`);
-        authClose();
-      });
+    const w = 500, h = 600;
+    const left = (screen.width/2)-(w/2);
+    const top = (screen.height/2)-(h/2);
+    const googleAuthUrl = AUTH_CONFIG.googleClientId 
+      ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${AUTH_CONFIG.googleClientId}&redirect_uri=${encodeURIComponent(location.origin + location.pathname)}&response_type=token&scope=email%20profile&prompt=select_account`
+      : `https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin`;
+    
+    window.open(googleAuthUrl, 'GoogleAuth', `width=${w},height=${h},top=${top},left=${left},toolbar=no,menubar=no,status=no`);
+    
+    if(!AUTH_CONFIG.googleClientId){
+      authShowAlert(LANG==='pt'
+        ?'Janela da Google aberta. Para ligar à database, adiciona o Google Client ID no AUTH_CONFIG.'
+        :'Google window opened. To link with your database, add Google Client ID to AUTH_CONFIG.');
     }
   }
 }
