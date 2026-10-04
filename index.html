@@ -623,6 +623,48 @@ html.hlock{overflow:hidden}
 .auth-delete-btn:hover{background:#dc2626!important;box-shadow:0 6px 20px rgba(220,38,38,.35)}
 @media(max-width:480px){.auth-profile-actions{grid-template-columns:1fr}}
 [hidden], #authLoggedInView[hidden], #authLoggedOutView[hidden]{display:none!important}
+/* Botão Sign Up dinâmico no Hero */
+.hero-signup-btn{
+  background:rgba(255,255,255,.32)!important;
+  border:1px solid rgba(255,255,255,.85)!important;
+  font-weight:600!important;
+  color:#fff!important;
+  box-shadow:0 4px 18px rgba(10,40,90,.18);
+  transition:transform .2s, background .25s!important;
+}
+.hero-signup-btn:hover{
+  background:rgba(255,255,255,.45)!important;
+  transform:translateY(-2px);
+}
+
+/* Lupa no cartão: oculta por defeito, surge com scroll */
+.card-search-trigger{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 14px;
+  border-radius:999px;
+  background:rgba(255,255,255,.26);
+  border:1px solid rgba(255,255,255,.55);
+  backdrop-filter:blur(14px);
+  color:#fff;
+  font-size:13px;
+  cursor:pointer;
+  opacity:0;
+  transform:translateY(-6px);
+  pointer-events:none;
+  transition:opacity .35s ease, transform .35s ease, background .25s;
+  margin-top:10px;
+}
+.card-search-trigger.scrolled{
+  opacity:1;
+  transform:none;
+  pointer-events:auto;
+}
+.card-search-trigger:hover{
+  background:rgba(255,255,255,.42);
+}
+.card-search-trigger svg{width:15px;height:15px;flex:none}
 </style>
 </head>
 <body>
@@ -1092,6 +1134,13 @@ const PT={
  'Thin, low lift':'Rarefeito, menor sustentação',
  'Dense, high lift':'Denso, maior sustentação',
  'Standard atmosphere':'Atmosfera padrão',
+ 'Sign Up':'Criar Conta',
+ 'Barometric trend':'Tendência barométrica',
+ 'Falling rapidly (Front approaching)':'Queda rápida (Frente a aproximar-se)',
+ 'Falling (Unsettled)':'A descer (Instabilidade)',
+ 'Rising rapidly (High pressure)':'Subida rápida (Crista anticiclónica)',
+ 'Rising (Clearing)':'A subir (Céu a desanuviar)',
+ 'Steady (Stable mass)':'Estável (Massa de ar calma)',
 };
 const FACTS_PT=[
  ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos (dispersão de Rayleigh). O violeta dispersa-se ainda mais, mas o Sol emite menos dele e os nossos olhos respondem-lhe pouco, por isso vemos azul.'],
@@ -1325,7 +1374,8 @@ function advice(){
  return a.slice(0,5).map(([i,s],n)=>`<span class="chip" style="--n:${n}">${ic(i)}${s}</span>`).join('');
 }
 function lab(){
- const c=data.current,d=data.daily,tC=c.temperature_2m,td=c.dew_point_2m,v=c.wind_speed_10m,rh=c.relative_humidity_2m;
+ const c=data.current,d=data.daily,h=data.hourly,i0=idx0();
+ const tC=c.temperature_2m,td=c.dew_point_2m,v=c.wind_speed_10m,rh=c.relative_humidity_2m;
  const comfort=td<10?'Dry and comfortable':td<16?'Pleasant':td<18?'Slightly humid':td<21?'Humid':'Oppressive';
  const cb=Math.max(0,(tC-td)*125),cbTxt=cb<60?'Fog level':unit=='c'?`~${Math.round(cb/10)*10} m`:`~${Math.round(cb*3.281/50)*50} ft`;
  let chill=null;if(tC<=10&&v>4.8){const p=Math.pow(v,.16);chill=13.12+.6215*tC-11.37*p+.3965*tC*p}
@@ -1333,17 +1383,33 @@ function lab(){
  if(F>=80&&rh>=40)heat=(-42.379+2.04901523*F+10.14333127*rh-.22475541*F*rh-.00683783*F*F-.05481717*rh*rh+.00122874*F*F*rh+.00085282*F*rh*rh-.00000199*F*F*rh*rh-32)*5/9;
  const feel=chill!==null?['Wind chill',T(chill)+'°','Wind strips heat from skin']:heat!==null?['Heat index',T(heat)+'°','Humidity slows sweat']:['Body heat','Neutral','No chill or heat stress'];
  const dl=(new Date(d.sunset[0])-new Date(d.sunrise[0]))/6e4,dl2=(new Date(d.sunset[1])-new Date(d.sunrise[1]))/6e4,df=Math.round((dl2-dl)*60);
- 
- // Equação dos gases perfeitos para ar (kg/m³)
+
+ // 1. Densidade do ar (Equação de estado dos gases)
  const pVal = c.surface_pressure || 1013.25;
  const rho=(pVal*100/(287.058*(tC+273.15))).toFixed(3);
  const rhoSub=rho<1.18?'Thin, low lift':rho>1.25?'Dense, high lift':'Standard atmosphere';
+
+ // 2. Nova Feature: Tendência Barométrica das últimas 3 horas (WMO 0200)
+ const pastIdx = Math.max(0, i0 - 3);
+ const pPast = (h.surface_pressure && h.surface_pressure[pastIdx]) || pVal;
+ const deltaP = +(pVal - pPast).toFixed(1);
+ const pTrendTxt = deltaP <= -1.5 
+   ? 'Falling rapidly (Front approaching)' 
+   : deltaP <= -0.5 
+   ? 'Falling (Unsettled)' 
+   : deltaP >= 1.5 
+   ? 'Rising rapidly (High pressure)' 
+   : deltaP >= 0.5 
+   ? 'Rising (Clearing)' 
+   : 'Steady (Stable mass)';
+ const pTrendVal = `${deltaP > 0 ? '+' : ''}${deltaP} hPa/3h`;
 
  const tiles=[
   ['Dew point',T(td)+'°',comfort],
   ['Cloud base',cbTxt,'125 m per °C of spread'],
   feel,
   ['Air density',rho+' kg/m³',rhoSub],
+  ['Barometric trend',pTrendVal,pTrendTxt],
   ['Speed of sound',Math.round(331.3+.606*tC)+' m/s','Faster in warm air'],
   ['Daylight',hm(dl),`Tomorrow ${df>=0?'+':'−'}${Math.abs(df)}s`],
   ['Pressure',Math.round(pVal)+' hPa',pVal<1005?'Low, unsettled':pVal>1020?'High, settled':'Near average']
@@ -1824,10 +1890,15 @@ function landing(){
 <div class="now">
  <h1>The sky, explained.</h1>
  <p class="lp">Live weather for anywhere on Earth, with the science behind what you’re looking at.</p>
- <div class="cta">
-  <button class="pill big solid" id="lc">Use my location</button>
-  <button class="pill big" id="ls">Surprise me</button>
- </div>
+<div class="cta">
+ <button class="pill big solid" id="lc">Use my location</button>
+ <button class="pill big" id="ls">Surprise me</button>
+ ${!currentUser ? `<button class="pill big hero-signup-btn" id="heroSignupBtn">✨ ${tr('Sign Up')}</button>` : ''}
+</div>
+<button class="card-search-trigger" id="cardSearchTrigger" aria-label="Pesquisar cidade">
+ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+ <span>${tr('Search a city')}</span>
+</button>
  ${dailyHTML()}
  <div class="ticker" id="tk"></div>
 </div>
@@ -1841,6 +1912,10 @@ function landing(){
 </section>
 <section class="marq" id="marq"><div class="track">${CITIES.map(c=>`<div class="cityc sk">${c[0]}</div>`).join('')}</div></section>`;
  $('#lc').onclick=locate;$('#ls').onclick=surprise;startTicker();
+ const hsb = $('#heroSignupBtn');
+ if (hsb) hsb.onclick = () => { authSetMode('signup'); authOpen(); };
+ const cst = $('#cardSearchTrigger');
+ if (cst) cst.onclick = () => { window.scrollTo({top:0, behavior:'smooth'}); $('#q').focus(); };
  globeStart();
  const u=`https://api.open-meteo.com/v1/forecast?latitude=${CITIES.map(c=>c[2]).join(',')}
 &longitude=${CITIES.map(c=>c[3]).join(',')}
@@ -2155,7 +2230,12 @@ $$('.seg button').forEach(b=>{
  b.onclick=()=>setUnit(b.dataset.u,true);
 });
 $('#logo').onclick=()=>{lsSet('place',null);landing()};
-addEventListener('scroll',()=>$('#hd').classList.toggle('stuck',scrollY>20),{passive:true});
+addEventListener('scroll',()=>{
+  const scrolled = scrollY > 40;
+  $('#hd').classList.toggle('stuck', scrollY > 20);
+  const cst = $('#cardSearchTrigger');
+  if (cst) cst.classList.toggle('scrolled', scrolled);
+},{passive:true});
 document.addEventListener('pointermove',e=>{
  const hero=$('#hero');if(hero){hero.style.setProperty('--px',((e.clientX/innerWidth-.5)*2).toFixed(2));hero.style.setProperty('--py',((e.clientY/innerHeight-.5)*2).toFixed(2))}
  const el=e.target.closest&&e.target.closest('.card');
@@ -2976,7 +3056,7 @@ const AUTH_CONFIG = {
   apiUrl: (typeof ATMO !== 'undefined' && ATMO.base) 
     ? ATMO.base.replace(/\/v1\/?$/, '/api/auth') 
     : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
-  googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com'
+  googleClientId: ''
 };
 
 function imgFBAuth(el){
@@ -3063,6 +3143,61 @@ function updateAuthUI(){
     if(ico)ico.style.display='inline-block';
     txt.textContent=LANG==='pt'?'Entrar':'Sign In';
     btn.setAttribute('title',LANG==='pt'?'Criar Conta / Iniciar Sessão':'Sign Up / Sign In');
+  }
+}
+
+/* ============ Notificações Periódicas de 10 em 10 min (Apenas Logged In) ============ */
+let userWeatherTimer = null;
+
+async function sendUserWeatherStatus() {
+  if (!currentUser || !currentUser.username) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  // Se já temos dados carregados do local atual
+  if (data && place) {
+    const c = data.current;
+    const tStr = `${T(c.temperature_2m)}°`;
+    const condStr = tr(LABEL[c.weather_code] || 'Tempo atual');
+    const wStr = W(c.wind_speed_10m);
+    const title = `Skylab · ${place.name}: ${tStr}`;
+    const body = `${condStr} · Vento: ${wStr} · Humidade: ${c.relative_humidity_2m}%`;
+
+    try {
+      const n = new Notification(title, {
+        body,
+        icon: 'manifest-icon-192.png',
+        tag: 'skylab-user-live-weather' // Substitui a anterior para não acumular spam
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch(e) {}
+  } else if (navigator.geolocation) {
+    // Caso ainda não tenha dados, obtém a localização atual
+    navigator.geolocation.getCurrentPosition(p => {
+      show(+p.coords.latitude.toFixed(3), +p.coords.longitude.toFixed(3));
+    });
+  }
+}
+
+function startUserWeatherLoop() {
+  if (userWeatherTimer) clearInterval(userWeatherTimer);
+  if (currentUser && currentUser.username) {
+    // Solicita permissão se ainda não foi concedida
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') sendUserWeatherStatus();
+      });
+    } else if ('Notification' in window && Notification.permission === 'granted') {
+      sendUserWeatherStatus();
+    }
+    // Repete a cada 10 minutos (600.000 ms)
+    userWeatherTimer = setInterval(sendUserWeatherStatus, 10 * 60 * 1000);
+  }
+}
+
+function stopUserWeatherLoop() {
+  if (userWeatherTimer) {
+    clearInterval(userWeatherTimer);
+    userWeatherTimer = null;
   }
 }
 
@@ -3197,6 +3332,7 @@ function initAuthInputs(){
 
   // Terminar Sessão
   $('#authLogoutBtn').onclick=async()=>{
+    stopUserWeatherLoop();
     const tok=currentToken;
     currentUser=null;
     currentToken=null;
@@ -3213,6 +3349,7 @@ function initAuthInputs(){
     }
 
     updateAuthUI();
+    startUserWeatherLoop();
     if(emailIn)emailIn.value='';
     if(passIn)passIn.value='';
     if(userIn)userIn.value='';
@@ -3267,6 +3404,7 @@ function initAuthInputs(){
         } catch(e) {}
 
         updateAuthUI();
+        startUserWeatherLoop();
         if(emailIn) emailIn.value = '';
         if(passIn) passIn.value = '';
         if(userIn) userIn.value = '';
@@ -3334,6 +3472,7 @@ function initAuthInputs(){
       lsSet('skylab_auth_user',currentUser);
       lsSet('skylab_auth_token',currentToken);
       updateAuthUI();
+      startUserWeatherLoop();
 
       toast(authMode==='signup' 
         ?(LANG==='pt'?`Bem-vindo ao Skylab, ${currentUser.username}!`:`Welcome to Skylab, ${currentUser.username}!`)
@@ -3395,6 +3534,7 @@ function authTriggerGoogle(){
           lsSet('skylab_auth_user', currentUser);
           lsSet('skylab_auth_token', currentToken);
           updateAuthUI();
+          startUserWeatherLoop();
           toast(LANG==='pt'?`Autenticado como ${currentUser.username}!`:`Signed in as ${currentUser.username}!`);
           authClose();
         } catch(e) {
@@ -3434,6 +3574,7 @@ addEventListener('keydown',e=>{
 
 initAuthInputs();
 updateAuthUI();
+if (currentUser) startUserWeatherLoop();
 
 /* ============ PWA install ============ */
 let installEv=null;
@@ -3447,6 +3588,17 @@ $('#inst').onclick=async()=>{
 };
 addEventListener('appinstalled',()=>{installEv=null;$('#inst').hidden=true;toast('Skylab installed')});
 if('serviceWorker' in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* ============ Carregamento Automático de Tempestades ============ */
+function initAutoStorms(){
+  hurrGet().then(() => {
+    hurrBadge();
+  }).catch(e => console.warn('[AutoStorms]', e));
+  // Atualiza automaticamente a cada 10 minutos
+  setInterval(() => {
+    hurrGet(true).then(() => hurrBadge()).catch(() => {});
+  }, 10 * 60 * 1000);
+}
+initAutoStorms();
 
 /* ============ boot ============ */
 const saved=lsGet('place'); 
