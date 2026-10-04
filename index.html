@@ -1904,24 +1904,56 @@ async function ipmaDaily(lat,lon){
 /* ============ Radar IPMA (Portugal) ============ */
 const IPMA_RADAR_BASE = 'https://www.ipma.pt/resources.www/transf/radar/';
 let ipmaRadarCache = null;
+let ipmaRadarPrefix = lsGet('ipmaRadarPrefix');
+
+function ipmaRadarURL(path){
+  return IPMA_RADAR_BASE + (ipmaRadarPrefix ?? 'por/') + path;
+}
+function probeImage(url){
+  return new Promise(res=>{
+    const im=new Image(),to=setTimeout(()=>{im.src='';res(false)},4000);
+    im.onload=()=>{clearTimeout(to);res(true)};
+    im.onerror=()=>{clearTimeout(to);res(false)};
+    im.src=url;
+  });
+}
+async function ipmaResolvePrefix(samplePath){
+  if(ipmaRadarPrefix) return ipmaRadarPrefix;
+  for(const pre of ['por/','']){
+    if(await probeImage(IPMA_RADAR_BASE+pre+samplePath)){
+      ipmaRadarPrefix=pre;lsSet('ipmaRadarPrefix',pre);
+      console.info('[IPMA Radar] prefix resolved:',pre||'(root)');
+      return pre;
+    }
+  }
+  ipmaRadarPrefix='por/';
+  return 'por/';
+}
 
 async function ipmaRadarFrames(){
   try{
     const r=await fetchJSON(WORKER+'/ipma-radar');
-    const raw=j=>j&&(j.imagens||j.images||j.frames||j.list||j.data)||[];
-    const list=Array.isArray(raw(r))?raw(r):[];
-    const frames=list.map(f=>({
-      time:Date.parse(f.data||f.date||f.timestamp||f.time||'')||0,
-      path:String(f.path||f.ficheiro||f.file||f.url||'').replace(/^\//,'')
-    })).filter(f=>f.time&&f.path).sort((a,b)=>b.time-a.time);
-    if(!frames.length)throw new Error('empty');
-    console.info('[IPMA Radar]',frames.length,'frames, newest',new Date(frames[0].time).toISOString());
-    return frames;
+    // Estrutura real: {"Portugal":[{date,path},...]} — pode ter mais regiões no futuro
+    const all=[];
+    for(const region of Object.keys(r||{})){
+      const arr=Array.isArray(r[region])?r[region]:[];
+      for(const f of arr){
+        if(!f||!f.path) continue;                                  // path:null = frame ainda não processado
+          const time=Date.parse(String(f.date||'').replace(' ','T'))||0;
+        if(!time) continue;
+        all.push({time,path:f.path,region});
+      }
+    }
+    all.sort((a,b)=>b.time-a.time);
+    if(!all.length){console.warn('[IPMA Radar] no frames with paths');return null}
+    const out=all.slice(0,20);
+    console.info('[IPMA Radar]',out.length,'frames, newest',new Date(out[0].time).toISOString());
+    return out;
   }catch(e){console.warn('[IPMA Radar]',e.message);return null}
 }
 
 function ipmaRadarURL(path) {
-  return IPMA_RADAR_BASE + 'por/' + path;
+  return IPMA_RADAR_BASE + (ipmaRadarPrefix ?? 'por/') + path;
 }
 
 async function ipmaRadarInit() {
@@ -1966,9 +1998,8 @@ async function rainViewerLoad() {
   }
 }
 
-function rainViewerTileURL(frame, colorScheme = 4, options = '0_0') {
-  // Tamanho 256, sem smooth, com cobertura de neve desligada
-  return `${frame.host}${frame.path}/256/{z}/{x}/{y}/${colorScheme}/${options}.png`;
+function rainViewerTileURL(host, path, colorScheme = 4, options = '0_0') {
+  return `${host}${path}/256/{z}/{x}/{y}/${colorScheme}/${options}.png`;
 }
 
 /* ============ hero ============ */
@@ -2959,12 +2990,12 @@ let radarKT=0;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 /* ===== Vento: partículas animadas (substitui as setas) ===== */
 let windTok=0,windT=0,windCv=null,windCx=null,windRaf=0,windLast=0,windGrid=null,windFld=null,windP=[];
-const WGR={rows:11,cols:15},WSTEP=6,WK=.030,WFADE=.04,WBK=[[0,12,.4],[12,35,.7],[35,60,.85],[60,1e9,.95]];
+const WGR={rows:6,cols:8},WSTEP=6,WK=.030,WFADE=.04,WBK=[[0,12,.4],[12,35,.7],[35,60,.85],[60,1e9,.95]];
 
 function windStopLoop(){cancelAnimationFrame(windRaf);windRaf=0}
 function windClear(){if(windCx&&windCv)windCx.clearRect(0,0,windCv.width,windCv.height)}
 function windPause(){windStopLoop();windClear()}                    // durante o arrasto/zoom o canvas fica limpo
-function windMoved(){clearTimeout(windT);windT=setTimeout(updateWindVectors,250)}
+function windMoved(){clearTimeout(windT);windT=setTimeout(updateWindVectors,700)}
 function windStop(){
   windTok++;windStopLoop();clearTimeout(windT);
   if(radarMap){try{radarMap.off('movestart zoomstart',windPause);radarMap.off('moveend resize',windMoved)}catch(e){}}
@@ -2988,8 +3019,16 @@ function windEnsure(){
 
 /* grelha 10x7 de vento sobre a área visível (+30% de margem), numa só chamada à Open-Meteo */
 async function windFetchGrid(b){
-  const dl=b.getNorth()-b.getSouth(),dg=b.getEast()-b.getWest();
-  const s=Math.max(-80,b.getSouth()-dl*.3),n=Math.min(80,b.getNorth()+dl*.3),w=b.getWest()-dg*.3,e=b.getEast()+dg*.3;
+  let s,n,w,e;
+  if(radarScope==='pt'){
+    s=36.5;n=42.5;w=-10.0;e=-5.5;
+  }else{
+    const dl=b.getNorth()-b.getSouth(),dg=b.getEast()-b.getWest();
+    s=Math.max(-80,b.getSouth()-dl*.3);
+    n=Math.min(80,b.getNorth()+dl*.3);
+    w=b.getWest()-dg*.3;
+    e=b.getEast()+dg*.3;
+  }
   const{rows,cols}=WGR,lats=[],lons=[];
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
     lats.push((s+r*(n-s)/(rows-1)).toFixed(3));
@@ -3404,10 +3443,11 @@ async function loadRainPT(stale){
   const frames=await ipmaRadarFrames();
   if(stale())return;
   if(!frames||!frames.length){note.textContent='IPMA radar unavailable right now.';return}
+  await ipmaResolvePrefix(frames[0].path);
   const bounds=[[36.8,-9.6],[42.2,-6.2]];
   const sliced=frames.slice(0,12);
   radarLayers=sliced.map(f=>L.imageOverlay(
-    IPMA_RADAR_BASE+f.path, bounds,
+    ipmaRadarURL(f.path), bounds,
     {opacity:0,pane:'radar',className:'rlayer'}
   ));
   radarFrames=sliced.map(f=>({time:f.time/1000,fc:false}));
@@ -3429,7 +3469,7 @@ async function loadRainGlobal(stale){
   if(!rv||!rv.all.length){note.textContent='RainViewer unavailable right now.';return}
   const frames=rv.all.slice(-12);
   radarFrames=frames.map(f=>({time:f.time/1000,fc:!!f.fc}));
-  radarLayers=frames.map(f=>mkLayer(rainViewerTileURL(f,4,'0_0'),{maxNativeZoom:6,maxZoom:9}));
+  radarLayers=frames.map(f=>mkLayer(rainViewerTileURL(rv.host,f.path,4,'0_0'),{maxNativeZoom:6,maxZoom:9}));
   sl.disabled=false;pl.disabled=false;sl.max=frames.length-1;
   note.textContent='RainViewer · global · 10 min · 2h past + 30 min nowcast';
   $('#rlmin').textContent='0.1 mm/h';
