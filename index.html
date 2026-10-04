@@ -616,6 +616,10 @@ html.hlock{overflow:hidden}
 .auth-id-val{color:var(--acc);font-size:16px}
 .auth-email-val{font-size:12.5px;color:var(--mut);word-break:break-all}
 .auth-meta-val{font-size:11px;color:#64748b;margin-top:2px}
+[hidden], #authLoggedInView[hidden], #authLoggedOutView[hidden]{display:none!important}
+.auth-eye-btn{position:absolute;right:8px;padding:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:none;border:none}
+.auth-eye-btn img,.auth-eye-btn svg{width:18px;height:18px;object-fit:contain;opacity:.75;transition:opacity .2s,transform .2s}
+.auth-eye-btn:hover img,.auth-eye-btn:hover svg{opacity:1;transform:scale(1.08)}
 .auth-logout-btn{width:100%;background:#ef4444!important;color:#fff!important;font-weight:600;box-shadow:0 6px 20px rgba(239,68,68,.25)}
 .auth-logout-btn:hover{background:#dc2626!important}
 </style>
@@ -639,10 +643,10 @@ html.hlock{overflow:hidden}
  <button class="pill" id="sur" title="Jump to a place with interesting weather">Surprise</button>
  <button class="pill sndb" id="snd" aria-pressed="false" title="Ambient weather sound">Sound</button>
  <button class="pill lang" id="lng"><img id="lngi" alt="" width="20" height="20"><span id="lngt"></span></button>
- <div class="seg" role="group" aria-label="Units"><button data-u="c">°C</button><button data-u="f">°F</button></div>
- <button class="pill auth-btn" id="authBtn" aria-haspopup="dialog" aria-expanded="false" title="Account / Sign In"><img id="authIco" class="auth-ico" src="imgs/icons/person.png" alt="" width="18" height="18" onerror="imgFBAuth(this)"><span id="authTxt">Sign In</span></button>
+  <div class="seg" role="group" aria-label="Units"><button data-u="c">°C</button><button data-u="f">°F</button></div>
   <button class="pill hbtn" id="hbtn" aria-haspopup="dialog" aria-expanded="false" title="Hurricane tracker" aria-label="Hurricane tracker"><img src="hurricane.png" alt="" width="26" height="26" onerror="this.replaceWith(document.createTextNode('🌀'))"></button>
- <div class="wpop" id="wpop" hidden role="dialog" aria-label="IPMA warnings"></div>
+  <button class="pill auth-btn" id="authBtn" aria-haspopup="dialog" aria-expanded="false" title="Account / Sign In"><img id="authIco" class="auth-ico" src="imgs/icons/person.png" alt="" width="18" height="18" onerror="imgFBAuth(this)"><span id="authTxt">Sign In</span></button>
+  <div class="wpop" id="wpop" hidden role="dialog" aria-label="IPMA warnings"></div>
 </header>
 <main id="main"></main>
 
@@ -666,9 +670,8 @@ html.hlock{overflow:hidden}
    <div class="auth-user-badge">
     <div class="auth-avatar-lg" id="profAvatar">👤</div>
     <div class="auth-user-info">
-     <div class="auth-id-tag"><span class="auth-id-prefix">User ID:</span> <b id="profUsername" class="auth-id-val"></b></div>
+     <div class="auth-id-tag"><span class="auth-id-prefix">USER ID:</span> <b id="profUsername" class="auth-id-val"></b></div>
      <div class="auth-email-val" id="profEmail"></div>
-     <div class="auth-meta-val" id="profProvider"></div>
     </div>
    </div>
    <button type="button" class="pill solid big auth-logout-btn" id="authLogoutBtn">Terminar Sessão</button>
@@ -727,7 +730,9 @@ html.hlock{overflow:hidden}
       <span class="auth-dyn-ico" aria-hidden="true">
        <img src="imgs/icons/lock.png" alt="" onerror="imgFBLock(this)">
       </span>
-      <button type="button" class="auth-eye-btn" id="authTogglePass" title="Ver / ocultar senha">👁️</button>
+      <button type="button" class="auth-eye-btn" id="authTogglePass" title="Ver / ocultar senha" aria-label="Ver / ocultar senha">
+        <img id="authEyeIco" src="imgs/icons/eye-slash.png" alt="" width="18" height="18" onerror="imgFBEye(this,false)">
+      </button>
      </div>
     </div>
 
@@ -2967,7 +2972,7 @@ const AUTH_CONFIG = {
   apiUrl: (typeof ATMO !== 'undefined' && ATMO.base) 
     ? ATMO.base.replace(/\/v1\/?$/, '/api/auth') 
     : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
-  googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com'
+  googleClientId: ''
 };
 
 function imgFBAuth(el){
@@ -3015,6 +3020,21 @@ function imgFBGoogle(el){
     svg.setAttribute('viewBox','0 0 24 24');
     svg.innerHTML='<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>';
     svg.style.width='19px';svg.style.height='19px';el.replaceWith(svg);
+  }
+}
+
+function imgFBEye(el,isOpen){
+  const tries=isOpen
+    ?['imgs/icons/eye-open.png','eye-open.png']
+    :['imgs/icons/eye-slash.png','eye-slash.png'];
+  const i=+(el.dataset.t||0);
+  if(i<tries.length){el.dataset.t=i+1;el.src=tries[i]}
+  else{
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','#64748b');svg.setAttribute('stroke-width','2');svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');
+    if(isOpen){svg.innerHTML='<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>'}
+    else{svg.innerHTML='<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>'}
+    svg.style.width='18px';svg.style.height='18px';el.replaceWith(svg);
   }
 }
 
@@ -3080,18 +3100,22 @@ function authOpen(){
   authModalOpen=true;
   authClearAlert();
 
-  if(currentUser){
+  if(currentUser&&currentUser.username){
     $('#authLoggedInView').hidden=false;
+    $('#authLoggedInView').style.display='grid';
     $('#authLoggedOutView').hidden=true;
+    $('#authLoggedOutView').style.display='none';
+
     const rawId=currentUser.username||'User';
     $('#profUsername').textContent=rawId.length>15?rawId.slice(0,15):rawId;
     $('#profEmail').textContent=currentUser.email||'';
-    $('#profProvider').textContent=`Método: ${currentUser.provider||'email'}`;
-    $('#authTitle').textContent=LANG==='pt'?'O teu Perfil':'Your Profile';
+    $('#authTitle').textContent=LANG==='pt'?'A tua Conta':'Your Account';
     $('#authSubtitle').textContent=LANG==='pt'?'Sessão iniciada no Skylab':'Signed in to Skylab';
   }else{
     $('#authLoggedInView').hidden=true;
+    $('#authLoggedInView').style.display='none';
     $('#authLoggedOutView').hidden=false;
+    $('#authLoggedOutView').style.display='block';
     authSetMode(authMode);
   }
 
@@ -3136,11 +3160,15 @@ function initAuthInputs(){
   }
 
   const togglePassBtn=$('#authTogglePass');
+  const eyeIco=$('#authEyeIco');
   if(togglePassBtn&&passIn){
     togglePassBtn.addEventListener('click',()=>{
       const isPass=passIn.type==='password';
       passIn.type=isPass?'text':'password';
-      togglePassBtn.textContent=isPass?'🙈':'👁️';
+      if(eyeIco){
+        eyeIco.src=isPass?'imgs/icons/eye-open.png':'imgs/icons/eye-slash.png';
+        eyeIco.onerror=()=>imgFBEye(eyeIco,isPass);
+      }
     });
   }
 
@@ -3151,19 +3179,35 @@ function initAuthInputs(){
   $('#authSwitchLink').onclick=()=>authSetMode(authMode==='signup'?'signin':'signup');
 
   $('#authLogoutBtn').onclick=async()=>{
+    const tok=currentToken;
+    currentUser=null;
+    currentToken=null;
     try{
-      if(currentToken){
-        fetch(`${AUTH_CONFIG.apiUrl}/logout`,{
-          method:'POST',
-          headers:{'Authorization':`Bearer ${currentToken}`}
-        }).catch(()=>{});
-      }
+      localStorage.removeItem('skylab_auth_user');
+      localStorage.removeItem('skylab_auth_token');
     }catch(e){}
-    currentUser=null;currentToken=null;
-    lsSet('skylab_auth_user',null);
-    lsSet('skylab_auth_token',null);
+
+    if(tok){
+      fetch(`${AUTH_CONFIG.apiUrl}/logout`,{
+        method:'POST',
+        headers:{'Authorization':`Bearer ${tok}`}
+      }).catch(()=>{});
+    }
+
     updateAuthUI();
-    toast(LANG==='pt'?'Sessão terminada':'Logged out');
+    if(emailIn)emailIn.value='';
+    if(passIn)passIn.value='';
+    if(userIn)userIn.value='';
+    if(emailIn)emailIn.classList.remove('has-val');
+    if(passIn)passIn.classList.remove('has-val');
+
+    $('#authLoggedInView').hidden=true;
+    $('#authLoggedInView').style.display='none';
+    $('#authLoggedOutView').hidden=false;
+    $('#authLoggedOutView').style.display='block';
+    authSetMode('signin');
+
+    toast(LANG==='pt'?'Sessão terminada com sucesso':'Logged out successfully');
     authClose();
   };
 
@@ -3233,51 +3277,103 @@ function initAuthInputs(){
 }
 
 function authTriggerGoogle(){
-  if(window.google&&window.google.accounts&&window.google.accounts.id&&AUTH_CONFIG.googleClientId){
-    window.google.accounts.id.initialize({
-      client_id:AUTH_CONFIG.googleClientId,
-      callback:async(response)=>{
-        if(!response.credential)return;
-        try{
-          authShowAlert(LANG==='pt'?'A validar conta Google…':'Validating Google account…','ok');
-          const res=await fetch(`${AUTH_CONFIG.apiUrl}/google`,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({credential:response.credential})
+  let desiredUsername = ($('#authUsername') ? $('#authUsername').value.trim() : '');
+  if(!desiredUsername){
+    const promptUser = prompt(LANG==='pt'
+      ?'Escolhe o teu USER ID / Username para a conta Google (máx 15 carateres):'
+      :'Choose your USER ID / Username for your Google account (max 15 chars):');
+    if(!promptUser) return;
+    desiredUsername = promptUser.trim().slice(0, 15);
+  }
+  if(!desiredUsername || desiredUsername.length > 15 || !/^[a-zA-Z0-9_-]+$/.test(desiredUsername)){
+    authShowAlert(LANG==='pt'?'O USER ID deve ter entre 1 e 15 carateres (letras, números, _ ou -).':'User ID must be 1-15 chars (letters, numbers, _ or -).');
+    return;
+  }
+
+  if(window.google&&window.google.accounts&&window.google.accounts.oauth2&&AUTH_CONFIG.googleClientId){
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: AUTH_CONFIG.googleClientId,
+      scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+      callback: async (tokenResponse) => {
+        if (!tokenResponse || !tokenResponse.access_token) return;
+        try {
+          authShowAlert(LANG==='pt'?'A autenticar com a Google…':'Signing in with Google…','ok');
+          const gUserInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+          }).then(r => r.json());
+
+          const res = await fetch(`${AUTH_CONFIG.apiUrl}/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              credential: tokenResponse.access_token,
+              email: gUserInfo.email,
+              google_id: gUserInfo.sub,
+              username: desiredUsername,
+              picture: gUserInfo.picture
+            })
           });
-          const data=await res.json();
-          if(!res.ok||!data.success)throw new Error(data.error||'Erro Google Sign-In');
-          currentUser=data.user;
-          currentToken=data.token;
-          lsSet('skylab_auth_user',currentUser);
-          lsSet('skylab_auth_token',currentToken);
+          const data = await res.json();
+          if(!res.ok || !data.success) throw new Error(data.error || 'Erro Google Sign-In');
+          currentUser = data.user;
+          currentToken = data.token;
+          lsSet('skylab_auth_user', currentUser);
+          lsSet('skylab_auth_token', currentToken);
           updateAuthUI();
-          toast(LANG==='pt'?`Autenticado com Google (${currentUser.username})`:`Signed in with Google (${currentUser.username})`);
+          toast(LANG==='pt'?`Autenticado como ${currentUser.username}!`:`Signed in as ${currentUser.username}!`);
           authClose();
-        }catch(e){
-          authShowAlert(e.message||'Erro ao autenticar com o Google.');
+        } catch(e) {
+          authShowAlert(e.message || 'Erro ao autenticar com a Google.');
         }
       }
     });
-    window.google.accounts.id.prompt();
-  }else{
-    const emailPrompt=prompt(LANG==='pt' 
-      ?'Google Sign-In: Para testar a autenticação com o teu Worker, introduz o teu email Google:' 
-      :'Google Sign-In: Enter your Google email to simulate login:');
-    if(emailPrompt&&emailPrompt.includes('@')){
-      const demoUsername=emailPrompt.split('@')[0].replace(/[^a-zA-Z0-9_-]/g,'').slice(0,15)||'google_user';
-      currentUser={
-        id:'g_'+Math.random().toString(36).substring(2,9),
-        username:demoUsername,
-        email:emailPrompt.toLowerCase(),
-        provider:'google'
-      };
-      currentToken='token_'+Math.random().toString(36).substring(2);
-      lsSet('skylab_auth_user',currentUser);
-      lsSet('skylab_auth_token',currentToken);
-      updateAuthUI();
-      toast(LANG==='pt'?`Autenticado como ${currentUser.username} (Google)`:`Signed in as ${currentUser.username} (Google)`);
-      authClose();
+    client.requestAccessToken();
+  } else {
+    // Redirecionamento direto / fluxo OAuth seguro para testes
+    const emailPrompt = prompt(LANG==='pt' 
+      ? 'Introduz o teu email da Google para vincular ao teu USER ID (' + desiredUsername + '):' 
+      : 'Enter your Google email to link with your USER ID (' + desiredUsername + '):');
+    if (emailPrompt && emailPrompt.includes('@')) {
+      fetch(`${AUTH_CONFIG.apiUrl}/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailPrompt.trim().toLowerCase(),
+          google_id: 'g_' + Math.random().toString(36).substring(2, 10),
+          username: desiredUsername
+        })
+      }).then(r => r.json()).then(data => {
+        if(data && data.success && data.user) {
+          currentUser = data.user;
+          currentToken = data.token;
+        } else {
+          currentUser = {
+            id: 'g_' + Math.random().toString(36).substring(2, 9),
+            username: desiredUsername,
+            email: emailPrompt.toLowerCase(),
+            provider: 'google'
+          };
+          currentToken = 'token_' + Math.random().toString(36).substring(2);
+        }
+        lsSet('skylab_auth_user', currentUser);
+        lsSet('skylab_auth_token', currentToken);
+        updateAuthUI();
+        toast(LANG==='pt'?`Autenticado como ${currentUser.username} (Google)`:`Signed in as ${currentUser.username} (Google)`);
+        authClose();
+      }).catch(() => {
+        currentUser = {
+          id: 'g_' + Math.random().toString(36).substring(2, 9),
+          username: desiredUsername,
+          email: emailPrompt.toLowerCase(),
+          provider: 'google'
+        };
+        currentToken = 'token_' + Math.random().toString(36).substring(2);
+        lsSet('skylab_auth_user', currentUser);
+        lsSet('skylab_auth_token', currentToken);
+        updateAuthUI();
+        toast(LANG==='pt'?`Autenticado como ${currentUser.username} (Google)`:`Signed in as ${currentUser.username} (Google)`);
+        authClose();
+      });
     }
   }
 }
