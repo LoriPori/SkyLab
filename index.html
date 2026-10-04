@@ -1944,10 +1944,10 @@ async function ipmaRadarFrames(){
         all.push({time,path:f.path,region});
       }
     }
-    all.sort((a,b)=>b.time-a.time);
+    all.sort((a,b)=>a.time-b.time);   // mais antiga primeiro, mais recente por último
     if(!all.length){console.warn('[IPMA Radar] no frames with paths');return null}
-    const out=all.slice(0,20);
-    console.info('[IPMA Radar]',out.length,'frames, newest',new Date(out[0].time).toISOString());
+    const out=all.slice(-12);
+    console.info('[IPMA Radar]',out.length,'frames ·',new Date(out[0].time).toISOString(),'→',new Date(out[out.length-1].time).toISOString());
     return out;
   }catch(e){console.warn('[IPMA Radar]',e.message);return null}
 }
@@ -1961,7 +1961,7 @@ async function ipmaRadarInit() {
   if (!frames || !frames.length || !radarMap) return null;
 
   // Cria uma camada L.imageOverlay para cada frame
-  const bounds = [[36.8, -9.6], [42.2, -6.2]]; // Portugal continental (ajustar se necessário)
+  const bounds=[[35.5,-11.0],[43.5,-4.0]];
   const layers = frames.map(f => {
     const overlay = L.imageOverlay(ipmaRadarURL(f.path), bounds, {
       opacity: 0,
@@ -3093,6 +3093,7 @@ function windStep(dt,fade){
   }
 }
 function windFrame(t){
+  if(!windFrame._logged){windFrame._logged=1;console.info('[Wind] first frame', windP.length, 'particles, field', !!windFld);}
   if(!windCx||!windFld||radarKind!=='wind'||!radarMap){windRaf=0;return}
   const dt=Math.min(2.5,(t-(windLast||t))/16.67);windLast=t;
   windStep(dt||1,true);
@@ -3113,6 +3114,7 @@ async function updateWindVectors(){
   }
   const{W,H}=windEnsure();
   windStopLoop();windClear();windBuild(W,H);
+    console.info('[Wind] built', windP.length, 'particles, canvas', W+'x'+H, 'grid?', !!windGrid);
   if(still){for(let i=0;i<70;i++)windStep(1,false)}                // movimento reduzido: linhas de corrente estáticas
   else{windLast=0;windRaf=requestAnimationFrame(windFrame)}
 }
@@ -3189,7 +3191,7 @@ function radarPane(){
  <div id="rmap" role="application" aria-label="Weather radar map">Loading map…</div>
  <div class="rctl"><button class="pill dk" id="rplay" aria-label="Pause">❚❚</button><input type="range" id="rsl" min="0" max="0" value="0" aria-label="Radar time"><span class="rtime" id="rtime"></span></div>
  <div class="rleg" id="rleg"><span>Light</span><i></i><span>Heavy</span></div>
- <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">— mm/h</span><i id="rlbar"></i><span id="rlmax">— mm/h</span><span style="margin-left:8px;font-size:10px;opacity:.7">NASA IMERG</span></div>
+ <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">— mm/h</span><i id="rlbar"></i><span id="rlmax">— mm/h</span><span id="rlsrc" style="margin-left:8px;font-size:10px;opacity:.7"></span></div>
  </section></div>`;
 }
 function clearRadarLayers(){
@@ -3444,7 +3446,7 @@ async function loadRainPT(stale){
   if(stale())return;
   if(!frames||!frames.length){note.textContent='IPMA radar unavailable right now.';return}
   await ipmaResolvePrefix(frames[0].path);
-  const bounds=[[36.8,-9.6],[42.2,-6.2]];
+  const bounds=[[35.0,-10.5],[43.5,-5.0]];
   const sliced=frames.slice(0,12);
   radarLayers=sliced.map(f=>L.imageOverlay(
     ipmaRadarURL(f.path), bounds,
@@ -3456,6 +3458,7 @@ async function loadRainPT(stale){
   $('#rlmin').textContent='0.1 mm/h';
   $('#rlmax').textContent='> 30 mm/h';
   $('#rlbar').style.background='linear-gradient(90deg,#c8e6c9,#81c784,#4caf50,#ffeb3b,#ff9800,#f44336,#9c27b0)';
+  $('#rlsrc').textContent='IPMA · 5 min';
   radarShow(0);radarWarm();radarBtn();radarTick();
 }
 
@@ -3469,12 +3472,16 @@ async function loadRainGlobal(stale){
   if(!rv||!rv.all.length){note.textContent='RainViewer unavailable right now.';return}
   const frames=rv.all.slice(-12);
   radarFrames=frames.map(f=>({time:f.time/1000,fc:!!f.fc}));
-  radarLayers=frames.map(f=>mkLayer(rainViewerTileURL(rv.host,f.path,4,'0_0'),{maxNativeZoom:6,maxZoom:9}));
+    console.info('[RainViewer] host=%s first-path=%s tile=%s',
+    rv.host, frames[0].path,
+    rainViewerTileURL(rv.host, frames[0].path, 2, '0_0'));
+  radarLayers=frames.map(f=>mkLayer(rainViewerTileURL(rv.host,f.path,2,'0_0'),{maxNativeZoom:6,maxZoom:9}));
   sl.disabled=false;pl.disabled=false;sl.max=frames.length-1;
   note.textContent='RainViewer · global · 10 min · 2h past + 30 min nowcast';
   $('#rlmin').textContent='0.1 mm/h';
   $('#rlmax').textContent='> 50 mm/h';
-  $('#rlbar').style.background='linear-gradient(90deg,#00e400,#ffff00,#ff7e00,#ff0000,#8f3f97,#7e0023)';
+  $('#rlbar').style.background='linear-gradient(90deg,#88ddee,#36bae5,#00a3e0,#007fb4,#005588,#c2b482,#cec087,#ffee00,#ffd200,#ffaa00,#ff8100,#ff4400)';
+  $('#rlsrc').textContent='RainViewer · 10 min';
   radarShow(0);radarWarm();radarBtn();radarTick();
 }
 
@@ -4278,6 +4285,8 @@ function initAuthInputs(){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(payload)
       });
+
+        console.info('[Wind] fetch status', res.status, 'points', lats.length);
 
       const data=await res.json();
       if(!res.ok||!data.success){
