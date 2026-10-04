@@ -36,12 +36,12 @@ animation:aur 28s ease-in-out infinite alternate}
 .wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:12px 20px 26px}
 
 /* header */
-header{position:sticky;top:0;z-index:10;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 20px;margin:0 -20px;border-radius:0 0 22px 22px;transition:background .35s,box-shadow .35s}
+header{position:sticky;top:0;z-index:10;display:flex;gap:10px;align-items:center;flex-wrap:nowrap;padding:10px 20px;margin:0 -20px;border-radius:0 0 22px 22px;transition:background .35s,box-shadow .35s}
 header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shadow:0 8px 30px rgba(10,40,90,.12)}
 .logo{font-family:var(--serif);font-size:28px;margin-right:auto;cursor:pointer;display:flex;align-items:center;gap:9px;text-shadow:0 2px 14px rgba(10,30,60,.25)}
 .lg{width:14px;height:14px;border-radius:50%;background:#fff3b0;box-shadow:0 0 0 0 rgba(255,243,176,.8);animation:ping2 2.6s infinite}
 @keyframes ping2{70%{box-shadow:0 0 0 12px rgba(255,243,176,0)}100%{box-shadow:0 0 0 0 rgba(255,243,176,0)}}
-.search{position:relative;flex:1 1 240px;max-width:380px}
+.search{position:relative;flex:1 1 140px;min-width:0;max-width:380px}
 .search input{width:100%;padding:11px 40px 11px 40px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.26);backdrop-filter:blur(14px);color:#fff;font:inherit;font-size:15px}
 .search input::placeholder{color:rgba(255,255,255,.85)}
 .search>svg{position:absolute;left:14px;top:12px;width:18px}
@@ -469,7 +469,8 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 @media(max-width:860px){
  .hero{grid-template-columns:1fr}.scene{flex-direction:row;justify-content:space-between;width:100%}.bigwrap{font-size:110px}
  .g2,.g2e{grid-template-columns:1fr}.strip{grid-template-columns:repeat(3,1fr)}
- .wk{grid-template-columns:repeat(7,minmax(54px,1fr));overflow-x:auto}.logo{width:100%}
+ .wk{grid-template-columns:repeat(7,minmax(54px,1fr));overflow-x:auto}
+ header{flex-wrap:wrap}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
@@ -724,19 +725,7 @@ html.hlock{overflow:hidden}
 .auth-delete-btn:hover{background:#dc2626!important;box-shadow:0 6px 20px rgba(220,38,38,.35)}
 @media(max-width:480px){.auth-profile-actions{grid-template-columns:1fr}}
 [hidden], #authLoggedInView[hidden], #authLoggedOutView[hidden]{display:none!important}
-/* Botão Sign Up dinâmico no Hero */
-.hero-signup-btn{
-  background:rgba(255,255,255,.32)!important;
-  border:1px solid rgba(255,255,255,.85)!important;
-  font-weight:600!important;
-  color:#fff!important;
-  box-shadow:0 4px 18px rgba(10,40,90,.18);
-  transition:transform .2s, background .25s!important;
-}
-.hero-signup-btn:hover{
-  background:rgba(255,255,255,.45)!important;
-  transform:translateY(-2px);
-}
+/* (removido: botão Sign Up do hero; a topbar já faz o mesmo) */
 
 /* Lupa no cartão: oculta por defeito, surge com scroll */
 .card-search-trigger{
@@ -2033,7 +2022,6 @@ function landing(){
 <div class="cta">
  <button class="pill big solid" id="lc">Use my location</button>
  <button class="pill big" id="ls">Surprise me</button>
- ${!currentUser ? `<button class="pill big hero-signup-btn" id="heroSignupBtn">✨ ${tr('Sign Up')}</button>` : ''}
 </div>
 <button class="card-search-trigger" id="cardSearchTrigger" aria-label="Pesquisar cidade">
  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -2052,8 +2040,6 @@ function landing(){
 </section>
 <section class="marq" id="marq"><div class="track">${CITIES.map(c=>`<div class="cityc sk">${c[0]}</div>`).join('')}</div></section>`;
  $('#lc').onclick=locate;$('#ls').onclick=surprise;startTicker();
- const hsb = $('#heroSignupBtn');
- if (hsb) hsb.onclick = () => { authSetMode('signup'); authOpen(); };
  const cst = $('#cardSearchTrigger');
  if (cst) cst.onclick = () => { window.scrollTo({top:0, behavior:'smooth'}); $('#q').focus(); };
  globeStart();
@@ -2375,6 +2361,8 @@ addEventListener('scroll',()=>{
   $('#hd').classList.toggle('stuck', scrollY > 20);
   const btn = $('#cardSearchBtn');
   if(btn) btn.classList.toggle('visible', isScrolled);
+  const cst = $('#cardSearchTrigger');
+  if(cst) cst.classList.toggle('scrolled', isScrolled);
 },{passive:true});
 
 // Delegação de clique da lupa para focar na pesquisa
@@ -2890,7 +2878,6 @@ async function radarLoadKind(k){
     sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
     sl.value=times.length-1;
     note.textContent='True-colour satellite · NASA VIIRS · global daily composite'+fbNote;
-    radarShow(times.length-1);radarPlay=false;radarBtn();   // start on the newest day, paused
     radarShow(times.length-1);radarPlay=false;radarBtn();radarWarm();   // start on the newest day, paused
     return;
   }
@@ -3204,7 +3191,7 @@ const AUTH_CONFIG = {
   apiUrl: (typeof ATMO !== 'undefined' && ATMO.base) 
     ? ATMO.base.replace(/\/v1\/?$/, '/api/auth') 
     : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
-  googleClientId: ''
+  googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com'
 };
 
 function imgFBAuth(el){
@@ -3480,8 +3467,7 @@ function initAuthInputs(){
   $('#authSwitchLink').onclick=()=>authSetMode(authMode==='signup'?'signin':'signup');
 
   // Terminar Sessão
-  $('#authLogoutBtn').onclick=async()=>{y
-    if(userNotifyTimer) { clearInterval(userNotifyTimer); userNotifyTimer = null; }
+  $('#authLogoutBtn').onclick=async()=>{
     stopUserWeatherLoop();
     const tok=currentToken;
     currentUser=null;
