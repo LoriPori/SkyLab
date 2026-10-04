@@ -516,6 +516,14 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .rpin i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--acc);animation:haloP 2.2s ease-out infinite}
 @media(max-width:860px){.rtime{min-width:0;font-size:12px}}
 
+/* ==== scope toggle: Portugal vs Mundo ==== */
+.rscope{background:rgba(20,49,79,.06);border-color:rgba(20,49,79,.12)}
+.rscope button{padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--mut)}
+.rscope button[aria-pressed=true]{background:#fff;color:var(--acc);font-weight:700}
+.rscope button:first-child{border-radius:999px 0 0 999px}
+.rscope button:last-child{border-radius:0 999px 999px 0}
+.rscope button + button{border-left:1px solid rgba(20,49,79,.1)}
+
 .rleg2{flex-wrap:wrap}
 .rleg2 img{height:44px;max-width:100%;padding:4px 8px;border-radius:10px;background:#fff;border:1px solid rgba(20,49,79,.12)}
 .rleg2 img[hidden],.rlegfb[hidden]{display:none}
@@ -819,7 +827,7 @@ background:radial-gradient(circle,color-mix(in srgb,var(--a) 22%,transparent),tr
 .expH{font-family:var(--serif);font-weight:400;font-size:29px;line-height:1.1;margin-bottom:14px;color:var(--ink);position:relative;letter-spacing:-.01em}
 .expP{font-size:15.5px;line-height:1.68;color:var(--ink);max-width:66ch;position:relative;opacity:.92}
 .expP b{font-weight:600;color:var(--ink)}
-.expP i{font-style:normal;background:linear-gradient(180deg,transparent 62%,color-mix(in srgb,var(--a) 34%,transparent) 62%);padding:0 2px;font-weight:500}
+.expP i{font-style:normal;font-weight:600;color:var(--ink)}
 .expSig{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;position:relative}
 .expSig span{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;background:rgba(255,255,255,.72);border:1px solid rgba(20,49,79,.1);font-size:11.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
 .expSig span i{width:5px;height:5px;border-radius:50%;background:var(--acc);display:block;flex:none}
@@ -964,6 +972,7 @@ background:radial-gradient(circle,color-mix(in srgb,var(--a) 22%,transparent),tr
 <footer>Weather by Open-Meteo · Places by BigDataCloud · Pollen by Atmospore
   <span class="db-badge">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+    <span>Precipitação (PT) por <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a></span>
     <span>Data stored on <strong>Cloudflare D1</strong></span>
   </span>
 </footer>
@@ -1033,6 +1042,11 @@ function emoji(code,day=1){
  else if(code==45||code==48)n='fog'; else if(code<=57)n='drizzle';
  else if(code<=67||code>=80&&code<=82)n='rain'; else if(code<=77||code==85||code==86)n='snow'; else n='storm';
  return ic(n);
+ const IPMA_TO_WMO={
+  1:0,2:2,3:3,4:3,5:3,6:3,7:3,8:3,9:3,10:3,11:3,12:3,13:3,
+  14:51,15:61,16:45,17:61,18:65,19:95,20:95,21:95,22:95,
+  23:71,24:71,25:75,26:75,27:77,28:85,29:86,30:95
+};
 }
 
 /* ============ colour theme: cool blue -> teal -> gold -> orange (never red) ============ */
@@ -1318,7 +1332,11 @@ const PT={
  'Data by':'Dados por','Places by':'Locais por',
  'Source':'Fonte','Live':'Em direto','Stale data':'Dados desatualizados',
 
-  'Sky Explained':'Céu Explicado','Next 6 hours':'Próximas 6 horas','This week in context':'Esta semana em contexto',
+ 'Sky Explained':'Céu Explicado','Next 6 hours':'Próximas 6 horas','This week in context':'Esta semana em contexto',
+  
+ 'Forecast by':'Previsão do','based on':'baseada em',
+
+ 'Portugal':'Portugal','World':'Mundo','Scope':'Âmbito',
 };
 const FACTS_PT=[
  ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos (dispersão de Rayleigh). O violeta dispersa-se ainda mais, mas o Sol emite menos dele e os nossos olhos respondem-lhe pouco, por isso vemos azul.'],
@@ -1836,6 +1854,122 @@ function skyPane(){
    </div>
   </div>`;
 }
+/* ============ IPMA: descodificação ============ */
+let ipmaMeta=null;
+async function ipmaLoadMeta(){
+  if(ipmaMeta) return ipmaMeta;
+  try{
+    const[w,t,p]=await Promise.all([
+      fetchJSON('https://api.ipma.pt/open-data/weather-type-classe.json'),
+      fetchJSON('https://api.ipma.pt/open-data/wind-speed-daily-classe.json'),
+      fetchJSON('https://api.ipma.pt/open-data/precipitation-classe.json')
+    ]);
+    const weather={},wind={},precip={};
+    (w.data||[]).forEach(x=>weather[x.idWeatherType]=LANG==='pt'?x.descWeatherTypePT:x.descWeatherTypeEN);
+    (t.data||[]).forEach(x=>wind[x.classWindSpeed]=LANG==='pt'?x.descClassWindSpeedDailyPT:x.descClassWindSpeedDailyEN);
+    (p.data||[]).forEach(x=>precip[x.classPrecInt]=LANG==='pt'?x.descClassPrecIntPT:x.descClassPrecIntEN);
+    ipmaMeta={weather,wind,precip};
+    return ipmaMeta;
+  }catch(e){console.warn('[IPMA meta]',e.message);return{weather:{},wind:{},precip:{}}}
+}
+
+function isPortugal(lat,lon){
+  return lat>=29.5&&lat<=42.2&&lon>=-32&&lon<=-6;
+}
+async function ipmaDaily(lat,lon){
+  try{
+    const list=await fetchJSON('https://api.ipma.pt/open-data/distrits-islands.json');
+    const areas=(list.data||[]).map(a=>({id:a.globalIdLocal,name:a.local,lat:+a.latitude,lon:+a.longitude}));
+    if(!areas.length) return null;
+    let best=areas[0],bd=1e9;
+    for(const a of areas){
+      const d=hav(lat,lon,a.lat,a.lon);
+      if(d<bd){bd=d;best=a}
+    }
+    if(bd>50) return null;   // mais de 50 km: não mostra
+    const f=await fetchJSON(`https://api.ipma.pt/open-data/forecast/meteorology/cities/daily/${best.id}.json`);
+    const meta=await ipmaLoadMeta();
+    return{area:best,daily:(f.data||[]).map(d=>({
+      date:d.forecastDate,
+      tMin:+d.tMin,tMax:+d.tMax,
+      rain:+d.precipitaProb,
+      windDir:d.predWindDir,
+      windCls:meta.wind[d.classWindSpeed]||d.classWindSpeed,
+      code:+d.idWeatherType,
+      desc:meta.weather[d.idWeatherType]||''
+    }))};
+  }catch(e){console.warn('[IPMA daily]',e.message);return null}
+}
+
+/* ============ Radar IPMA (Portugal) ============ */
+const IPMA_RADAR_BASE = 'https://www.ipma.pt/resources.www/transf/radar/';
+let ipmaRadarCache = null;
+
+async function ipmaRadarFrames(){
+  try{
+    const r=await fetchJSON(WORKER+'/ipma-radar');
+    const raw=j=>j&&(j.imagens||j.images||j.frames||j.list||j.data)||[];
+    const list=Array.isArray(raw(r))?raw(r):[];
+    const frames=list.map(f=>({
+      time:Date.parse(f.data||f.date||f.timestamp||f.time||'')||0,
+      path:String(f.path||f.ficheiro||f.file||f.url||'').replace(/^\//,'')
+    })).filter(f=>f.time&&f.path).sort((a,b)=>b.time-a.time);
+    if(!frames.length)throw new Error('empty');
+    console.info('[IPMA Radar]',frames.length,'frames, newest',new Date(frames[0].time).toISOString());
+    return frames;
+  }catch(e){console.warn('[IPMA Radar]',e.message);return null}
+}
+
+function ipmaRadarURL(path) {
+  return IPMA_RADAR_BASE + 'por/' + path;
+}
+
+async function ipmaRadarInit() {
+  const frames = await ipmaRadarFrames();
+  if (!frames || !frames.length || !radarMap) return null;
+
+  // Cria uma camada L.imageOverlay para cada frame
+  const bounds = [[36.8, -9.6], [42.2, -6.2]]; // Portugal continental (ajustar se necessário)
+  const layers = frames.map(f => {
+    const overlay = L.imageOverlay(ipmaRadarURL(f.path), bounds, {
+      opacity: 0,
+      pane: 'radar',
+      className: 'rlayer'
+    });
+    return { layer: overlay, time: f.time };
+  });
+
+  return { layers, frames };
+}
+
+/* ============ RainViewer (global) ============ */
+let rainViewerFrames = null;
+let rainViewerCacheAt = 0;
+
+async function rainViewerLoad() {
+  if (rainViewerFrames && Date.now() - rainViewerCacheAt < 5 * 60 * 1000) {
+    return rainViewerFrames;
+  }
+  try {
+    const r = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const radar = j.radar || {};
+    const past = (radar.past || []).map(f => ({ time: f.time * 1000, path: f.path }));
+    const nowcast = (radar.nowcast || []).map(f => ({ time: f.time * 1000, path: f.path, fc: true }));
+    rainViewerFrames = { host: j.host, past, nowcast, all: [...past, ...nowcast] };
+    rainViewerCacheAt = Date.now();
+    return rainViewerFrames;
+  } catch (e) {
+    console.warn('[RainViewer]', e.message);
+    return null;
+  }
+}
+
+function rainViewerTileURL(frame, colorScheme = 4, options = '0_0') {
+  // Tamanho 256, sem smooth, com cobertura de neve desligada
+  return `${frame.host}${frame.path}/256/{z}/{x}/{y}/${colorScheme}/${options}.png`;
+}
 
 /* ============ hero ============ */
 function nowcastHTML(){
@@ -2076,17 +2210,45 @@ function scrub(){
 }
 
 /* --- Week --- */
+async function weekPaneAsync(){
+  const d=data.daily,h=data.hourly,i0=idx0();
+  const c=data.current;
+  const inPT=place&&isPortugal(place.lat,place.lon);
+  if(inPT){
+    const ip=await ipmaDaily(place.lat,place.lon);
+    if(ip&&ip.daily.length){
+      const days=ip.daily.slice(0,7);
+      const mn=Math.min(...days.map(x=>x.tMin)),mx=Math.max(...days.map(x=>x.tMax)),sp=mx-mn||1;
+      const cols=days.map((x,i)=>{
+        const lo=(x.tMin-mn)/sp*100,ht=Math.max(10,(x.tMax-x.tMin)/sp*100);
+        const code=IPMA_TO_WMO[x.code]??2;
+        const isToday=i===0;
+        return`<div class="dcol" style="--n:${i}"><b>${isToday?'Today':new Date(x.date+'T12:00').toLocaleDateString('en',{weekday:'short'})}</b><span class="dic">${emoji(code,1)}</span><span class="hi">${T(x.tMax)}°</span><div class="dbar"><i style="--lo:${lo}%;--h:${ht}%;--n:${i};background:linear-gradient(${tempColor(x.tMax)},${tempColor(x.tMin)})"></i></div><span class="lo">${T(x.tMin)}°</span><small>${x.rain>=20?x.rain+'%':'&nbsp;'}</small></div>`;
+      }).join('');
+      const hrs=h.time.slice(i0,i0+24).map((t,j)=>{const i=i0+j;return`<div class="hr" style="--n:${j}"><div class="t">${j?t.slice(11,13)+'h':'Now'}</div><div class="e">${emoji(h.weather_code[i],h.is_day[i])}</div><div>${T(h.temperature_2m[i])}°</div><div class="p">${h.precipitation_probability[i]>=20?h.precipitation_probability[i]+'%':''}</div></div>`}).join('');
+      return`<div class="pane"><section class="card"><p class="story">${story()}</p><div class="wk">${cols}</div><p class="note" style="margin-top:10px;font-size:12px">${tr('Forecast by')} <a href="https://www.ipma.pt/" target="_blank" rel="noopener" style="color:var(--acc)">IPMA</a> · ${tr('based on')} ECMWF + AROME</p></section>
+      <section class="card"><h3>Next 24 hours</h3><div class="hours">${hrs}</div></section></div>`;
+    }
+  }
+  // fallback: Open-Meteo (resto do mundo)
+  const mn=Math.min(...d.temperature_2m_min),mx=Math.max(...d.temperature_2m_max),sp=mx-mn||1;
+  const cols=d.time.map((t,i)=>{
+    const lo=(d.temperature_2m_min[i]-mn)/sp*100,ht=Math.max(10,(d.temperature_2m_max[i]-d.temperature_2m_min[i])/sp*100);
+    const rp=d.precipitation_probability_max?d.precipitation_probability_max[i]:0;
+    return`<div class="dcol" style="--n:${i}"><b>${i?new Date(t+'T12:00').toLocaleDateString('en',{weekday:'short'}):'Today'}</b><span class="dic">${emoji(d.weather_code[i])}</span><span class="hi">${T(d.temperature_2m_max[i])}°</span><div class="dbar"><i style="--lo:${lo}%;--h:${ht}%;--n:${i};background:linear-gradient(${tempColor(d.temperature_2m_max[i])},${tempColor(d.temperature_2m_min[i])})"></i></div><span class="lo">${T(d.temperature_2m_min[i])}°</span><small>${rp>=20?rp+'%':'&nbsp;'}</small></div>`;
+  }).join('');
+  const hrs=h.time.slice(i0,i0+24).map((t,j)=>{const i=i0+j;return`<div class="hr" style="--n:${j}"><div class="t">${j?t.slice(11,13)+'h':'Now'}</div><div class="e">${emoji(h.weather_code[i],h.is_day[i])}</div><div>${T(h.temperature_2m[i])}°</div><div class="p">${h.precipitation_probability[i]>=20?h.precipitation_probability[i]+'%':''}</div></div>`}).join('');
+  return`<div class="pane"><section class="card"><p class="story">${story()}</p><div class="wk">${cols}</div></section>
+  <section class="card"><h3>Next 24 hours</h3><div class="hours">${hrs}</div></section></div>`;
+}
 function weekPane(){
- const d=data.daily,h=data.hourly,i0=idx0();
- const mn=Math.min(...d.temperature_2m_min),mx=Math.max(...d.temperature_2m_max),sp=mx-mn||1;
- const cols=d.time.map((t,i)=>{
-  const lo=(d.temperature_2m_min[i]-mn)/sp*100,ht=Math.max(10,(d.temperature_2m_max[i]-d.temperature_2m_min[i])/sp*100);
-  const rp=d.precipitation_probability_max?d.precipitation_probability_max[i]:0;
-  return`<div class="dcol" style="--n:${i}"><b>${i?new Date(t+'T12:00').toLocaleDateString('en',{weekday:'short'}):'Today'}</b><span class="dic">${emoji(d.weather_code[i])}</span><span class="hi">${T(d.temperature_2m_max[i])}°</span><div class="dbar"><i style="--lo:${lo}%;--h:${ht}%;--n:${i};background:linear-gradient(${tempColor(d.temperature_2m_max[i])},${tempColor(d.temperature_2m_min[i])})"></i></div><span class="lo">${T(d.temperature_2m_min[i])}°</span><small>${rp>=20?rp+'%':'&nbsp;'}</small></div>`;
- }).join('');
- const hrs=h.time.slice(i0,i0+24).map((t,j)=>{const i=i0+j;return`<div class="hr" style="--n:${j}"><div class="t">${j?t.slice(11,13)+'h':'Now'}</div><div class="e">${emoji(h.weather_code[i],h.is_day[i])}</div><div>${T(h.temperature_2m[i])}°</div><div class="p">${h.precipitation_probability[i]>=20?h.precipitation_probability[i]+'%':''}</div></div>`}).join('');
- return`<div class="pane"><section class="card"><p class="story">${story()}</p><div class="wk">${cols}</div></section>
- <section class="card"><h3>Next 24 hours</h3><div class="hours">${hrs}</div></section></div>`;
+  // devolve um placeholder; o conteúdo real chega via weekPaneAsync
+  setTimeout(async()=>{
+    const pane=$('#pane');if(!pane||tab!=='week')return;
+    pane.innerHTML=await weekPaneAsync();
+    moveInd();
+  },0);
+  return `<div class="pane sk" style="min-height:260px"></div>`;
 }
 
 /* --- Air & pollen --- */
@@ -2778,14 +2940,26 @@ addEventListener('pointerdown',askNotif,{once:true});
 addEventListener('keydown',askNotif,{once:true});
 
 /* ============ Radar tab ============ */
-const RADAR_KINDS=[['nasa','Rain'],['wind','Wind'],['cloud','Clouds'],['sat','Satellite']];
-const OWM_KINDS={wind:{layer:'wind_new',note:'Wind speed (colours) and direction (moving particles) · OpenWeatherMap + Open-Meteo',lo:'Calm',hi:'Storm',grad:'linear-gradient(90deg,#cfe6f5,#aacbe6,#b364bc,#7a4cac,#46009f)'}};
-let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='nasa',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
+const RADAR_KINDS = [
+  ['rain', 'Rain'],
+  ['wind', 'Wind'],
+  ['cloud', 'Clouds'],
+  ['sat', 'Satellite']
+];
+const OWM_KINDS={wind:{
+  layer:'wind_new',
+  note:'Wind speed (colours) and direction (moving particles) · ECMWF + Open-Meteo',
+  lo:'0 km/h',
+  hi:'120+ km/h',
+  grad:'linear-gradient(90deg,#cfe6f5 0%,#aacbe6 15%,#b364bc 40%,#7a4cac 65%,#46009f 100%)'
+}};
+let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='rain',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
+let radarScope = lsGet('radarScope') || 'pt';
 let radarKT=0;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 /* ===== Vento: partículas animadas (substitui as setas) ===== */
 let windTok=0,windT=0,windCv=null,windCx=null,windRaf=0,windLast=0,windGrid=null,windFld=null,windP=[];
-const WGR={rows:7,cols:10},WSTEP=6,WK=.06,WFADE=.05,WBK=[[0,12,.45],[12,35,.75],[35,1e9,.95]];
+const WGR={rows:11,cols:15},WSTEP=6,WK=.030,WFADE=.04,WBK=[[0,12,.4],[12,35,.7],[35,60,.85],[60,1e9,.95]];
 
 function windStopLoop(){cancelAnimationFrame(windRaf);windRaf=0}
 function windClear(){if(windCx&&windCv)windCx.clearRect(0,0,windCv.width,windCv.height)}
@@ -2821,7 +2995,7 @@ async function windFetchGrid(b){
     lats.push((s+r*(n-s)/(rows-1)).toFixed(3));
     lons.push(((((w+c*(e-w)/(cols-1))%360)+540)%360-180).toFixed(3));
   }
-  const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=wind_speed_10m,wind_direction_10m`);
+  const res=await fetch(`https://api.open-meteo.com/v1/ecmwf?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`);
   if(!res.ok)throw new Error('HTTP '+res.status);
   const j=await res.json(),arr=Array.isArray(j)?j:[j],N=rows*cols,u=new Float32Array(N),v=new Float32Array(N);
   for(let i=0;i<N;i++){
@@ -2965,11 +3139,18 @@ function loadLeaflet(){
 
 function radarPane(){
  return`<div class="pane"><section class="card radar">
- <div class="rtop"><div class="sw" id="rsw">${RADAR_KINDS.map(([k,n])=>`<button data-rk="${k}" aria-pressed="${k==radarKind}">${n}</button>`).join('')}</div><span class="rnow" id="rnote"></span></div>
+ <div class="rtop">
+  <div class="sw" id="rsw">${RADAR_KINDS.map(([k,n])=>`<button data-rk="${k}" aria-pressed="${k==radarKind}">${n}</button>`).join('')}</div>
+  <div class="sw rscope" id="rscope" role="group" aria-label="${tr('Scope')}">
+   <button data-rs="pt" aria-pressed="${radarScope==='pt'}">🇵🇹 ${tr('Portugal')}</button>
+   <button data-rs="global" aria-pressed="${radarScope==='global'}">🌍 ${tr('World')}</button>
+  </div>
+  <span class="rnow" id="rnote"></span>
+ </div>
  <div id="rmap" role="application" aria-label="Weather radar map">Loading map…</div>
  <div class="rctl"><button class="pill dk" id="rplay" aria-label="Pause">❚❚</button><input type="range" id="rsl" min="0" max="0" value="0" aria-label="Radar time"><span class="rtime" id="rtime"></span></div>
  <div class="rleg" id="rleg"><span>Light</span><i></i><span>Heavy</span></div>
- <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">light</span><i id="rlbar"></i><span id="rlmax">heavy</span><span>mm/h</span></div>
+ <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">— mm/h</span><i id="rlbar"></i><span id="rlmax">— mm/h</span><span style="margin-left:8px;font-size:10px;opacity:.7">NASA IMERG</span></div>
  </section></div>`;
 }
 function clearRadarLayers(){
@@ -3056,18 +3237,35 @@ async function radarInit(){
  $('#rmap').textContent='';
   if(radarMap){try{radarMap.remove()}catch(e){}radarMap=null}
  const rmapEl=$('#rmap');if(rmapEl&&rmapEl._leaflet_id)delete rmapEl._leaflet_id;
- radarMap=L.map('rmap',{center:[place.lat,place.lon],zoom:6,minZoom:3,maxZoom:9,scrollWheelZoom:false});
+ const isPT = radarScope === 'pt';
+ const mapOpts = isPT
+   ? { center:[39.5,-8.0], zoom:7, minZoom:6, maxZoom:11,
+       maxBounds:[[36.0,-10.8],[42.8,-5.4]], maxBoundsViscosity:1.0 }
+   : { center:[place.lat,place.lon], zoom:6, minZoom:3, maxZoom:9 };
+ radarMap=L.map('rmap',{scrollWheelZoom:false,...mapOpts});
  radarMap.createPane('radar').style.zIndex=250;
  const lp=radarMap.createPane('labels');lp.style.zIndex=260;lp.style.pointerEvents='none';
  const MAP_KEY='cb1_4644_2_e1ddc0590e0bf3595329dba5';
  L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${MAP_KEY}`,{maxZoom:19}).addTo(radarMap);
- radarMap.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · wind &amp; clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>');
+ const att = radarScope === 'pt'
+   ? '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · rain <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a> · wind/clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · sat <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>'
+   : '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · rain <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> · wind/clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · sat <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>';
+ radarMap.attributionControl.addAttribution(att);
  L.marker([place.lat,place.lon],{keyboard:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(radarMap);
  radarMap.on('click focus',()=>radarMap.scrollWheelZoom.enable());
  radarMap.on('mouseout',()=>radarMap.scrollWheelZoom.disable());
  setTimeout(()=>radarMap&&radarMap.invalidateSize(),250);
 
  $('#rsw').onclick=e=>{const b=e.target.closest('[data-rk]');if(b&&b.dataset.rk!=radarKind)radarLoadKind(b.dataset.rk)};
+ $('#rscope').onclick=e=>{
+   const b=e.target.closest('[data-rs]');
+   if(!b||b.dataset.rs===radarScope)return;
+   radarScope=b.dataset.rs;
+   lsSet('radarScope',radarScope);
+   $$('#rscope button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.rs===radarScope));
+   radarStop();
+   radarInit();
+ };
  $('#rplay').onclick=()=>{radarPlay=!radarPlay;radarBtn();radarTick()};
  $('#rsl').oninput=e=>{radarPlay=false;radarBtn();clearTimeout(radarTimer);radarShow(+e.target.value)};
  radarBtn();
@@ -3157,114 +3355,154 @@ async function nasaLegend(){
         break;
       }catch(e){console.warn('[NASA legend] failed:',u,e.message)}
     }
-    if(!nasaLeg)nasaLeg={cols:null};   // keeps the default CSS gradient
+    if(!nasaLeg)nasaLeg={cols:null};
   }
   const bar=$('#rlbar');if(!bar)return;
   if(nasaLeg.cols)bar.style.background=`linear-gradient(90deg,${nasaLeg.cols.map(c=>`rgb(${c})`).join(',')})`;
-  $('#rlmin').textContent=nasaLeg.min||'light';
-  $('#rlmax').textContent=nasaLeg.max||'heavy';
+  const min=+nasaLeg.min||0,max=+nasaLeg.max||0;
+  const fmt=v=>v<1?v.toFixed(2):v<10?v.toFixed(1):Math.round(v);
+  $('#rlmin').textContent=nasaLeg.min!=null?`${fmt(min)} mm/h`:'light';
+  $('#rlmax').textContent=nasaLeg.max!=null?`${fmt(max)} mm/h`:'heavy';
 }
 
 
 async function radarLoadKind(k){
   if(!radarMap)return;
-  const tok=radarTok,kt=++radarKT,stale=()=>tok!==radarTok||kt!==radarKT||!radarMap,note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  const tok=radarTok,kt=++radarKT;
+  const stale=()=>tok!==radarTok||kt!==radarKT||!radarMap;
+  const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+
   clearTimeout(radarTimer);
-  clearRadarLayers(); // Limpa garantidamente todas as camadas do mapa anterior
+  clearRadarLayers();
   radarLayers=[];radarFrames=[];
-  radarKind=k;$$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
-  radarPlay=!still&&k!='sat';radarBtn();   // o NASA volta a animar depois do satélite
-  $('#rmap').classList.toggle('cloudy',k=='cloud'||!!OWM_KINDS[k]);   // mapa escuro também no vento
-  $('#rleg').hidden=!OWM_KINDS[k];
-  $('#rleg2').hidden=k!='nasa';
-  if(k=='nasa')nasaLegend();
+  radarKind=k;
+  $$('#rsw button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.rk==k));
+  radarPlay=!still;radarBtn();
   note.textContent='';$('#rtime').textContent='';
 
-  /* ---- Clouds (OpenWeatherMap via worker): global, single layer ---- */
-  let asSat=(k=='sat'),fbNote='';
-  if(k=='cloud'){
-    sl.disabled=true;pl.disabled=true;
-    note.textContent='Loading cloud layer…';
-    let ok=false;
-    try{ok=(await fetch(WORKER+'/clouds/0/0/0.png')).ok}catch(e){}
-    if(stale())return;
-    if(ok){
-      radarLayers=[mkLayer(WORKER+'/clouds/{z}/{x}/{y}.png',{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
-      radarFrames=[{}];sl.max=0;
-      note.textContent='Global cloud cover · OpenWeatherMap · updated regularly';
-      $('#rtime').textContent='Current';
-      radarShow(0);radarBtn();
-      return;
-    }
-    asSat=true;fbNote=' · cloud layer needs OWM_KEY in the worker, showing satellite instead';
-    $('#rmap').classList.remove('cloudy');
-  }
+  const isPT = radarScope==='pt';
+  $('#rmap').classList.toggle('cloudy',k==='cloud'||k==='wind');
+  $('#rleg').hidden = k!=='wind';
+  $('#rleg2').hidden = k!=='rain';
 
-  /* ---- Satellite: NASA VIIRS true colour, global daily composites ---- */
-  if(asSat){
-    sl.disabled=true;pl.disabled=true;
-    note.textContent='Loading satellite frames…';
-    let j;
-    try{j=await satInfo(SAT_ID)}catch(e){
-      console.warn('[SAT]',e.message);
-      if(!stale()&&note)note.textContent='Satellite imagery unavailable right now.';
-      return;
-    }
-    if(stale())return;
-    const daily=j.stepMs>=864e5;
-    let end=Date.parse(j.end);const start=Date.parse(j.start),N=daily?7:12;
-    if(daily)end-=j.stepMs;                       // today's mosaic is still incomplete: start at yesterday
-    const times=Array.from({length:N},(_,i)=>end-(N-1-i)*j.stepMs).filter(t=>t>=start);
-    const nz=+((j.tms.match(/Level(\d+)/)||[0,9])[1]);
-    console.info('[SAT] newest frame:',new Date(end).toISOString().slice(0,10));
-    radarFrames=times.map(t=>({time:t/1000,fc:false,day:daily}));
-    radarLayers=times.map(t=>mkLayer(satURL(SAT_ID,j,t),{maxNativeZoom:nz,maxZoom:9}));
-    sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
-    sl.value=times.length-1;
-    note.textContent='True-colour satellite · NASA VIIRS · global daily composite'+fbNote;
-    radarShow(times.length-1);radarPlay=false;radarBtn();radarWarm();   // start on the newest day, paused
-    return;
+  try{
+    if(k==='rain')    return isPT ? loadRainPT(stale)     : loadRainGlobal(stale);
+    if(k==='wind')    return loadWind(stale);
+    if(k==='cloud')   return loadCloud(stale,isPT);
+    if(k==='sat')     return loadSat(stale);
+  }catch(e){
+    console.warn('[Radar]',k,e.message);
+    if(!stale()&&note)note.textContent='Layer unavailable right now.';
   }
+}
 
-  /* ---- NASA IMERG ---- */
-  if(k=='nasa'){
-    sl.disabled=true;pl.disabled=true;
-    note.textContent='Checking the latest satellite frames…';
-    const times=await nasaTimes();
-    if(stale())return;
-    if(times.length<2){
-      radarLayers=[L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate_30min/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png',
-        {pane:'radar',className:'rlayer',opacity:.8,maxNativeZoom:6,maxZoom:9,errorTileUrl:BLANK}).addTo(radarMap)];
-      radarFrames=[{}];sl.max=0;
-      note.textContent='Satellite rain estimate · worldwide · latest image (no distinct frames to animate)';
-      $('#rtime').textContent='Latest available';
-      return;
-    }
-    radarFrames=times.map(t=>({time:t/1000,fc:false}));
-    radarLayers=times.map(t=>mkLayer(NASA_URL(t),{maxNativeZoom:6,maxZoom:9}));
-    sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
-    note.textContent='Satellite rain estimate · worldwide · last ~6 h';
-    radarShow(0);radarWarm();radarBtn();radarTick();
-    return;
-  }
-  /* ---- Camadas OpenWeatherMap via worker (vento) ---- */
-  const ow=OWM_KINDS[k];
-  if(!ow)return;
+/* ---- Rain: IPMA (PT) ---- */
+async function loadRainPT(stale){
+  const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  sl.disabled=true;pl.disabled=true;
+  note.textContent='Loading IPMA radar…';
+  const frames=await ipmaRadarFrames();
+  if(stale())return;
+  if(!frames||!frames.length){note.textContent='IPMA radar unavailable right now.';return}
+  const bounds=[[36.8,-9.6],[42.2,-6.2]];
+  const sliced=frames.slice(0,12);
+  radarLayers=sliced.map(f=>L.imageOverlay(
+    IPMA_RADAR_BASE+f.path, bounds,
+    {opacity:0,pane:'radar',className:'rlayer'}
+  ));
+  radarFrames=sliced.map(f=>({time:f.time/1000,fc:false}));
+  sl.disabled=false;pl.disabled=false;sl.max=radarFrames.length-1;
+  note.textContent='IPMA radar · 5 min resolution · Portugal';
+  $('#rlmin').textContent='0.1 mm/h';
+  $('#rlmax').textContent='> 30 mm/h';
+  $('#rlbar').style.background='linear-gradient(90deg,#c8e6c9,#81c784,#4caf50,#ffeb3b,#ff9800,#f44336,#9c27b0)';
+  radarShow(0);radarWarm();radarBtn();radarTick();
+}
+
+/* ---- Rain: RainViewer (global) ---- */
+async function loadRainGlobal(stale){
+  const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  sl.disabled=true;pl.disabled=true;
+  note.textContent='Loading RainViewer…';
+  const rv=await rainViewerLoad();
+  if(stale())return;
+  if(!rv||!rv.all.length){note.textContent='RainViewer unavailable right now.';return}
+  const frames=rv.all.slice(-12);
+  radarFrames=frames.map(f=>({time:f.time/1000,fc:!!f.fc}));
+  radarLayers=frames.map(f=>mkLayer(rainViewerTileURL(f,4,'0_0'),{maxNativeZoom:6,maxZoom:9}));
+  sl.disabled=false;pl.disabled=false;sl.max=frames.length-1;
+  note.textContent='RainViewer · global · 10 min · 2h past + 30 min nowcast';
+  $('#rlmin').textContent='0.1 mm/h';
+  $('#rlmax').textContent='> 50 mm/h';
+  $('#rlbar').style.background='linear-gradient(90deg,#00e400,#ffff00,#ff7e00,#ff0000,#8f3f97,#7e0023)';
+  radarShow(0);radarWarm();radarBtn();radarTick();
+}
+
+/* ---- Wind (OpenWeatherMap + ECMWF particles) ---- */
+async function loadWind(stale){
+  const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  const ow=OWM_KINDS.wind;
   sl.disabled=true;pl.disabled=true;
   note.textContent='Loading wind layer…';
-  let owOk=false;
-  try{owOk=(await fetch(`${WORKER}/owm/${ow.layer}/0/0/0.png`)).ok}catch(e){}
+  let ok=false;
+  try{ok=(await fetch(`${WORKER}/owm/${ow.layer}/0/0/0.png`)).ok}catch(e){}
   if(stale())return;
-   if(!owOk){note.textContent='Wind layer needs OWM_KEY in the worker.';return}
-  radarLayers=[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,{maxNativeZoom:6,maxZoom:9,className:'rlayer rcloud'})];
+  if(!ok){note.textContent='Wind layer needs OWM_KEY in the worker.';return}
+  const isPT=radarScope==='pt';
+  radarLayers=[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,
+    {maxNativeZoom:6,maxZoom:isPT?11:9,className:'rlayer rcloud'})];
   radarFrames=[{}];sl.max=0;
-  note.textContent=ow.note;$('#rtime').textContent='Current';
-  $('#rleg').innerHTML=`<span>${ow.lo}</span><i style="background:${ow.grad}"></i><span>${ow.hi}</span>`;
+  note.textContent=ow.note+(isPT?' · Portugal':' · Global');
+  $('#rtime').textContent='Current';
+  $('#rleg').innerHTML=`<span>${ow.lo}</span><i style="background:${ow.grad}"></i><span>${ow.hi}</span><span style="margin-left:8px;font-size:10px;opacity:.7">ECMWF/IFS</span>`;
   radarShow(0);radarBtn();
-
-  if (k === 'wind') {
   updateWindVectors();
 }
+
+/* ---- Clouds (OpenWeatherMap) ---- */
+async function loadCloud(stale,isPT){
+  const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  sl.disabled=true;pl.disabled=true;
+  note.textContent='Loading cloud layer…';
+  let ok=false;
+  try{ok=(await fetch(WORKER+'/clouds/0/0/0.png')).ok}catch(e){}
+  if(stale())return;
+  if(!ok){
+    note.textContent='Cloud layer needs OWM_KEY, showing satellite instead.';
+    return loadSat(stale);
+  }
+  radarLayers=[mkLayer(WORKER+'/clouds/{z}/{x}/{y}.png',
+    {maxNativeZoom:6,maxZoom:isPT?11:9,className:'rlayer rcloud'})];
+  radarFrames=[{}];sl.max=0;
+  note.textContent='Clouds · OpenWeatherMap'+(isPT?' · Portugal':' · Global');
+  $('#rtime').textContent='Current';
+  radarShow(0);radarBtn();
+}
+
+/* ---- Satellite (NASA VIIRS, idêntico nos dois âmbitos) ---- */
+async function loadSat(stale){
+  const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  sl.disabled=true;pl.disabled=true;
+  note.textContent='Loading satellite frames…';
+  let j;
+  try{j=await satInfo(SAT_ID)}catch(e){
+    if(!stale()&&note)note.textContent='Satellite imagery unavailable right now.';
+    return;
+  }
+  if(stale())return;
+  const daily=j.stepMs>=864e5;
+  let end=Date.parse(j.end);
+  const start=Date.parse(j.start),N=daily?7:12;
+  if(daily)end-=j.stepMs;
+  const times=Array.from({length:N},(_,i)=>end-(N-1-i)*j.stepMs).filter(t=>t>=start);
+  const nz=+((j.tms.match(/Level(\d+)/)||[0,9])[1]);
+  radarFrames=times.map(t=>({time:t/1000,fc:false,day:daily}));
+  radarLayers=times.map(t=>mkLayer(satURL(SAT_ID,j,t),{maxNativeZoom:nz,maxZoom:9}));
+  sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
+  sl.value=times.length-1;
+  note.textContent='NASA VIIRS true colour · '+(daily?'daily composite':'30 min frames');
+  radarShow(times.length-1);
+  radarPlay=false;radarBtn();radarWarm();
 }
 
 /* ============ IPMA warnings (topbar) ============ */
