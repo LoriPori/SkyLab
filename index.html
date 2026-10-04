@@ -41,7 +41,7 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .logo{font-family:var(--serif);font-size:28px;margin-right:auto;cursor:pointer;display:flex;align-items:center;gap:9px;text-shadow:0 2px 14px rgba(10,30,60,.25)}
 .lg{width:14px;height:14px;border-radius:50%;background:#fff3b0;box-shadow:0 0 0 0 rgba(255,243,176,.8);animation:ping2 2.6s infinite}
 @keyframes ping2{70%{box-shadow:0 0 0 12px rgba(255,243,176,0)}100%{box-shadow:0 0 0 0 rgba(255,243,176,0)}}
-.search{position:relative;flex:1 1 180px;max-width:360px}
+.search{position:relative;flex:1 1 240px;max-width:380px}
 .search input{width:100%;padding:11px 40px 11px 40px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.26);backdrop-filter:blur(14px);color:#fff;font:inherit;font-size:15px}
 .search input::placeholder{color:rgba(255,255,255,.85)}
 .search>svg{position:absolute;left:14px;top:12px;width:18px}
@@ -611,16 +611,18 @@ html.hlock{overflow:hidden}
 .auth-alert.err{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
 .auth-alert.ok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
 .auth-profile-view{display:grid;gap:16px}
-.auth-user-badge{display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;background:rgba(20,49,79,.05);border:1px solid rgba(20,49,79,.1)}
-.auth-avatar-lg{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--acc));display:grid;place-items:center;font-size:22px;color:#fff;flex:none;box-shadow:0 6px 16px rgba(10,40,90,.15)}
-.auth-user-info{display:flex;flex-direction:column;gap:2px;min-width:0}
-.auth-id-tag{font-size:14.5px;color:var(--ink)}
-.auth-id-prefix{color:#64748b;font-size:12px;font-weight:600;margin-right:4px}
-.auth-id-val{color:var(--acc);font-size:16px}
-.auth-email-val{font-size:12.5px;color:var(--mut);word-break:break-all}
+.auth-clean-card{display:grid;gap:12px;padding:16px 18px;border-radius:18px;background:rgba(20,49,79,.06);border:1px solid rgba(20,49,79,.1)}
+.auth-prof-user-row, .auth-prof-email-row{display:flex;flex-direction:column;gap:3px}
+.auth-prof-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;color:var(--mut)}
+.auth-prof-username{font-size:18px;font-weight:600;color:var(--acc);letter-spacing:-.01em;word-break:break-all}
+.auth-prof-email{font-size:14px;color:var(--ink);word-break:break-all}
+.auth-profile-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.auth-logout-btn{width:100%;background:rgba(20,49,79,.09)!important;color:var(--ink)!important;font-weight:600;border:1px solid rgba(20,49,79,.15)!important}
+.auth-logout-btn:hover{background:rgba(20,49,79,.16)!important}
+.auth-delete-btn{width:100%;background:#ef4444!important;color:#fff!important;font-weight:600;box-shadow:0 4px 14px rgba(239,68,68,.25)}
+.auth-delete-btn:hover{background:#dc2626!important;box-shadow:0 6px 20px rgba(220,38,38,.35)}
+@media(max-width:480px){.auth-profile-actions{grid-template-columns:1fr}}
 [hidden], #authLoggedInView[hidden], #authLoggedOutView[hidden]{display:none!important}
-.auth-logout-btn{width:100%;background:#ef4444!important;color:#fff!important;font-weight:600;box-shadow:0 6px 20px rgba(239,68,68,.25)}
-.auth-logout-btn:hover{background:#dc2626!important}
 </style>
 </head>
 <body>
@@ -666,14 +668,20 @@ html.hlock{overflow:hidden}
 
   <!-- Profile View (When Logged In) -->
   <div id="authLoggedInView" hidden class="auth-profile-view">
-   <div class="auth-user-badge">
-    <div class="auth-avatar-lg" id="profAvatar">👤</div>
-    <div class="auth-user-info">
-     <div class="auth-id-tag"><span class="auth-id-prefix" id="profUserLbl">Nome de utilizador:</span> <b id="profUsername" class="auth-id-val"></b></div>
-     <div class="auth-email-val" id="profEmail"></div>
+   <div class="auth-clean-card">
+    <div class="auth-prof-user-row">
+     <span class="auth-prof-label" id="profUserLbl">Nome de utilizador</span>
+     <b id="profUsername" class="auth-prof-username"></b>
+    </div>
+    <div class="auth-prof-email-row">
+     <span class="auth-prof-label" id="profEmailLbl">Email</span>
+     <span class="auth-prof-email" id="profEmail"></span>
     </div>
    </div>
-   <button type="button" class="pill solid big auth-logout-btn" id="authLogoutBtn">Terminar Sessão</button>
+   <div class="auth-profile-actions">
+    <button type="button" class="pill solid big auth-logout-btn" id="authLogoutBtn">Terminar Sessão</button>
+    <button type="button" class="pill solid big auth-delete-btn" id="authDeleteBtn">Apagar Conta</button>
+   </div>
   </div>
 
   <!-- Auth Form View (When Logged Out) -->
@@ -2964,10 +2972,9 @@ document.addEventListener('keydown',e=>{      // atalho: T abre o seguimento de 
 });
 new MutationObserver(()=>hurrBadge()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});   // muda o idioma do tooltip do botão
 /* ============ Skylab Auth Client ============ */
-/* Fix: the previous auth config block had been duplicated and cut off, which caused the script parser to hit a stray `const` after an unfinished object literal. Keep a single complete AUTH_CONFIG definition. */
 const AUTH_CONFIG = {
-  apiUrl: (typeof ATMO !== 'undefined' && ATMO.base)
-    ? ATMO.base.replace(/\/v1\/?$/, '/api/auth')
+  apiUrl: (typeof ATMO !== 'undefined' && ATMO.base) 
+    ? ATMO.base.replace(/\/v1\/?$/, '/api/auth') 
     : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
   googleClientId: ''
 };
@@ -3042,17 +3049,19 @@ let currentToken = lsGet('skylab_auth_token');
 let authModalOpen = false;
 
 function updateAuthUI(){
-  const btn=$('#authBtn');const txt=$('#authTxt');
+  const btn=$('#authBtn');const txt=$('#authTxt');const ico=$('#authIco');
   if(!btn||!txt)return;
   if(currentUser&&currentUser.username){
     btn.classList.remove('pulse-btn');
+    if(ico)ico.style.display='none';
     const rawName=currentUser.username.trim();
     const displayName=rawName.length>15?rawName.slice(0,15):rawName;
     txt.innerHTML=`<span class="auth-u-id" title="${escH(rawName)}">${escH(displayName)}</span>`;
     btn.setAttribute('title',`Conta: ${rawName}`);
   }else{
     btn.classList.add('pulse-btn');
-    txt.textContent='Sign In';
+    if(ico)ico.style.display='inline-block';
+    txt.textContent=LANG==='pt'?'Entrar':'Sign In';
     btn.setAttribute('title',LANG==='pt'?'Criar Conta / Iniciar Sessão':'Sign Up / Sign In');
   }
 }
@@ -3082,7 +3091,8 @@ function authSetMode(mode){
     ?(LANG==='pt'?'Iniciar sessão':'Sign In')
     :(LANG==='pt'?'Regista-te':'Sign Up');
   if($('#lblUsername'))$('#lblUsername').textContent=LANG==='pt'?'Nome de utilizador':'Username';
-  if($('#profUserLbl'))$('#profUserLbl').textContent=LANG==='pt'?'Nome de utilizador:':'Username:';
+  if($('#profUserLbl'))$('#profUserLbl').textContent=LANG==='pt'?'Nome de utilizador':'Username';
+  if($('#profEmailLbl'))$('#profEmailLbl').textContent=LANG==='pt'?'Email':'Email';
 
   authClearAlert();
 }
@@ -3107,17 +3117,23 @@ function authOpen(){
     $('#authLoggedInView').style.display='grid';
     $('#authLoggedOutView').hidden=true;
     $('#authLoggedOutView').style.display='none';
+    if($('#authHeaderAvatar'))$('#authHeaderAvatar').style.display='none';
 
     const rawName=currentUser.username||'User';
     $('#profUsername').textContent=rawName.length>15?rawName.slice(0,15):rawName;
     $('#profEmail').textContent=currentUser.email||'';
     $('#authTitle').textContent=LANG==='pt'?'A tua Conta':'Your Account';
     $('#authSubtitle').textContent=LANG==='pt'?'Sessão iniciada no Skylab':'Signed in to Skylab';
+    if($('#profUserLbl'))$('#profUserLbl').textContent=LANG==='pt'?'Nome de utilizador':'Username';
+    if($('#profEmailLbl'))$('#profEmailLbl').textContent=LANG==='pt'?'Email':'Email';
+    if($('#authLogoutBtn'))$('#authLogoutBtn').textContent=LANG==='pt'?'Terminar Sessão':'Log Out';
+    if($('#authDeleteBtn'))$('#authDeleteBtn').textContent=LANG==='pt'?'Apagar Conta':'Delete Account';
   }else{
     $('#authLoggedInView').hidden=true;
     $('#authLoggedInView').style.display='none';
     $('#authLoggedOutView').hidden=false;
     $('#authLoggedOutView').style.display='block';
+    if($('#authHeaderAvatar'))$('#authHeaderAvatar').style.display='grid';
     authSetMode(authMode);
   }
 
@@ -3179,6 +3195,7 @@ function initAuthInputs(){
   $('#authTabSignin').onclick=()=>authSetMode('signin');
   $('#authSwitchLink').onclick=()=>authSetMode(authMode==='signup'?'signin':'signup');
 
+  // Terminar Sessão
   $('#authLogoutBtn').onclick=async()=>{
     const tok=currentToken;
     currentUser=null;
@@ -3211,6 +3228,68 @@ function initAuthInputs(){
     toast(LANG==='pt'?'Sessão terminada com sucesso':'Logged out successfully');
     authClose();
   };
+
+  // Apagar Conta
+  if($('#authDeleteBtn')){
+    $('#authDeleteBtn').onclick=async()=>{
+      const msg = LANG==='pt'
+        ? 'Tem a certeza de que pretende apagar a sua conta permanentemente? Esta ação removerá os seus dados da base de dados e não pode ser desfeita.'
+        : 'Are you sure you want to permanently delete your account? This action will remove your data from the database and cannot be undone.';
+      
+      if(!confirm(msg)) return;
+
+      const tok = currentToken;
+      const deleteBtn = $('#authDeleteBtn');
+      deleteBtn.disabled = true;
+      const oldTxt = deleteBtn.textContent;
+      deleteBtn.textContent = LANG==='pt' ? 'A apagar…' : 'Deleting…';
+
+      try {
+        if(tok){
+          const res = await fetch(`${AUTH_CONFIG.apiUrl}/delete-account`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${tok}` 
+            }
+          });
+          const data = await res.json().catch(()=>({}));
+          if(!res.ok || data.error) {
+            throw new Error(data.error || (LANG==='pt'?'Erro ao apagar a conta.':'Failed to delete account.'));
+          }
+        }
+
+        currentUser = null;
+        currentToken = null;
+        try {
+          localStorage.removeItem('skylab_auth_user');
+          localStorage.removeItem('skylab_auth_token');
+        } catch(e) {}
+
+        updateAuthUI();
+        if(emailIn) emailIn.value = '';
+        if(passIn) passIn.value = '';
+        if(userIn) userIn.value = '';
+        if(emailIn) emailIn.classList.remove('has-val');
+        if(passIn) passIn.classList.remove('has-val');
+
+        $('#authLoggedInView').hidden = true;
+        $('#authLoggedInView').style.display = 'none';
+        $('#authLoggedOutView').hidden = false;
+        $('#authLoggedOutView').style.display = 'block';
+        authSetMode('signin');
+
+        toast(LANG==='pt' ? 'Conta apagada com sucesso.' : 'Account deleted successfully.');
+        authClose();
+      } catch(err) {
+        console.warn('[Delete Account Error]', err);
+        alert(err.message || (LANG==='pt' ? 'Erro ao apagar a conta.' : 'Error deleting account.'));
+      } finally {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = oldTxt;
+      }
+    };
+  }
 
   $('#authForm').onsubmit=async(e)=>{
     e.preventDefault();
@@ -3277,7 +3356,7 @@ function initAuthInputs(){
   });
 }
 
-// Fluxo de Autenticação Oficial da Google (Janela/Popup OAuth)
+// Fluxo de Autenticação com Google (Google Identity Services)
 function authTriggerGoogle(){
   authClearAlert();
   const rawInput = $('#authUsername') ? $('#authUsername').value.trim() : '';
@@ -3325,20 +3404,9 @@ function authTriggerGoogle(){
     });
     client.requestAccessToken({ prompt: 'select_account' });
   } else {
-    const w = 500, h = 600;
-    const left = (screen.width/2)-(w/2);
-    const top = (screen.height/2)-(h/2);
-    const googleAuthUrl = AUTH_CONFIG.googleClientId 
-      ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${AUTH_CONFIG.googleClientId}&redirect_uri=${encodeURIComponent(location.origin + location.pathname)}&response_type=token&scope=email%20profile&prompt=select_account`
-      : `https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin`;
-    
-    window.open(googleAuthUrl, 'GoogleAuth', `width=${w},height=${h},top=${top},left=${left},toolbar=no,menubar=no,status=no`);
-    
-    if(!AUTH_CONFIG.googleClientId){
-      authShowAlert(LANG==='pt'
-        ?'Janela da Google aberta. Para ligar à database, adiciona o Google Client ID no AUTH_CONFIG.'
-        :'Google window opened. To link with your database, add Google Client ID to AUTH_CONFIG.');
-    }
+    authShowAlert(LANG==='pt'
+      ?'Para ativar o início de sessão Google, configure o Google Client ID no AUTH_CONFIG (ou utilize o registo com email/palavra-passe).'
+      :'To enable Google Sign-In, add your Google Client ID to AUTH_CONFIG (or use email/password sign-in).');
   }
 }
 
