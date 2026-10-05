@@ -987,6 +987,7 @@ background:radial-gradient(circle,color-mix(in srgb,var(--a) 22%,transparent),tr
 
 const ATMO={ base:'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/v1' };
 let atmoDead=false;
+const SYNC_KEYS = ['favs','unitPick','lang','place'];   // declared first so lsSet can reference it safely
 /* ============ basics ============ */
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const main=$('#main'),q=$('#q'),sg=$('#sg');
@@ -3156,14 +3157,14 @@ const WORKER=ATMO.base.replace('/v1','');
 const SAT_ID='VIIRS_SNPP_CorrectedReflectance_TrueColor';
 
 function loadLeaflet(){
- if(window.L)return Promise.resolve();
+ if(window.L){installFourCorners();return Promise.resolve()}
  return leafletP||(leafletP=Promise.all([
   new Promise((res,rej)=>{const c=document.createElement('link');c.rel='stylesheet';c.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';c.onload=res;c.onerror=rej;document.head.appendChild(c)}),
   new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})
- ]).catch(e=>{leafletP=null;throw e}));
+ ]).then(installFourCorners).catch(e=>{leafletP=null;throw e}));
 }
 
-/* ===== Geo-referenciação por 4 cantos (substitui o L.imageOverlay simples) ===== */
+/* ===== Geo-referenciação por 4 cantos (instalado após o Leaflet carregar) ===== */
 function solveHomography(src, dst){
   const A = [];
   for(let i=0;i<4;i++){
@@ -3187,41 +3188,44 @@ function solveHomography(src, dst){
   return h;
 }
 
-L.ImageOverlay.FourCorners = L.Layer.extend({
-  initialize(url, corners, options){
-    this._url=url; this._corners=corners;
-    L.setOptions(this, options);
-  },
-  onAdd(map){
-    this._map=map;
-    const img=this._image=document.createElement('img');
-    img.src=this._url; img.alt='';
-    img.className='leaflet-image-layer '+(this.options.className||'');
-    Object.assign(img.style,{position:'absolute',transformOrigin:'0 0',pointerEvents:'none',opacity:this.options.opacity??0});
-    (this.options.pane?map.getPane(this.options.pane):map.getPanes().overlayPane).appendChild(img);
-    this._onMove=()=>this._reset();
-    map.on('move zoom moveend zoomend resize', this._onMove);
-    img.onload=()=>{ this._reset(); this.fire('load'); };
-    img.onerror=()=>this.fire('error');
-    this._reset();
-    return this;
-  },
-  onRemove(map){
-    map.off('move zoom moveend zoomend resize', this._onMove);
-    if(this._image&&this._image.parentNode) this._image.parentNode.removeChild(this._image);
-  },
-  setOpacity(op){ this.options.opacity=op; if(this._image) this._image.style.opacity=op; return this; },
-  _reset(){
-    if(!this._map||!this._image) return;
-    const map=this._map,c=this._corners,p=ll=>map.latLngToLayerPoint(ll);
-    const nw=p(c.nw),ne=p(c.ne),sw=p(c.sw),se=p(c.se);
-    const w=this._image.naturalWidth||1,h=this._image.naturalHeight||1;
-    const m=solveHomography([[0,0],[w,0],[0,h],[w,h]],[[nw.x,nw.y],[ne.x,ne.y],[sw.x,sw.y],[se.x,se.y]]);
-    this._image.style.width=w+'px'; this._image.style.height=h+'px';
-    this._image.style.transform=`matrix3d(${m[0]},${m[3]},0,${m[6]}, ${m[1]},${m[4]},0,${m[7]}, 0,0,1,0, ${m[2]},${m[5]},0,1)`;
-  }
-});
-L.imageOverlay.fourCorners=(url,corners,opts)=>new L.ImageOverlay.FourCorners(url,corners,opts);
+function installFourCorners(){
+  if(!window.L||L.ImageOverlay.FourCorners) return;
+  L.ImageOverlay.FourCorners = L.Layer.extend({
+    initialize(url, corners, options){
+      this._url=url; this._corners=corners;
+      L.setOptions(this, options);
+    },
+    onAdd(map){
+      this._map=map;
+      const img=this._image=document.createElement('img');
+      img.src=this._url; img.alt='';
+      img.className='leaflet-image-layer '+(this.options.className||'');
+      Object.assign(img.style,{position:'absolute',transformOrigin:'0 0',pointerEvents:'none',opacity:this.options.opacity??0});
+      (this.options.pane?map.getPane(this.options.pane):map.getPanes().overlayPane).appendChild(img);
+      this._onMove=()=>this._reset();
+      map.on('move zoom moveend zoomend resize', this._onMove);
+      img.onload=()=>{ this._reset(); this.fire('load'); };
+      img.onerror=()=>this.fire('error');
+      this._reset();
+      return this;
+    },
+    onRemove(map){
+      map.off('move zoom moveend zoomend resize', this._onMove);
+      if(this._image&&this._image.parentNode) this._image.parentNode.removeChild(this._image);
+    },
+    setOpacity(op){ this.options.opacity=op; if(this._image) this._image.style.opacity=op; return this; },
+    _reset(){
+      if(!this._map||!this._image) return;
+      const map=this._map,c=this._corners,p=ll=>map.latLngToLayerPoint(ll);
+      const nw=p(c.nw),ne=p(c.ne),sw=p(c.sw),se=p(c.se);
+      const w=this._image.naturalWidth||1,h=this._image.naturalHeight||1;
+      const m=solveHomography([[0,0],[w,0],[0,h],[w,h]],[[nw.x,nw.y],[ne.x,ne.y],[sw.x,sw.y],[se.x,se.y]]);
+      this._image.style.width=w+'px'; this._image.style.height=h+'px';
+      this._image.style.transform=`matrix3d(${m[0]},${m[3]},0,${m[6]}, ${m[1]},${m[4]},0,${m[7]}, 0,0,1,0, ${m[2]},${m[5]},0,1)`;
+    }
+  });
+  L.imageOverlay.fourCorners=(url,corners,opts)=>new L.ImageOverlay.FourCorners(url,corners,opts);
+}
 
 function radarPane(){
  return`<div class="pane"><section class="card radar">
@@ -3868,7 +3872,6 @@ const AUTH_CONFIG = {
   googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com'
 };
 /* ==== sync de preferências ==== */
-const SYNC_KEYS = ['favs','unitPick','lang','place'];
 let syncT = null;
 async function prefsPush(){
   if(!currentToken) return;
