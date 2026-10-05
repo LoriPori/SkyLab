@@ -1952,27 +1952,7 @@ async function ipmaRadarFrames(){
   }catch(e){console.warn('[IPMA Radar]',e.message);return null}
 }
 
-function ipmaRadarURL(path) {
-  return IPMA_RADAR_BASE + (ipmaRadarPrefix ?? 'por/') + path;
-}
 
-async function ipmaRadarInit() {
-  const frames = await ipmaRadarFrames();
-  if (!frames || !frames.length || !radarMap) return null;
-
-  // Cria uma camada L.imageOverlay para cada frame
-  const bounds=[[35.5,-11.0],[43.5,-4.0]];
-  const layers = frames.map(f => {
-    const overlay = L.imageOverlay(ipmaRadarURL(f.path), bounds, {
-      opacity: 0,
-      pane: 'radar',
-      className: 'rlayer'
-    });
-    return { layer: overlay, time: f.time };
-  });
-
-  return { layers, frames };
-}
 
 /* ============ RainViewer (global) ============ */
 let rainViewerFrames = null;
@@ -3085,10 +3065,15 @@ function windStep(dt,fade){
     p.ox=p.x;p.oy=p.y;p.x+=o[0]*WK*dt;p.y-=o[1]*WK*dt;p.a+=dt;p.s=sp;     // no ecrã o Norte é y negativo
     if(p.a>p.m||p.x<0||p.y<0||p.x>f.W||p.y>f.H||sp<.3)windSpawn(p);
   }
-  cx.lineWidth=1.4;cx.lineCap='round';
-  for(const[lo,hi,al]of WBK){
-    cx.strokeStyle=`rgba(255,255,255,${al})`;cx.beginPath();
-    for(const p of windP)if(p.s>=lo&&p.s<hi){cx.moveTo(p.ox,p.oy);cx.lineTo(p.x,p.y)}
+  cx.lineCap='round';
+  for(const[lo,hi,al] of WBK){
+    cx.lineWidth=3; cx.strokeStyle=`rgba(8,18,36,${al*0.55})`;
+    cx.beginPath();
+    for(const p of windP) if(p.s>=lo&&p.s<hi){cx.moveTo(p.ox,p.oy);cx.lineTo(p.x,p.y)}
+    cx.stroke();
+    cx.lineWidth=1.5; cx.strokeStyle=`rgba(255,255,255,${al})`;
+    cx.beginPath();
+    for(const p of windP) if(p.s>=lo&&p.s<hi){cx.moveTo(p.ox,p.oy);cx.lineTo(p.x,p.y)}
     cx.stroke();
   }
 }
@@ -3178,13 +3163,73 @@ function loadLeaflet(){
  ]).catch(e=>{leafletP=null;throw e}));
 }
 
+/* ===== Geo-referenciação por 4 cantos (substitui o L.imageOverlay simples) ===== */
+function solveHomography(src, dst){
+  const A = [];
+  for(let i=0;i<4;i++){
+    const [x,y]=src[i], [X,Y]=dst[i];
+    A.push([x,y,1,0,0,0,-x*X,-y*X,X]);
+    A.push([0,0,0,x,y,1,-x*Y,-y*Y,Y]);
+  }
+  for(let i=0;i<8;i++){
+    let piv=i;
+    for(let r=i+1;r<8;r++) if(Math.abs(A[r][i])>Math.abs(A[piv][i])) piv=r;
+    [A[i],A[piv]]=[A[piv],A[i]];
+    const d=A[i][i]||1e-12;
+    for(let c=i;c<9;c++) A[i][c]/=d;
+    for(let r=0;r<8;r++){
+      if(r===i) continue;
+      const f=A[r][i];
+      for(let c=i;c<9;c++) A[r][c]-=f*A[i][c];
+    }
+  }
+  const h=A.map(r=>r[8]); h.push(1);
+  return h;
+}
+
+L.ImageOverlay.FourCorners = L.Layer.extend({
+  initialize(url, corners, options){
+    this._url=url; this._corners=corners;
+    L.setOptions(this, options);
+  },
+  onAdd(map){
+    this._map=map;
+    const img=this._image=document.createElement('img');
+    img.src=this._url; img.alt='';
+    img.className='leaflet-image-layer '+(this.options.className||'');
+    Object.assign(img.style,{position:'absolute',transformOrigin:'0 0',pointerEvents:'none',opacity:this.options.opacity??0});
+    (this.options.pane?map.getPane(this.options.pane):map.getPanes().overlayPane).appendChild(img);
+    this._onMove=()=>this._reset();
+    map.on('move zoom moveend zoomend resize', this._onMove);
+    img.onload=()=>{ this._reset(); this.fire('load'); };
+    img.onerror=()=>this.fire('error');
+    this._reset();
+    return this;
+  },
+  onRemove(map){
+    map.off('move zoom moveend zoomend resize', this._onMove);
+    if(this._image&&this._image.parentNode) this._image.parentNode.removeChild(this._image);
+  },
+  setOpacity(op){ this.options.opacity=op; if(this._image) this._image.style.opacity=op; return this; },
+  _reset(){
+    if(!this._map||!this._image) return;
+    const map=this._map,c=this._corners,p=ll=>map.latLngToLayerPoint(ll);
+    const nw=p(c.nw),ne=p(c.ne),sw=p(c.sw),se=p(c.se);
+    const w=this._image.naturalWidth||1,h=this._image.naturalHeight||1;
+    const m=solveHomography([[0,0],[w,0],[0,h],[w,h]],[[nw.x,nw.y],[ne.x,ne.y],[sw.x,sw.y],[se.x,se.y]]);
+    this._image.style.width=w+'px'; this._image.style.height=h+'px';
+    this._image.style.transform=`matrix3d(${m[0]},${m[3]},0,${m[6]}, ${m[1]},${m[4]},0,${m[7]}, 0,0,1,0, ${m[2]},${m[5]},0,1)`;
+  }
+});
+L.imageOverlay.fourCorners=(url,corners,opts)=>new L.ImageOverlay.FourCorners(url,corners,opts);
+
 function radarPane(){
  return`<div class="pane"><section class="card radar">
  <div class="rtop">
   <div class="sw" id="rsw">${RADAR_KINDS.map(([k,n])=>`<button data-rk="${k}" aria-pressed="${k==radarKind}">${n}</button>`).join('')}</div>
   <div class="sw rscope" id="rscope" role="group" aria-label="${tr('Scope')}">
-   <button data-rs="pt" aria-pressed="${radarScope==='pt'}">🇵🇹 ${tr('Portugal')}</button>
-   <button data-rs="global" aria-pressed="${radarScope==='global'}">🌍 ${tr('World')}</button>
+    <button data-rs="pt" aria-pressed="${radarScope==='pt'}">${tr('Portugal')}</button>
+    <button data-rs="global" aria-pressed="${radarScope==='global'}">${tr('World')}</button>
   </div>
   <span class="rnow" id="rnote"></span>
  </div>
@@ -3446,12 +3491,12 @@ async function loadRainPT(stale){
   if(stale())return;
   if(!frames||!frames.length){note.textContent='IPMA radar unavailable right now.';return}
   await ipmaResolvePrefix(frames[0].path);
-  const bounds=[[35.0,-10.5],[43.5,-5.0]];
-  const sliced=frames.slice(0,12);
-  radarLayers=sliced.map(f=>L.imageOverlay(
-    ipmaRadarURL(f.path), bounds,
-    {opacity:0,pane:'radar',className:'rlayer'}
-  ));
+  const sliced=frames.slice(-12);
+  const IPMA_CORNERS = {
+    nw:[43.705, -12.345], ne:[43.066, -6.279],
+    sw:[35.953, -12.986], se:[36.097, -5.948]
+  };
+  radarLayers=sliced.map(f=>L.imageOverlay.fourCorners(ipmaRadarURL(f.path), IPMA_CORNERS, {opacity:0,pane:'radar',className:'rlayer'}));
   radarFrames=sliced.map(f=>({time:f.time/1000,fc:false}));
   sl.disabled=false;pl.disabled=false;sl.max=radarFrames.length-1;
   note.textContent='IPMA radar · 5 min resolution · Portugal';
@@ -3503,7 +3548,7 @@ async function loadWind(stale){
   $('#rtime').textContent='Current';
   $('#rleg').innerHTML=`<span>${ow.lo}</span><i style="background:${ow.grad}"></i><span>${ow.hi}</span><span style="margin-left:8px;font-size:10px;opacity:.7">ECMWF/IFS</span>`;
   radarShow(0);radarBtn();
-  updateWindVectors();
+  requestAnimationFrame(()=>requestAnimationFrame(updateWindVectors));
 }
 
 /* ---- Clouds (OpenWeatherMap) ---- */
@@ -4285,8 +4330,6 @@ function initAuthInputs(){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(payload)
       });
-
-        console.info('[Wind] fetch status', res.status, 'points', lats.length);
 
       const data=await res.json();
       if(!res.ok||!data.success){
