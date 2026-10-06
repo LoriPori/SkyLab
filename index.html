@@ -1064,7 +1064,7 @@ try{localStorage.removeItem('unit');localStorage.removeItem('unitManual')}catch(
 let unit=lsGet('unitPick')||(LANG=='pt'?'c':'f'),data=null,place=null,tab='today',lastKey='',tickT;
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const T=c=>Math.round(unit=='c'?c:c*9/5+32);
-const W=k=>unit=='c'?Math.round(k)+' km/h':Math.round(k*.621)+' mph';
+const W=k=>unit=='c'?Math.round(k)+' km/h':Math.round(k*.539957)+' kt';
 const deg=()=>unit=='c'?'°C':'°F';
 const hm=m=>`${Math.floor(m/60)}h ${Math.round(m%60)}m`;
 const fmtT=s=>s.slice(11,16);
@@ -1664,8 +1664,8 @@ function lab(){
    ? 'Rising (Clearing)' 
    : 'Steady (Stable mass)';
 
- const soundMs=331.3+.606*tC;
- const soundTxt=unit=='c'?Math.round(soundMs*3.6)+' km/h':Math.round(soundMs*2.23694)+' mph';
+const soundMs=331.3+.606*tC;
+const soundTxt=unit=='c'?Math.round(soundMs*3.6)+' km/h':Math.round(soundMs*1.94384)+' kt';
  const tiles=[
  ['Dew point',T(td)+'°',comfort],
  ['Cloud base',cbTxt,'125 m per °C of spread'],
@@ -3291,11 +3291,11 @@ const RADAR_KINDS = [
   ['sat', 'Satellite']
 ];
 const OWM_KINDS={wind:{
-  layer:'wind_new',
-  note:'Wind speed (colours) and direction (moving particles) · ECMWF + Open-Meteo',
-  lo:'0 km/h',
-  hi:'120+ km/h',
-  grad:'linear-gradient(90deg,#cfe6f5 0%,#aacbe6 15%,#b364bc 40%,#7a4cac 65%,#46009f 100%)'
+ layer:'wind_new',
+ note:'Wind speed (colours) and direction (moving particles) · ECMWF + Open-Meteo',
+ lo:()=>unit=='c'?'0 km/h':'0 kt',
+ hi:()=>unit=='c'?'120+ km/h':'65+ kt',
+ grad:'linear-gradient(90deg,#cfe6f5 0%,#aacbe6 15%,#b364bc 40%,#7a4cac 65%,#46009f 100%)'
 }};
 let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='rain',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
 let radarScope = lsGet('radarScope') || 'pt';
@@ -3879,7 +3879,7 @@ async function loadWind(stale){
   radarFrames=[{}];sl.max=0;
   note.textContent=ok?ow.note+(isPT?' · Portugal':' · Global'):'Wind particles · ECMWF + Open-Meteo (colour layer needs OWM_KEY in the worker)';
   $('#rtime').textContent='Current';
-  $('#rleg').innerHTML=`<span>${ow.lo}</span><i style="background:${ow.grad}"></i><span>${ow.hi}</span><span style="margin-left:8px;font-size:10px;opacity:.7">ECMWF/IFS</span>`;
+  $('#rleg').innerHTML=`<span>${ow.lo()}</span><i style="background:${ow.grad}"></i><span>${ow.hi()}</span><span style="margin-left:8px;font-size:10px;opacity:.7">ECMWF/IFS</span>`;
   $('#rleg').hidden=!ok;
   radarShow(0);radarBtn();
   requestAnimationFrame(()=>requestAnimationFrame(updateWindVectors));
