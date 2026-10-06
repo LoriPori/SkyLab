@@ -1664,15 +1664,17 @@ function lab(){
    ? 'Rising (Clearing)' 
    : 'Steady (Stable mass)';
 
+ const soundMs=331.3+.606*tC;
+ const soundTxt=unit=='c'?Math.round(soundMs*3.6)+' km/h':Math.round(soundMs*2.23694)+' mph';
  const tiles=[
-  ['Dew point',T(td)+'°',comfort],
-  ['Cloud base',cbTxt,'125 m per °C of spread'],
-  feel,
-  ['Air density',rho+' kg/m³',rhoSub],
-  ['Barometric trend',pTrendVal,pTrendTxt],
-  ['Speed of sound',Math.round(331.3+.606*tC)+' m/s','Faster in warm air'],
-  ['Daylight',hm(dl),`Tomorrow ${df>=0?'+':'−'}${Math.abs(df)}s`],
-  ['Pressure',Math.round(pVal)+' hPa',pVal<1005?'Low, unsettled':pVal>1020?'High, settled':'Near average']
+ ['Dew point',T(td)+'°',comfort],
+ ['Cloud base',cbTxt,'125 m per °C of spread'],
+ feel,
+ ['Air density',rho+' kg/m³',rhoSub],
+ ['Barometric trend',pTrendVal,pTrendTxt],
+ ['Speed of sound',soundTxt,'Faster in warm air'],
+ ['Daylight',hm(dl),`Tomorrow ${df>=0?'+':'−'}${Math.abs(df)}s`],
+ ['Pressure',Math.round(pVal)+' hPa',pVal<1005?'Low, unsettled':pVal>1020?'High, settled':'Near average']
  ];
 
  return tiles.map(([a,b,s],n)=>`<div class="st" style="--n:${n}"><span>${tr(a)}</span><b>${b}</b><span>${tr(s)}</span></div>`).join('');
@@ -1680,6 +1682,9 @@ function lab(){
 /* ============ Céu Explicado: deteção de padrões ============ */
 const dec1=v=>(LANG==='pt'?v.toFixed(1).replace('.',','):v.toFixed(1));
 const T2=(en,pt)=>LANG==='pt'?pt:en;
+const Traw=c=>unit=='c'?c:c*9/5+32; // igual a T(), mas sem arredondar (mantém casas decimais)
+const decT=v=>{const n=Traw(v);return LANG==='pt'?n.toFixed(1).replace('.',','):n.toFixed(1)}; // valor ABSOLUTO de temperatura, 1 casa decimal, sensível à unidade
+const decDT=v=>{const n=unit=='c'?v:v*9/5;return LANG==='pt'?n.toFixed(1).replace('.',','):n.toFixed(1)}; // DIFERENÇA de temperatura (sem +32!), sensível à unidade
 
 function skySignals(){
   const c=data.current,h=data.hourly,i0=idx0();
@@ -1763,36 +1768,36 @@ const PATTERNS={
  'front-cold':s=>({
   title:T2('A cold front is passing overhead','Uma frente fria está a passar'),
   body:T2(
-   `In the last three hours <i>pressure has dropped ${dec1(s.dP)} hPa</i> and the <i>dew point has climbed ${dec1(s.dDew)}°</i>. Rain is falling. Warm, humid air ahead of the front is being forced up over the colder air arriving behind it. As it rises it cools, the vapour condenses, and the drops fall. This is the most active phase of a frontal passage — expect the rain to ease within a few hours, then pressure to rise and the sky to clear.`,
-   `Nas últimas três horas a <i>pressão caiu ${dec1(s.dP)} hPa</i> e o <i>ponto de orvalho subiu ${dec1(s.dDew)}°</i>. Está a chover. O ar quente e húmido à frente da frente está a ser forçado a subir sobre o ar mais frio que chega por trás. Ao subir, arrefece, o vapor condensa-se e as gotas caem. Esta é a fase mais ativa de uma passagem frontal — é de esperar que a chuva abrande dentro de poucas horas, a pressão comece a subir e o céu a limpar.`
+   `In the last three hours <i>pressure has dropped ${dec1(s.dP)} hPa</i> and the <i>dew point has climbed ${decDT(s.dDew)}°</i>. Rain is falling. Warm, humid air ahead of the front is being forced up over the colder air arriving behind it. As it rises it cools, the vapour condenses, and the drops fall. This is the most active phase of a frontal passage — expect the rain to ease within a few hours, then pressure to rise and the sky to clear.`,
+   `Nas últimas três horas a <i>pressão caiu ${dec1(s.dP)} hPa</i> e o <i>ponto de orvalho subiu ${decDT(s.dDew)}°</i>. Está a chover. O ar quente e húmido à frente da frente está a ser forçado a subir sobre o ar mais frio que chega por trás. Ao subir, arrefece, o vapor condensa-se e as gotas caem. Esta é a fase mais ativa de uma passagem frontal — é de esperar que a chuva abrande dentro de poucas horas, a pressão comece a subir e o céu a limpar.`
   ),
   signals:[
    T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),
-   T2(`Dew +${dec1(s.dDew)}° in 3h`,`Orvalho +${dec1(s.dDew)}° em 3h`),
+   T2(`Dew +${decDT(s.dDew)}° in 3h`,`Orvalho +${decDT(s.dDew)}° em 3h`),
    T2(`Code ${s.code} — rain`,`Código ${s.code} — chuva`)
   ]
  }),
  'front-warm':s=>({
   title:T2('A warm front is moving through','Uma frente quente está a passar'),
   body:T2(
-   `Pressure is falling gently (${dec1(s.dP)} hPa over 3h), the dew point is high at ${dec1(s.dewNow)}°, and rain is falling. Warm air is sliding up over cooler air ahead of the front — but the slope is shallow, so the rain is steady rather than heavy and can last for hours. Behind the front the air will be noticeably warmer and more humid.`,
-   `A pressão está a descer suavemente (${dec1(s.dP)} hPa em 3 h), o ponto de orvalho está alto, em ${dec1(s.dewNow)}°, e está a chover. O ar quente desliza sobre o ar mais frio à frente da frente — mas o declive é suave, por isso a chuva é contínua em vez de forte e pode durar horas. Depois da frente, o ar estará claramente mais quente e húmido.`
+   `Pressure is falling gently (${dec1(s.dP)} hPa over 3h), the dew point is high at ${decT(s.dewNow)}°, and rain is falling. Warm air is sliding up over cooler air ahead of the front — but the slope is shallow, so the rain is steady rather than heavy and can last for hours. Behind the front the air will be noticeably warmer and more humid.`,
+   `A pressão está a descer suavemente (${dec1(s.dP)} hPa em 3 h), o ponto de orvalho está alto, em ${decT(s.dewNow)}°, e está a chover. O ar quente desliza sobre o ar mais frio à frente da frente — mas o declive é suave, por isso a chuva é contínua em vez de forte e pode durar horas. Depois da frente, o ar estará claramente mais quente e húmido.`
   ),
   signals:[
    T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),
-   T2(`Dew ${dec1(s.dewNow)}°`,`Orvalho ${dec1(s.dewNow)}°`),
-   T2(`Wind ${s.wind} km/h`,`Vento ${s.wind} km/h`)
+   T2(`Dew ${decT(s.dewNow)}°`,`Orvalho ${decT(s.dewNow)}°`),
+   T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`)
   ]
  }),
  'post-front':s=>({
   title:T2('The front has passed — clearing','A frente passou — céu a limpar'),
   body:T2(
-   `Pressure is rising, the <i>dew point is dropping (${dec1(s.dDew)}° in 3h)</i>, and the sky is clearing. A cooler, drier air mass has moved in behind the front. This is the clearest weather of the whole frontal cycle: crisp, stable, often with excellent visibility. It is also the moment when the temperature can drop fastest.`,
-   `A pressão está a subir, o <i>ponto de orvalho está a descer (${dec1(s.dDew)}° em 3 h)</i> e o céu está a limpar. Entrou uma massa de ar mais fria e seca por trás da frente. Este é o tempo mais limpo de todo o ciclo frontal: nítido, estável, muitas vezes com visibilidade excelente. É também o momento em que a temperatura pode descer mais depressa.`
+   `Pressure is rising, the <i>dew point is dropping (${decDT(s.dDew)}° in 3h)</i>, and the sky is clearing. A cooler, drier air mass has moved in behind the front. This is the clearest weather of the whole frontal cycle: crisp, stable, often with excellent visibility. It is also the moment when the temperature can drop fastest.`,
+   `A pressão está a subir, o <i>ponto de orvalho está a descer (${decDT(s.dDew)}° em 3 h)</i> e o céu está a limpar. Entrou uma massa de ar mais fria e seca por trás da frente. Este é o tempo mais limpo de todo o ciclo frontal: nítido, estável, muitas vezes com visibilidade excelente. É também o momento em que a temperatura pode descer mais depressa.`
   ),
   signals:[
    T2(`ΔP +${dec1(s.dP)} hPa/3h`,`ΔP +${dec1(s.dP)} hPa/3h`),
-   T2(`Dew ${dec1(s.dDew)}° in 3h`,`Orvalho ${dec1(s.dDew)}° em 3h`),
+   T2(`Dew ${decDT(s.dDew)}° in 3h`,`Orvalho ${decDT(s.dDew)}° em 3h`),
    T2(`Code ${s.code} — clear`,`Código ${s.code} — limpo`)
   ]
  }),
@@ -1804,55 +1809,55 @@ const PATTERNS={
   ),
   signals:[
    T2(`Pressure ${Math.round(data.current.surface_pressure)} hPa`,`Pressão ${Math.round(data.current.surface_pressure)} hPa`),
-   T2(`Wind ${s.wind} km/h`,`Vento ${s.wind} km/h`),
+   T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`),
    T2(`Code ${s.code} — clear`,`Código ${s.code} — limpo`)
   ]
  }),
  'tropical':s=>({
   title:T2('A warm, humid air mass','Uma massa de ar quente e húmida'),
   body:T2(
-   `The temperature is ${dec1(s.temp)}° and the dew point is ${dec1(s.dewNow)}° — the air is loaded with water vapour. It feels heavy because it is: at this humidity, sweat evaporates more slowly, so your body cannot shed heat as efficiently. This air mass typically arrives from the south or southwest, often ahead of an approaching front.`,
-   `A temperatura está a ${dec1(s.temp)}° e o ponto de orvalho a ${dec1(s.dewNow)}° — o ar está carregado de vapor de água. Sente-se pesado porque é: com esta humidade, o suor evapora mais devagar e o corpo não consegue libertar calor com a mesma eficiência. Esta massa de ar chega tipicamente de sul ou sudoeste, muitas vezes à frente de uma frente que se aproxima.`
+   `The temperature is ${decT(s.temp)}° and the dew point is ${decT(s.dewNow)}° — the air is loaded with water vapour. It feels heavy because it is: at this humidity, sweat evaporates more slowly, so your body cannot shed heat as efficiently. This air mass typically arrives from the south or southwest, often ahead of an approaching front.`,
+   `A temperatura está a ${decT(s.temp)}° e o ponto de orvalho a ${decT(s.dewNow)}° — o ar está carregado de vapor de água. Sente-se pesado porque é: com esta humidade, o suor evapora mais devagar e o corpo não consegue libertar calor com a mesma eficiência. Esta massa de ar chega tipicamente de sul ou sudoeste, muitas vezes à frente de uma frente que se aproxima.`
   ),
   signals:[
-   T2(`Temp ${dec1(s.temp)}°`,`Temp ${dec1(s.temp)}°`),
-   T2(`Dew ${dec1(s.dewNow)}°`,`Orvalho ${dec1(s.dewNow)}°`),
+   T2(`Temp ${decT(s.temp)}°`,`Temp ${decT(s.temp)}°`),
+   T2(`Dew ${decT(s.dewNow)}°`,`Orvalho ${decT(s.dewNow)}°`),
    T2(`Humidity ${s.rhNow}%`,`Humidade ${s.rhNow}%`)
   ]
  }),
  'polar':s=>({
   title:T2('Cold, dry polar air','Ar polar, frio e seco'),
   body:T2(
-   `The dew point is below ${dec1(s.dewNow)}°, which means almost no water vapour in the air. A wind blowing from ${LANG==='pt'?'norte':'north'} is the signature of a polar outbreak. Expect very clear skies — dry air has no moisture to form clouds — sharp shadows, and a wind that bites. Nights under this air mass are the coldest of the winter.`,
-   `O ponto de orvalho está abaixo de ${dec1(s.dewNow)}°, o que significa quase nenhum vapor de água no ar. O vento a soprar de norte é a assinatura de uma entrada de ar polar. Espera céu muito limpo — o ar seco não tem humidade para formar nuvens —, sombras nítidas e um vento que corta. As noites sob esta massa de ar são as mais frias do inverno.`
+   `The dew point is below ${decT(s.dewNow)}°, which means almost no water vapour in the air. A wind blowing from ${LANG==='pt'?'norte':'north'} is the signature of a polar outbreak. Expect very clear skies — dry air has no moisture to form clouds — sharp shadows, and a wind that bites. Nights under this air mass are the coldest of the winter.`,
+   `O ponto de orvalho está abaixo de ${decT(s.dewNow)}°, o que significa quase nenhum vapor de água no ar. O vento a soprar de norte é a assinatura de uma entrada de ar polar. Espera céu muito limpo — o ar seco não tem humidade para formar nuvens —, sombras nítidas e um vento que corta. As noites sob esta massa de ar são as mais frias do inverno.`
   ),
   signals:[
-   T2(`Dew ${dec1(s.dewNow)}°`,`Orvalho ${dec1(s.dewNow)}°`),
-   T2(`Wind from N · ${s.wind} km/h`,`Vento de N · ${s.wind} km/h`),
-   T2(`Temp ${dec1(s.temp)}°`,`Temp ${dec1(s.temp)}°`)
+   T2(`Dew ${decT(s.dewNow)}°`,`Orvalho ${decT(s.dewNow)}°`),
+   T2(`Wind from N · ${W(s.wind)}`,`Vento de N · ${W(s.wind)}`),
+   T2(`Temp ${decT(s.temp)}°`,`Temp ${decT(s.temp)}°`)
   ]
  }),
  'storm-conv':s=>({
   title:T2('A convective thunderstorm','Uma trovoada de convecção'),
   body:T2(
-   `On a day this warm (${dec1(s.temp)}°), the ground heats up, the air above it rises, cools, and the water vapour condenses into towering cumulonimbus clouds. The energy released inside the cloud drives the lightning, hail, and bursts of heavy rain typical of this kind of storm. It is usually short-lived — most convective cells pass within an hour or two — but the downburst of cold air underneath can be surprisingly strong.`,
-   `Num dia tão quente (${dec1(s.temp)}°), o solo aquece, o ar por cima sobe, arrefece, e o vapor de água condensa-se em nuvens cumulonimbus altas. A energia libertada dentro da nuvem alimenta os relâmpagos, o granizo e os aguaceiros fortes típicos deste tipo de tempestade. Costuma ser curta — a maioria das células convectivas passa em uma ou duas horas — mas a corrente descendente de ar frio por baixo pode ser surpreendentemente forte.`
+   `On a day this warm (${decT(s.temp)}°), the ground heats up, the air above it rises, cools, and the water vapour condenses into towering cumulonimbus clouds. The energy released inside the cloud drives the lightning, hail, and bursts of heavy rain typical of this kind of storm. It is usually short-lived — most convective cells pass within an hour or two — but the downburst of cold air underneath can be surprisingly strong.`,
+   `Num dia tão quente (${decT(s.temp)}°), o solo aquece, o ar por cima sobe, arrefece, e o vapor de água condensa-se em nuvens cumulonimbus altas. A energia libertada dentro da nuvem alimenta os relâmpagos, o granizo e os aguaceiros fortes típicos deste tipo de tempestade. Costuma ser curta — a maioria das células convectivas passa em uma ou duas horas — mas a corrente descendente de ar frio por baixo pode ser surpreendentemente forte.`
   ),
   signals:[
    T2(`Code ${s.code} — thunder`,`Código ${s.code} — trovoada`),
-   T2(`Temp ${dec1(s.temp)}°`,`Temp ${dec1(s.temp)}°`),
-   T2(`Wind ${s.wind} km/h`,`Vento ${s.wind} km/h`)
+   T2(`Temp ${decT(s.temp)}°`,`Temp ${decT(s.temp)}°`),
+   T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`)
   ]
  }),
  'fog-rad':s=>({
   title:T2('Radiation fog','Nevoeiro de radiação'),
   body:T2(
-   `Overnight the ground lost its heat to space by radiation, cooling the air directly above it to the dew point. With almost no wind (${s.wind} km/h), the air cannot mix with drier air above, so the fog sits and thickens. It will lift in the morning when the Sun warms the ground — but until then, visibility can drop below a few hundred metres.`,
-   `Durante a noite o solo perdeu calor para o espaço por radiação, arrefecendo o ar logo acima até ao ponto de orvalho. Com quase nenhum vento (${s.wind} km/h), o ar não se mistura com o ar mais seco de cima, por isso o nevoeiro instala-se e adensa-se. Levanta pela manhã, quando o Sol aquecer o solo — mas até lá a visibilidade pode descer abaixo dos duzentos metros.`
+   `Overnight the ground lost its heat to space by radiation, cooling the air directly above it to the dew point. With almost no wind (${W(s.wind)}), the air cannot mix with drier air above, so the fog sits and thickens. It will lift in the morning when the Sun warms the ground — but until then, visibility can drop below a few hundred metres.`,
+   `Durante a noite o solo perdeu calor para o espaço por radiação, arrefecendo o ar logo acima até ao ponto de orvalho. Com quase nenhum vento (${W(s.wind)}), o ar não se mistura com o ar mais seco de cima, por isso o nevoeiro instala-se e adensa-se. Levanta pela manhã, quando o Sol aquecer o solo — mas até lá a visibilidade pode descer abaixo dos duzentos metros.`
   ),
   signals:[
    T2(`Code ${s.code} — fog`,`Código ${s.code} — nevoeiro`),
-   T2(`Wind ${s.wind} km/h`,`Vento ${s.wind} km/h`),
+   T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`),
    T2(`Humidity ${s.rhNow}%`,`Humidade ${s.rhNow}%`)
   ]
  }),
@@ -1865,7 +1870,7 @@ const PATTERNS={
   signals:[
    T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),
    T2(`Code ${s.code} — showers`,`Código ${s.code} — aguaceiros`),
-   T2(`Wind ${s.wind} km/h`,`Vento ${s.wind} km/h`)
+   T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`)
   ]
  }),
  'transition':s=>({
@@ -1876,8 +1881,8 @@ const PATTERNS={
   ),
   signals:[
    T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),
-   T2(`Dew ${dec1(s.dewNow)}°`,`Orvalho ${dec1(s.dewNow)}°`),
-   T2(`Wind ${s.wind} km/h`,`Vento ${s.wind} km/h`)
+   T2(`Dew ${decT(s.dewNow)}°`,`Orvalho ${decT(s.dewNow)}°`),
+   T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`)
   ]
  })
 };
@@ -1904,7 +1909,7 @@ Object.assign(PATTERNS,{
   body:T2('Heavy snow combined with strong winds is sharply reducing visibility — classic blizzard conditions.',
           'Neve intensa combinada com vento forte reduz drasticamente a visibilidade — condições clássicas de blizzard.'),
   signals:[T2(`Wind ${Math.round(s.wind)} km/h`,`Vento ${Math.round(s.wind)} km/h`),
-           T2(`Temp ${s.temp.toFixed(1)}°`,`Temp ${s.temp.toFixed(1)}°`),
+           T2(`Temp ${decT(s.temp)}°`,`Temp ${decT(s.temp)}°`),
            T2('Heavy snowfall','Queda de neve intensa')]
  }),
  'thundersnow':(s)=>({
@@ -1912,13 +1917,13 @@ Object.assign(PATTERNS,{
   body:T2('A rare combination of thunder and snowfall — strong upward motion occurring even in near-freezing air.',
           'Uma combinação rara de trovão e neve — há movimento ascendente forte mesmo com ar próximo de 0°C.'),
   signals:[T2('Thunderstorm code active','Código de trovoada ativo'),
-           T2(`Temp ${s.temp.toFixed(1)}°`,`Temp ${s.temp.toFixed(1)}°`)]
+           T2(`Temp ${decT(s.temp)}°`,`Temp ${decT(s.temp)}°`)]
  }),
  'heatwave':(s)=>({
   title:T2('Heatwave','Onda de calor'),
   body:T2('Persistently high temperatures with low humidity and light wind. Stay hydrated and avoid peak sun hours.',
           'Temperaturas persistentemente altas, humidade baixa e vento fraco. Hidrate-se e evite as horas de maior sol.'),
-  signals:[T2(`Temp ${s.temp.toFixed(1)}°`,`Temp ${s.temp.toFixed(1)}°`),
+  signals:[T2(`Temp ${decT(s.temp)}°`,`Temp ${decT(s.temp)}°`),
            T2(`Humidity ${Math.round(s.rhNow)}%`,`Humidade ${Math.round(s.rhNow)}%`),
            T2('Light wind','Vento fraco')]
  }),
@@ -1927,7 +1932,7 @@ Object.assign(PATTERNS,{
   body:T2('Warm, moisture-loaded air is producing sustained heavy rainfall — consistent with an active monsoon phase.',
           'Ar quente e carregado de humidade produz chuva intensa e sustentada — consistente com uma fase ativa de monção.'),
   signals:[T2(`Humidity ${Math.round(s.rhNow)}%`,`Humidade ${Math.round(s.rhNow)}%`),
-           T2(`Temp ${s.temp.toFixed(1)}°`,`Temp ${s.temp.toFixed(1)}°`),
+           T2(`Temp ${decT(s.temp)}°`,`Temp ${decT(s.temp)}°`),
            T2('Sustained heavy rain','Chuva forte sustentada')]
  }),
  'atm-river':(s)=>({
@@ -2070,22 +2075,23 @@ function initSparkTooltip(){
 }
 
 function expMetricsHTML(s){
- const dP   = Number(s.dP)  || 0;
+ const dP = Number(s.dP) || 0;
  const dDew = Number(s.dDew)|| 0;
  const wind = Number(s.wind)|| 0;
+ const dDewD = unit=='c'?dDew:dDew*9/5; // diferença: só escala, nunca +32
  const rows=[
-  {label:T2('Pressure (3h)','Pressão (3h)'),
-   value:`${dP>0?'+':''}${dP.toFixed(1)} hPa`, trend:dP},
-  {label:T2('Dew point (3h)','Ponto de orvalho (3h)'),
-   value:`${dDew>0?'+':''}${dDew.toFixed(1)}°`, trend:dDew},
-  {label:T2('Wind now','Vento agora'),
-   value:`${Math.round(wind)} km/h`, trend:null}
+ {label:T2('Pressure (3h)','Pressão (3h)'),
+ value:`${dP>0?'+':''}${dP.toFixed(1)} hPa`, trend:dP},
+ {label:T2('Dew point (3h)','Ponto de orvalho (3h)'),
+ value:`${dDewD>0?'+':''}${dDewD.toFixed(1)}°`, trend:dDew},
+ {label:T2('Wind now','Vento agora'),
+ value:W(wind), trend:null}
  ];
  return rows.map(r=>`
-  <div class="sgRow">
-   <span class="sgLabel">${r.label}</span>
-   <span class="sgVal">${r.value}${trendIcon(r.trend)}</span>
-  </div>`).join('');
+ <div class="sgRow">
+ <span class="sgLabel">${r.label}</span>
+ <span class="sgVal">${r.value}${trendIcon(r.trend)}</span>
+ </div>`).join('');
 }
 function trendIcon(v){
  if(v==null)return'';
@@ -2108,12 +2114,12 @@ function next6hText(){
     `<i>Pressão ${dP>0?'a subir':'a descer'} ${dec1(Math.abs(dP))} hPa</i> — ${dP>0?'tempo mais estável a caminho':'tempo mais ativo é provável'}.`
   ));
   if(Math.abs(dDew)>=1) parts.push(T2(
-    `<i>Dew point ${dDew>0?'rising':'falling'} by ${dec1(Math.abs(dDew))}°</i> — the air is getting ${dDew>0?'more humid':'drier'}.`,
-    `<i>Ponto de orvalho ${dDew>0?'a subir':'a descer'} ${dec1(Math.abs(dDew))}°</i> — o ar está a ficar ${dDew>0?'mais húmido':'mais seco'}.`
+    `<i>Dew point ${dDew>0?'rising':'falling'} by ${decDT(Math.abs(dDew))	}°</i> — the air is getting ${dDew>0?'more humid':'drier'}.`,
+    `<i>Ponto de orvalho ${dDew>0?'a subir':'a descer'} ${decDT(Math.abs(dDew))	}°</i> — o ar está a ficar ${dDew>0?'mais húmido':'mais seco'}.`
   ));
   if(Math.abs(dT)>=1.5) parts.push(T2(
-    `Temperature ${dT>0?'climbing':'dropping'} by about ${dec1(Math.abs(dT))}°.`,
-    `Temperatura ${dT>0?'a subir':'a descer'} cerca de ${dec1(Math.abs(dT))}°.`
+    `Temperature ${dT>0?'climbing':'dropping'} by about ${decDT(Math.abs(dT))}°.`,
+    `Temperatura ${dT>0?'a subir':'a descer'} cerca de ${decDT(Math.abs(dT))}°.`
   ));
   if(rainMax>=50) parts.push(T2(
     `Rain probability peaks at ${rainMax}% in this window.`,
@@ -2135,12 +2141,12 @@ function contextWeekText(){
   const wet=d.weather_code.filter(x=>x>=51).length;
   const parts=[];
   if(Math.abs(diff)<=1.5) parts.push(T2(
-    `Today is close to the week's average (${dec1(wkMax)}°).`,
-    `Hoje está perto da média da semana (${dec1(wkMax)}°).`
+    `Today is close to the week's average (${decT(wkMax)}°).`,
+    `Hoje está perto da média da semana (${decT(wkMax)}°).`
   ));
   else parts.push(T2(
-    `Today is <b>${dec1(Math.abs(diff))}° ${diff>0?'warmer':'cooler'}</b> than the week's average (${dec1(wkMax)}°).`,
-    `Hoje está <b>${dec1(Math.abs(diff))}° ${diff>0?'mais quente':'mais frio'}</b> do que a média da semana (${dec1(wkMax)}°).`
+    `Today is <b>${decDT(Math.abs(diff))}° ${diff>0?'warmer':'cooler'}</b> than the week's average (${decT(wkMax)}°).`,
+    `Hoje está <b>${decDT(Math.abs(diff))}° ${diff>0?'mais quente':'mais frio'}</b> do que a média da semana (${decT(wkMax)}°).`
   ));
   parts.push(T2(
     `Warmest day: <b>${new Date(d.time[hi]+'T12:00').toLocaleDateString('en',{weekday:'long'})}</b> at ${T(d.temperature_2m_max[hi])}°. Coolest night: <b>${new Date(d.time[lo]+'T12:00').toLocaleDateString('en',{weekday:'long'})}</b> at ${T(d.temperature_2m_min[lo])}°.`,
