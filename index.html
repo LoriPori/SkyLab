@@ -861,12 +861,16 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
 .expCard p i{font-style:normal;background:linear-gradient(180deg,transparent 62%,color-mix(in srgb,var(--a) 30%,transparent) 62%);padding:0 2px;font-weight:500;color:var(--ink)}
 
 /* mini-métricas com barras */
-.expMetrics{display:grid;gap:11px}
-.expM{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:10px;font-size:12.5px}
-.expM svg{width:16px;height:16px;color:var(--acc)}
-.expM .mb{height:6px;border-radius:9px;background:rgba(20,49,79,.1);overflow:hidden;margin-top:4px}
-.expM .mb i{display:block;height:100%;border-radius:9px;background:var(--acc);width:var(--w,30%);transition:width .6s cubic-bezier(.2,.8,.2,1)}
-.expM b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.expMetrics{display:flex;flex-direction:column;gap:2px}
+.sgRow{display:flex;align-items:center;justify-content:space-between;
+ padding:10px 2px;border-bottom:1px solid var(--line,rgba(255,255,255,.08))}
+.sgRow:last-child{border-bottom:none}
+.sgLabel{font-size:13px;opacity:.75}
+.sgVal{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;
+ font-variant-numeric:tabular-nums}
+.sgUp{color:#ef5a5a;font-style:normal;font-size:11px}
+.sgDown{color:#3fa8ef;font-style:normal;font-size:11px}
+.sgFlat{color:#9aa4b2;font-style:normal;font-size:10px}
 
 @media(max-width:860px){
  .expHero{grid-template-columns:1fr;text-align:left}
@@ -874,6 +878,24 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
  .expGrid,.expGrid.three{grid-template-columns:1fr}
  .expH{font-size:24px}.expP{font-size:15px}
 }
+
+.sparkWrap{position:relative}
+.sp-pt{fill:transparent;stroke:transparent;cursor:pointer}
+.sp-pt.sp-now{fill:var(--accent,#3fa8ef);stroke:#fff;stroke-width:1.5}
+.sp-tooltip{position:absolute;pointer-events:none;background:#1b2330;color:#fff;
+ font-size:11px;padding:4px 8px;border-radius:6px;transform:translate(-50%,-130%);
+ white-space:nowrap;opacity:0;transition:opacity .12s;z-index:5;
+ box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.sp-tooltip.show{opacity:1}
+.sp-empty{font-size:12px;opacity:.6;padding:10px 0}
+
+.pdIcon{width:100%;height:100%;color:var(--accent,#3fa8ef)}
+.pdSpin{animation:pdSpin 7s linear infinite;transform-origin:center}
+.pdPulse{animation:pdPulse 2.4s ease-in-out infinite}
+.pdDash{stroke-dasharray:8 6;animation:pdDash 1.6s linear infinite}
+@keyframes pdSpin{to{transform:rotate(360deg)}}
+@keyframes pdPulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes pdDash{to{stroke-dashoffset:-28}}
 </style>
 </head>
 <body>
@@ -1669,7 +1691,10 @@ function skySignals(){
 }
 
 /* ============ Céu Explicado: Península Ibérica ============ */
-function isIberia(lat,lon){return lat>=35.8&&lat<=43.9&&lon>=-9.6&&lon<=3.5}
+function isIberia(lat,lon){
+ if(place && place.countryCode) return place.countryCode==='PT'||place.countryCode==='ES';
+ return lat>=35.8&&lat<=43.9&&lon>=-9.6&&lon<=3.5; // fallback sem countryCode
+}
 function isAtlanticPT(lat,lon){return isIberia(lat,lon)&&lon<=-7.4}
 function isStraitZone(lat,lon){return isIberia(lat,lon)&&lat<=37.6&&lon>=-7&&lon<=-4.5}
 function isMedSpain(lat,lon){return isIberia(lat,lon)&&lon>=-1.2}
@@ -1687,11 +1712,31 @@ function patternDetectIberia(s){
  return null;
 }
 
+function patternDetectGlobalExtra(s){
+ const lat = place ? place.lat : 0;
+ const tropical = Math.abs(lat) <= 35;
+ const dP = Number(s.dP)||0, wind = Number(s.wind)||0, temp = Number(s.temp)||0, rh = Number(s.rhNow)||0;
+
+ if(dP<=-6 && wind>=55 && s.code>=51 && s.code<=86) return 'bomb-cyclone';
+ if(wind>=70 && s.code>=95 && dP<=-3) return 'derecho';
+ if(s.code>=71 && s.code<=86 && wind>=40 && temp<=-2) return 'blizzard';
+ if((s.code===95||s.code===96||s.code===99) && temp<=1) return 'thundersnow';
+ if(temp>=35 && rh<=40 && wind<20 && s.code<=3) return 'heatwave';
+ if(tropical && s.code>=61 && s.code<=82 && rh>=80 && temp>=24 && wind>=15) return 'monsoon';
+ if(!tropical && s.code>=51 && s.code<=67 && wind>=35 && rh>=85 && temp>=4 && temp<=16) return 'atm-river';
+ if(rh<=20 && wind>=35 && temp>=25 && tropical) return 'dust-storm';
+ if(rh<=30 && wind>=20 && wind<=50 && s.code<=2 && dP>=-1 && dP<=1) return 'foehn';
+ return null;
+}
+
 function patternDetect(){
-  const s=skySignals();
-  const ibId=patternDetectIberia(s);
-  if(ibId)return{id:ibId,cat:'Iberia',s};
-  const code=s.code;
+ const s=skySignals();
+ const ibId=patternDetectIberia(s);
+ if(ibId)return{id:ibId,cat:'Iberia',s};
+ const globalId=patternDetectGlobalExtra(s);
+ if(globalId)return{id:globalId,cat:'Global extremes',s};
+ const code=s.code;
+ // ...resto da função original mantém-se inalterado...
   // ...o resto da função mantém-se exatamente igual...
   const isRain=(code>=51&&code<=67)||(code>=80&&code<=82);
   const isStorm=code>=95;
@@ -1838,47 +1883,79 @@ const PATTERNS={
 };
 
 Object.assign(PATTERNS,{
-'ib-nortada':s=>({
- title:T2('Nortada: the Portuguese upwelling wind','Nortada: o vento que arrefece a costa'),
- body:T2(
- `A strong, steady wind from the north (${Math.round(s.wind)} km/h) is blowing down the Portuguese Atlantic coast. This is the nortada, driven by the summer pressure gap between the Azores High and the thermal low over Iberia. It pushes surface water offshore, pulling cold, nutrient-rich water up from the deep — which is why the sea feels so much colder on the coast than a few kilometres inland, even in the middle of summer.`,
- `Um vento forte e constante de norte (${Math.round(s.wind)} km/h) sopra ao longo da costa atlântica portuguesa. É a nortada, resultado da diferença de pressão de verão entre o Anticiclone dos Açores e a baixa térmica sobre a Península Ibérica. Empurra a água da superfície para o largo, trazendo à tona água fria e rica em nutrientes das profundezas — por isso o mar está muito mais frio na costa do que a poucos quilómetros terra adentro, mesmo em pleno verão.`
- ),
- signals:[T2(`Wind from N · ${Math.round(s.wind)} km/h`,`Vento de N · ${Math.round(s.wind)} km/h`),T2('Clear/few clouds','Céu limpo/pouco nublado'),T2('Coastal upwelling likely','Upwelling costeiro provável')]
-}),
-'ib-levante':s=>({
- title:T2('Levante: wind through the Strait','Levante: o vento que atravessa o Estreito'),
- body:T2(
- `A strong easterly (${Math.round(s.wind)} km/h) is funnelling through the Strait of Gibraltar. The levante forms when high pressure sits over the western Mediterranean and lower pressure over the Atlantic, squeezing air through the narrow gap between Europe and Africa. It brings the trademark lens-shaped cloud over the Rock, choppy seas in the Strait, and noticeably drier air on the Atlantic side once it spills through.`,
- `Um vento forte de leste (${Math.round(s.wind)} km/h) atravessa o Estreito de Gibraltar. O levante forma-se quando há alta pressão sobre o Mediterrâneo ocidental e pressão mais baixa sobre o Atlântico, espremendo o ar pelo estreito corredor entre a Europa e África. Traz a característica nuvem em forma de lente sobre o Rochedo, mar agitado no Estreito e ar bem mais seco do lado atlântico depois de transpor a passagem.`
- ),
- signals:[T2(`Wind from E · ${Math.round(s.wind)} km/h`,`Vento de E · ${Math.round(s.wind)} km/h`),T2('Strait of Gibraltar','Estreito de Gibraltar'),T2('Pressure gradient: Med vs Atlantic','Gradiente: Mediterrâneo vs Atlântico')]
-}),
-'ib-suao':s=>({
- title:T2('Suão: a hot, dry easterly','Suão: vento quente e seco de leste'),
- body:T2(
- `The wind is coming from the east and the air is both hot (${dec1(s.temp)}°) and dry (${s.rhNow}% humidity). This is a suão — continental air from inland Iberia reaching the coast before the sea breeze can moderate it. It is Portugal's cousin of the sirocco: it can push temperatures up by several degrees within an hour and sharply raises wildfire risk.`,
- `O vento vem de leste e o ar está quente (${dec1(s.temp)}°) e seco (${s.rhNow}% de humidade). É um suão — ar continental do interior ibérico a chegar à costa antes de a brisa marítima o conseguir suavizar. É o primo português do siroco: pode fazer a temperatura subir vários graus numa hora e aumenta muito o risco de incêndio.`
- ),
- signals:[T2('Wind from E','Vento de leste'),T2(`Temp ${dec1(s.temp)}°`,`Temp ${dec1(s.temp)}°`),T2(`Humidity ${s.rhNow}%`,`Humidade ${s.rhNow}%`)]
-}),
-'ib-calima':s=>({
- title:T2('Calima: Saharan dust overhead','Calima: poeira do Sara no ar'),
- body:T2(
- `A southerly flow (${dec1(s.temp)}°, only ${s.rhNow}% humidity) is carrying fine Saharan dust across Iberia. Calima turns the sky a milky, slightly orange hue even without a single cloud, dulls the sunlight, and can irritate eyes and airways. It usually clears within a day or two once the wind swings back round to the Atlantic.`,
- `Um fluxo de sul (${dec1(s.temp)}°, apenas ${s.rhNow}% de humidade) transporta poeira fina do Sara sobre a Península Ibérica. A calima deixa o céu com um tom leitoso e ligeiramente alaranjado mesmo sem uma única nuvem, embacia a luz do sol e pode irritar os olhos e as vias respiratórias. Costuma dissipar-se em um ou dois dias, quando o vento volta a rodar para o Atlântico.`
- ),
- signals:[T2('Wind from S/SE','Vento de S/SE'),T2(`Humidity ${s.rhNow}%`,`Humidade ${s.rhNow}%`),T2('Hazy sky likely','Céu com neblina provável')]
-}),
-'ib-gotafria':s=>({
- title:T2('Gota fría: an isolated cold pocket aloft','Gota fria: uma bolsa de ar frio isolada'),
- body:T2(
- `Pressure has dropped sharply (${dec1(s.dP)} hPa in 3h) and heavy rain is falling — classic signs of a gota fría (DANA), a pocket of cold air that has broken away from the polar jet stream and drifted south over a still-warm Mediterranean. The temperature contrast fuels explosive, slow-moving storms that can drop huge amounts of rain in just a few hours, especially along Spain's eastern coast in autumn.`,
- `A pressão caiu de forma acentuada (${dec1(s.dP)} hPa em 3 h) e está a chover com intensidade — sinais clássicos de uma gota fria (DANA), uma bolsa de ar frio que se separou da corrente de jato polar e desceu sobre um Mediterrâneo ainda quente. O contraste de temperaturas alimenta tempestades explosivas e de movimento lento, capazes de descarregar enormes quantidades de chuva em poucas horas, sobretudo na costa leste de Espanha no outono.`
- ),
- signals:[T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),T2(`Code ${s.code} — heavy rain`,`Código ${s.code} — chuva forte`),T2('Mediterranean Spain, autumn','Espanha mediterrânica, outono')]
-})
+ 'bomb-cyclone':(s)=>({
+  title:T2('Bomb cyclone','Ciclone-bomba'),
+  body:T2('Pressure is falling very fast — a sign of explosive cyclogenesis. Expect rapid intensification of wind and rain over the next hours.',
+          'A pressão está a cair muito depressa — sinal de ciclogénese explosiva. Espera-se intensificação rápida de vento e chuva nas próximas horas.'),
+  signals:[T2(`Pressure drop ${s.dP?.toFixed(1)||'–'} hPa`,`Queda de pressão ${s.dP?.toFixed(1)||'–'} hPa`),
+           T2(`Wind ${Math.round(s.wind)} km/h`,`Vento ${Math.round(s.wind)} km/h`),
+           T2('Rapid intensification','Intensificação rápida')]
+ }),
+ 'derecho':(s)=>({
+  title:T2('Derecho / severe wind line','Derecho / linha de vento severo'),
+  body:T2('A fast-moving band of thunderstorms is producing widespread damaging straight-line winds.',
+          'Uma linha de trovoadas em movimento rápido está a produzir ventos retilíneos generalizados e destrutivos.'),
+  signals:[T2(`Gusts ${Math.round(s.wind)} km/h`,`Rajadas ${Math.round(s.wind)} km/h`),
+           T2('Thunderstorm activity','Atividade de trovoada'),
+           T2('Sudden pressure drop','Queda súbita de pressão')]
+ }),
+ 'blizzard':(s)=>({
+  title:T2('Blizzard','Nevão com vento (blizzard)'),
+  body:T2('Heavy snow combined with strong winds is sharply reducing visibility — classic blizzard conditions.',
+          'Neve intensa combinada com vento forte reduz drasticamente a visibilidade — condições clássicas de blizzard.'),
+  signals:[T2(`Wind ${Math.round(s.wind)} km/h`,`Vento ${Math.round(s.wind)} km/h`),
+           T2(`Temp ${s.temp.toFixed(1)}°`,`Temp ${s.temp.toFixed(1)}°`),
+           T2('Heavy snowfall','Queda de neve intensa')]
+ }),
+ 'thundersnow':(s)=>({
+  title:T2('Thundersnow','Trovoada com neve'),
+  body:T2('A rare combination of thunder and snowfall — strong upward motion occurring even in near-freezing air.',
+          'Uma combinação rara de trovão e neve — há movimento ascendente forte mesmo com ar próximo de 0°C.'),
+  signals:[T2('Thunderstorm code active','Código de trovoada ativo'),
+           T2(`Temp ${s.temp.toFixed(1)}°`,`Temp ${s.temp.toFixed(1)}°`)]
+ }),
+ 'heatwave':(s)=>({
+  title:T2('Heatwave','Onda de calor'),
+  body:T2('Persistently high temperatures with low humidity and light wind. Stay hydrated and avoid peak sun hours.',
+          'Temperaturas persistentemente altas, humidade baixa e vento fraco. Hidrate-se e evite as horas de maior sol.'),
+  signals:[T2(`Temp ${s.temp.toFixed(1)}°`,`Temp ${s.temp.toFixed(1)}°`),
+           T2(`Humidity ${Math.round(s.rhNow)}%`,`Humidade ${Math.round(s.rhNow)}%`),
+           T2('Light wind','Vento fraco')]
+ }),
+ 'monsoon':(s)=>({
+  title:T2('Active monsoon burst','Episódio ativo de monção'),
+  body:T2('Warm, moisture-loaded air is producing sustained heavy rainfall — consistent with an active monsoon phase.',
+          'Ar quente e carregado de humidade produz chuva intensa e sustentada — consistente com uma fase ativa de monção.'),
+  signals:[T2(`Humidity ${Math.round(s.rhNow)}%`,`Humidade ${Math.round(s.rhNow)}%`),
+           T2(`Temp ${s.temp.toFixed(1)}°`,`Temp ${s.temp.toFixed(1)}°`),
+           T2('Sustained heavy rain','Chuva forte sustentada')]
+ }),
+ 'atm-river':(s)=>({
+  title:T2('Atmospheric river','Rio atmosférico'),
+  body:T2('A narrow corridor of concentrated moisture is funnelling sustained rain and strong wind into the region.',
+          'Um corredor estreito de humidade concentrada canaliza chuva sustentada e vento forte para a região.'),
+  signals:[T2(`Wind ${Math.round(s.wind)} km/h`,`Vento ${Math.round(s.wind)} km/h`),
+           T2(`Humidity ${Math.round(s.rhNow)}%`,`Humidade ${Math.round(s.rhNow)}%`),
+           T2('Persistent rain','Chuva persistente')]
+ }),
+ 'dust-storm':(s)=>({
+  title:T2('Dust storm / Haboob','Tempestade de poeira (haboob)'),
+  body:T2('Strong, dry winds are lifting large amounts of sand and dust, sharply reducing visibility.',
+          'Ventos fortes e secos levantam grandes quantidades de areia e poeira, reduzindo drasticamente a visibilidade.'),
+  signals:[T2(`Wind ${Math.round(s.wind)} km/h`,`Vento ${Math.round(s.wind)} km/h`),
+           T2(`Humidity ${Math.round(s.rhNow)}%`,`Humidade ${Math.round(s.rhNow)}%`),
+           T2('Low visibility risk','Risco de baixa visibilidade')]
+ }),
+ 'foehn':(s)=>({
+  title:T2('Foehn / Chinook wind','Vento foehn / Chinook'),
+  body:T2('Air descending from high terrain is warming and drying rapidly, producing an unusually warm, dry, gusty wind.',
+          'O ar que desce de terreno elevado aquece e seca rapidamente, produzindo um vento invulgarmente quente, seco e forte.'),
+  signals:[T2(`Humidity ${Math.round(s.rhNow)}%`,`Humidade ${Math.round(s.rhNow)}%`),
+           T2(`Wind ${Math.round(s.wind)} km/h`,`Vento ${Math.round(s.wind)} km/h`),
+           T2('Clear sky','Céu limpo')]
+ })
 });
+Object.assign(PT,{'Global extremes':'Fenómenos extremos'});
 
 Object.assign(PT,{'Iberia':'Península Ibérica','Signals right now':'Sinais neste momento'});
 
@@ -1902,33 +1979,100 @@ const PD_ICONS={
 'ib-levante':`<svg viewBox="0 0 120 120"><polygon points="4,36 40,36 30,84 4,84" fill="#d8c7a8"/><polygon points="116,36 80,36 90,84 116,84" fill="#d8c7a8"/><line x1="44" y1="60" x2="76" y2="60" stroke="#b4552e" stroke-width="6" stroke-linecap="round"/><polyline points="64,48 78,60 64,72" fill="none" stroke="#b4552e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 'ib-suao':`<svg viewBox="0 0 120 120"><circle cx="34" cy="32" r="16" fill="#e0892f"/><rect x="28" y="60" width="12" height="30" rx="6" fill="#e0352b"/><circle cx="34" cy="92" r="9" fill="#e0352b"/><line x1="60" y1="66" x2="98" y2="66" stroke="#b4552e" stroke-width="5" stroke-linecap="round"/><polyline points="86,54 100,66 86,78" fill="none" stroke="#b4552e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 'ib-calima':`<svg viewBox="0 0 120 120"><circle cx="60" cy="44" r="20" fill="#e0a046"/><g stroke="#c9873a" stroke-width="6" stroke-linecap="round" opacity=".75"><line x1="14" y1="74" x2="106" y2="74"/><line x1="20" y1="88" x2="100" y2="88"/><line x1="28" y1="102" x2="92" y2="102"/></g></svg>`,
-'ib-gotafria':`<svg viewBox="0 0 120 120"><circle cx="60" cy="52" r="30" fill="none" stroke="#5d6391" stroke-width="3" stroke-dasharray="4 6" opacity=".55"/><path d="M44 64 h32 a14 14 0 0 0 0 -28 20 20 0 0 0 -38 -2 15 15 0 0 0 6 30z" fill="#5d6391" opacity=".8"/><line x1="46" y1="78" x2="40" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="62" y1="80" x2="56" y2="94" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="78" y1="78" x2="72" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`
+'ib-gotafria':`<svg viewBox="0 0 120 120"><circle cx="60" cy="52" r="30" fill="none" stroke="#5d6391" stroke-width="3" stroke-dasharray="4 6" opacity=".55"/><path d="M44 64 h32 a14 14 0 0 0 0 -28 20 20 0 0 0 -38 -2 15 15 0 0 0 6 30z" fill="#5d6391" opacity=".8"/><line x1="46" y1="78" x2="40" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="62" y1="80" x2="56" y2="94" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="78" y1="78" x2="72" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
+ 'bomb-cyclone':`<svg viewBox="0 0 160 160" class="pdIcon"><g class="pdSpin"><path d="M80 20a60 60 0 1 0 42 102" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><path d="M80 20l10 14-18 2z" fill="currentColor"/></g></svg>`,
+ 'derecho':`<svg viewBox="0 0 160 160" class="pdIcon"><line x1="20" y1="60" x2="130" y2="60" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="pdDash"/><line x1="20" y1="90" x2="110" y2="90" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="pdDash"/><path d="M120 50l20 10-20 10" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></svg>`,
+ 'blizzard':`<svg viewBox="0 0 160 160" class="pdIcon"><g class="pdSpin" style="transform-origin:80px 80px"><path d="M80 40v80M45 60l70 40M115 60l-70 40" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></g><line x1="20" y1="120" x2="60" y2="120" stroke="currentColor" stroke-width="5" class="pdDash"/></svg>`,
+ 'thundersnow':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M85 30 60 85h20l-15 45 45-60H90z" fill="currentColor" class="pdPulse"/><circle cx="40" cy="120" r="4" fill="currentColor"/><circle cx="55" cy="130" r="4" fill="currentColor"/></svg>`,
+ 'heatwave':`<svg viewBox="0 0 160 160" class="pdIcon"><circle cx="80" cy="70" r="26" fill="currentColor" class="pdPulse"/><path d="M30 120q20-10 40 0t40 0t40 0" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`,
+ 'monsoon':`<svg viewBox="0 0 160 160" class="pdIcon"><ellipse cx="80" cy="55" rx="45" ry="25" fill="currentColor" opacity=".85"/><line x1="55" y1="90" x2="45" y2="125" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/><line x1="80" y1="90" x2="70" y2="130" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/><line x1="105" y1="90" x2="95" y2="125" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`,
+ 'atm-river':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M15 60q30-25 60 0t70 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" class="pdDash"/><path d="M15 95q30-25 60 0t70 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" opacity=".6" class="pdDash"/></svg>`,
+ 'dust-storm':`<svg viewBox="0 0 160 160" class="pdIcon"><g class="pdSpin" style="transform-origin:80px 80px"><circle cx="60" cy="70" r="4" fill="currentColor"/><circle cx="90" cy="60" r="3" fill="currentColor"/><circle cx="100" cy="90" r="4" fill="currentColor"/><circle cx="70" cy="100" r="3" fill="currentColor"/></g><path d="M20 120h120" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`,
+ 'foehn':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M20 110l40-60 25 35 20-25 35 50z" fill="currentColor" opacity=".7"/><line x1="90" y1="120" x2="90" y2="140" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`
 };
 
 function pressureSparkSVG(){
- const h=data.hourly,i0=idx0();
- const from=Math.max(0,i0-6),to=Math.min(h.time.length-1,i0+6);
- const vals=h.surface_pressure.slice(from,to+1);
- const lo=Math.min(...vals),hi=Math.max(...vals),sp=(hi-lo)||1;
- const W=300,H=56,n=vals.length-1;
- const X=i=>8+i*(W-16)/n,Y=v=>H-8-(v-lo)/sp*(H-16);
- let d=`M${X(0)},${Y(vals[0])}`;
- for(let i=1;i<vals.length;i++)d+=` L${X(i)},${Y(vals[i])}`;
- const nowI=Math.max(0,Math.min(n,i0-from));
- const area=`${d} L${X(n)},${H} L${X(0)},${H} Z`;
- return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" class="sparkfill" fill="var(--acc)"/><path d="${d}" class="sparkline"/><circle cx="${X(nowI)}" cy="${Y(vals[nowI])}" r="4" class="nowdot"/></svg>`;
+ const hrs = pressureSeries(); // assume que já existe: [{t:'14:00', v:1013.2, now:false}, ...]
+ if(!hrs || hrs.length<2){
+  return `<div class="sp-empty">${T2('Not enough data yet','Dados insuficientes por agora')}</div>`;
+ }
+ const W=260,H=60,pad=6;
+ const vals=hrs.map(p=>p.v);
+ const min=Math.min(...vals), max=Math.max(...vals);
+ const span=(max-min)||1;
+ const pts=hrs.map((p,i)=>({
+  x:pad+i*(W-2*pad)/(hrs.length-1),
+  y:H-pad-((p.v-min)/span)*(H-2*pad),
+  t:p.t, v:p.v, now:p.now
+ }));
+ const line=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+ const circles=pts.map(p=>
+  `<circle class="sp-pt${p.now?' sp-now':''}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.now?4:7}"
+    data-t="${p.t}" data-v="${p.v.toFixed(1)}"></circle>`
+ ).join('');
+ return `<div class="sparkWrap">
+  <svg viewBox="0 0 ${W} ${H}" class="sparkline" preserveAspectRatio="none">
+   <path d="${line}" class="sparkfill" fill="none"/>
+   ${circles}
+  </svg>
+  <div class="sp-tooltip" id="spTip"></div>
+ </div>`;
+}
+
+function initSparkTooltip(){
+ const wrap=document.querySelector('.sparkWrap');
+ if(!wrap)return;
+ const tip=wrap.querySelector('.sp-tooltip');
+ const show=(pt,x,y)=>{
+  tip.textContent=`${pt.dataset.t} · ${pt.dataset.v} hPa`;
+  tip.style.left=x+'px'; tip.style.top=y+'px';
+  tip.classList.add('show');
+ };
+ wrap.querySelectorAll('.sp-pt').forEach(pt=>{
+  pt.addEventListener('mouseenter',e=>{
+   const r=wrap.getBoundingClientRect();
+   show(pt, e.clientX-r.left, e.clientY-r.top);
+  });
+  pt.addEventListener('mousemove',e=>{
+   const r=wrap.getBoundingClientRect();
+   tip.style.left=(e.clientX-r.left)+'px';
+   tip.style.top=(e.clientY-r.top)+'px';
+  });
+  pt.addEventListener('mouseleave',()=>tip.classList.remove('show'));
+  pt.addEventListener('touchstart',e=>{
+   const r=wrap.getBoundingClientRect();
+   const t=e.touches[0];
+   show(pt, t.clientX-r.left, t.clientY-r.top);
+  },{passive:true});
+ });
+ document.addEventListener('touchstart',e=>{
+  if(!wrap.contains(e.target))tip.classList.remove('show');
+ },{passive:true});
 }
 
 function expMetricsHTML(s){
- const items=[
- [T2('Pressure change (3h)','Variação de pressão (3h)'),s.dP,5,' hPa','wind'],
- [T2('Dew point change (3h)','Variação do ponto de orvalho (3h)'),s.dDew,5,'°','drop'],
- [T2('Wind speed','Velocidade do vento'),s.wind,80,' km/h','wind']
+ const dP   = Number(s.dP)  || 0;
+ const dDew = Number(s.dDew)|| 0;
+ const wind = Number(s.wind)|| 0;
+ const rows=[
+  {label:T2('Pressure (3h)','Pressão (3h)'),
+   value:`${dP>0?'+':''}${dP.toFixed(1)} hPa`, trend:dP},
+  {label:T2('Dew point (3h)','Ponto de orvalho (3h)'),
+   value:`${dDew>0?'+':''}${dDew.toFixed(1)}°`, trend:dDew},
+  {label:T2('Wind now','Vento agora'),
+   value:`${Math.round(wind)} km/h`, trend:null}
  ];
- return items.map(([lbl,val,max,unit,icn])=>{
- const pct=Math.max(4,Math.min(100,Math.abs(val)/max*100));
- return`<div class="expM">${ic(icn)}<div><div style="margin-bottom:4px">${lbl}</div><div class="mb"><i style="--w:${pct}%"></i></div></div><b>${dec1(val)}${unit}</b></div>`;
- }).join('');
+ return rows.map(r=>`
+  <div class="sgRow">
+   <span class="sgLabel">${r.label}</span>
+   <span class="sgVal">${r.value}${trendIcon(r.trend)}</span>
+  </div>`).join('');
+}
+function trendIcon(v){
+ if(v==null)return'';
+ if(v>0.05)return'<i class="sgUp">▲</i>';
+ if(v<-0.05)return'<i class="sgDown">▼</i>';
+ return'<i class="sgFlat">▬</i>';
 }
 
 function next6hText(){
@@ -1996,7 +2140,7 @@ function contextWeekText(){
 
 function skyPane(){
  const p=patternDetect();
- const det=PATTERNS[p.id](p.s);
+ const det=(PATTERNS[p.id]||PATTERNS.transition)(p.s);
  const icon=PD_ICONS[p.id]||PD_ICONS.transition;
  const isIb=p.cat==='Iberia';
  return`<div class="pane exp">
@@ -2291,7 +2435,11 @@ function ephemerisData(){
 function sourceBadge(){
  if(!data||!place)return'';
  const c=data.current;
- const stale = Date.now() - new Date(c.time).getTime() > 60*60*1000;
+ // usa o offset da API em vez de confiar no parsing de timezone do browser
+ const apiNow = data.utc_offset_seconds!=null
+   ? Date.now() + data.utc_offset_seconds*1000
+   : Date.now();
+ const stale = apiNow - new Date(c.time).getTime() > 60*60*1000;
  const dot = stale ? '#f59a3a' : '#2fb34a';
  const label = stale ? tr('Stale data') : tr('Live');
  return`<div class="src-badge">
