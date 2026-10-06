@@ -2974,7 +2974,7 @@ let radarKT=0;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 /* ===== Vento: partículas animadas (substitui as setas) ===== */
 let windTok=0,windT=0,windCv=null,windCx=null,windRaf=0,windLast=0,windGrid=null,windFld=null,windP=[];
-const WGR={rows:6,cols:8},WSTEP=6,WK=.030,WFADE=.04,WBK=[[0,12,.4],[12,35,.7],[35,60,.85],[60,1e9,.95]];
+const WGR={rows:6,cols:8},WSTEP=6,WK=.045,WFADE=.045,WBK=[[0,12,.38,1],[12,35,.58,1.2],[35,60,.78,1.5],[60,1e9,.92,1.8]];
 
 function windStopLoop(){cancelAnimationFrame(windRaf);windRaf=0}
 function windClear(){if(windCx&&windCv)windCx.clearRect(0,0,windCv.width,windCv.height)}
@@ -3072,12 +3072,8 @@ function windStep(dt,fade){
     if(p.a>p.m||p.x<0||p.y<0||p.x>f.W||p.y>f.H||sp<.3)windSpawn(p);
   }
   cx.lineCap='round';
-  for(const[lo,hi,al] of WBK){
-    cx.lineWidth=3; cx.strokeStyle=`rgba(8,18,36,${al*0.55})`;
-    cx.beginPath();
-    for(const p of windP) if(p.s>=lo&&p.s<hi){cx.moveTo(p.ox,p.oy);cx.lineTo(p.x,p.y)}
-    cx.stroke();
-    cx.lineWidth=1.5; cx.strokeStyle=`rgba(255,255,255,${al})`;
+  for(const[lo,hi,al,lw] of WBK){
+    cx.lineWidth=lw; cx.strokeStyle=`rgba(255,255,255,${al})`;
     cx.beginPath();
     for(const p of windP) if(p.s>=lo&&p.s<hi){cx.moveTo(p.ox,p.oy);cx.lineTo(p.x,p.y)}
     cx.stroke();
