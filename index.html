@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#33b0ea">
 <title>Skylab — Weather & Science</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Schibsted+Grotesk:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Instrument+Serif&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
 <style>
 @property --a{syntax:'<color>';inherits:true;initial-value:#33b0ea}
 @property --b{syntax:'<color>';inherits:true;initial-value:#a8dcf5}
@@ -41,7 +41,8 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .logo{font-family:var(--serif);font-size:28px;margin-right:auto;cursor:pointer;display:flex;align-items:center;gap:9px;text-shadow:0 2px 14px rgba(10,30,60,.25)}
 .lg{width:14px;height:14px;border-radius:50%;background:#fff3b0;box-shadow:0 0 0 0 rgba(255,243,176,.8);animation:ping2 2.6s infinite}
 @keyframes ping2{70%{box-shadow:0 0 0 12px rgba(255,243,176,0)}100%{box-shadow:0 0 0 0 rgba(255,243,176,0)}}
-.search{position:relative;flex:1 1 140px;min-width:0;max-width:380px}
+.search{position:relative;flex:2 1 260px;min-width:180px;max-width:520px}
+.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
 .search input{width:100%;padding:11px 40px 11px 40px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.26);backdrop-filter:blur(14px);color:#fff;font:inherit;font-size:15px}
 .search input::placeholder{color:rgba(255,255,255,.85)}
 .search>svg{position:absolute;left:14px;top:12px;width:18px}
@@ -52,6 +53,139 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .sugg button small{color:var(--mut);margin-left:6px}
 .sugg button:hover,.sugg button[aria-selected=true]{background:rgba(20,49,79,.08)}
 .sugg .hd{padding:10px 16px;font-size:13px;color:var(--mut)}
+
+/* ============ Quick Tools Dropdown (Three Dots '•••') ============ */
+.pill.dots-btn{
+ width:43px;height:43px;padding:0;border-radius:50%;
+ font-size:9.5px;font-weight:600;line-height:1;letter-spacing:2.5px;
+ text-indent:2.5px;
+ display:inline-grid;place-items:center;
+}
+.tools-pop{
+ position:absolute;right:0;top:calc(100% + 10px);width:270px;
+ background:rgba(255,255,255,.96);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+ border:1px solid rgba(255,255,255,.9);border-radius:20px;
+ box-shadow:0 24px 60px rgba(10,40,90,.26),0 4px 16px rgba(10,30,60,.1);
+ padding:10px;display:none;z-index:45;color:var(--ink);
+ animation:rise .25s cubic-bezier(.2,.8,.2,1) both;
+}
+.tools-pop.on{display:block}
+.tools-grid{display:grid;gap:5px}
+.tool-item{
+ display:flex;align-items:center;justify-content:space-between;
+ padding:7px 10px;border-radius:12px;font-size:13px;font-weight:600;color:var(--ink);
+}
+.tool-item:hover{background:rgba(20,49,79,.06)}
+.tool-item-btn{
+ width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;
+ border-radius:12px;font-size:13px;font-weight:600;color:var(--ink);text-align:left;transition:background .2s;
+}
+.tool-item-btn:hover{background:rgba(20,49,79,.07)}
+.tool-item-btn svg{width:16px;height:16px;color:var(--acc);flex:none}
+.tools-divider{height:1px;background:rgba(20,49,79,.1);margin:4px 0}
+
+/* ============ Terminal Button (Round by default, expands to pill on hover) ============ */
+.pill.term-btn{
+ width:43px;height:43px;padding:0;border-radius:999px;
+ background:#ffffff;color:var(--acc);border-color:#ffffff;
+ font-weight:700;font-size:13.5px;
+ box-shadow:0 4px 16px rgba(10,30,60,.18), 0 0 10px rgba(255,255,255,.5);
+ display:inline-flex;align-items:center;justify-content:center;
+ gap:0;overflow:hidden;
+ transition:width .32s cubic-bezier(.2,.8,.2,1), padding .32s cubic-bezier(.2,.8,.2,1), gap .32s cubic-bezier(.2,.8,.2,1), background .25s ease, transform .2s ease, box-shadow .25s ease;
+}
+.pill.term-btn img{flex:none;transition:transform .2s ease}
+.pill.term-btn .term-lbl{
+ max-width:0;opacity:0;overflow:hidden;white-space:nowrap;
+ transition:max-width .32s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
+ font-family:var(--sans);
+}
+.pill.term-btn:hover{
+ width:126px;padding:0 15px;gap:8px;
+ background:#f8fafc;transform:translateY(-2px);
+ box-shadow:0 8px 26px rgba(10,30,60,.26), 0 0 18px rgba(255,255,255,.7);
+}
+.pill.term-btn:hover .term-lbl{
+ max-width:75px;opacity:1;
+}
+
+/* ============ Raw / Terminal View Drawer (Stylized White Retro-Modern) ============ */
+.term-overlay{
+ position:fixed;inset:0;z-index:1200;background:rgba(8,20,40,.45);
+ backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+ opacity:0;pointer-events:none;transition:opacity .35s ease;
+ display:flex;justify-content:flex-end;
+}
+.term-overlay.active{opacity:1;pointer-events:auto}
+.term-drawer{
+ width:min(880px,96vw);height:100%;background:#f8fafc;color:#0f172a;
+ box-shadow:-12px 0 60px rgba(8,20,45,.35);display:flex;flex-direction:column;
+ transform:translateX(100%);transition:transform .38s cubic-bezier(.16,1,.3,1);
+ border-left:1px solid rgba(20,49,79,.14);position:relative;overflow:hidden;
+ font-family:"Fira Code","SF Mono",Menlo,Consolas,monospace;
+}
+.term-overlay.active .term-drawer{transform:translateX(0)}
+.term-drawer.fullscreen{width:100vw}
+.term-drawer::before{
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background-image:radial-gradient(rgba(15,23,42,.07) 1px, transparent 1px);
+ background-size:18px 18px;opacity:.9;z-index:0;
+}
+.term-header{
+ position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
+ padding:15px 20px;background:#ffffff;border-bottom:1px solid rgba(15,23,42,.1);
+}
+.term-brand{display:flex;align-items:center;gap:12px}
+.term-brand-icon{
+ width:36px;height:36px;border-radius:10px;background:#0f172a;color:#38bdf8;
+ display:grid;place-items:center;flex:none;
+}
+.term-titles h2{font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#0f172a;margin:0}
+.term-titles p{font-size:11px;color:#64748b;font-weight:500;margin-top:2px}
+.term-cursor{animation:termBlink 1s infinite;font-weight:700;color:#0284c7}
+@keyframes termBlink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.term-controls{display:flex;align-items:center;gap:8px}
+.term-btn-icon{
+ width:32px;height:32px;border-radius:8px;border:1px solid rgba(15,23,42,.12);
+ background:#fff;display:grid;place-items:center;color:#475569;font-size:14px;transition:all .2s;
+}
+.term-btn-icon:hover{background:#f1f5f9;color:#0f172a}
+.term-meta-strip{
+ position:relative;z-index:2;display:flex;flex-wrap:wrap;align-items:center;
+ justify-content:space-between;gap:8px;padding:9px 20px;background:rgba(255,255,255,.8);
+ border-bottom:1px solid rgba(15,23,42,.08);font-size:11px;color:#475569;
+}
+.term-nav-bar{
+ position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
+ padding:10px 20px;background:#ffffff;border-bottom:1px solid rgba(15,23,42,.08);gap:10px;flex-wrap:wrap;
+}
+.term-tabs{display:inline-flex;gap:4px;padding:3px;background:#f1f5f9;border-radius:10px}
+.term-tab{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;color:#64748b;transition:all .2s}
+.term-tab.active{background:#fff;color:#0f172a;box-shadow:0 2px 8px rgba(15,23,42,.08)}
+.term-actions{display:flex;gap:8px}
+.term-act-btn{
+ display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;
+ background:#fff;border:1px solid rgba(15,23,42,.15);font-size:11.5px;font-weight:600;color:#1e293b;
+}
+.term-act-btn:hover{background:#f8fafc;border-color:#0f172a}
+.term-body{position:relative;z-index:1;flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin}
+.tmatrix-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;margin-bottom:16px}
+.tcard{background:#ffffff;border:1px solid rgba(15,23,42,.1);border-radius:14px;padding:14px 16px}
+.tcard-hd{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(15,23,42,.08);padding-bottom:8px;margin-bottom:10px}
+.tcard-hd h3{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;margin:0}
+.trow{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(15,23,42,.06);font-size:11.5px}
+.trow:last-child{border-bottom:none}
+.trow-label{color:#64748b}
+.trow-val{font-weight:600;color:#0f172a;display:inline-flex;align-items:center;gap:5px}
+.trow-val .tunit{font-size:10.5px;color:#94a3b8;font-weight:400}
+.ttable-wrap{background:#fff;border:1px solid rgba(15,23,42,.1);border-radius:14px;overflow:hidden}
+.ttable{width:100%;border-collapse:collapse;font-size:11px;text-align:left}
+.ttable th{background:#f8fafc;padding:9px 12px;font-weight:700;text-transform:uppercase;color:#475569;border-bottom:1px solid rgba(15,23,42,.1)}
+.ttable td{padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.06);color:#1e293b;white-space:nowrap}
+.ttable tr:hover td{background:#f1f5f9}
+.term-code-block{background:#ffffff;border:1px solid rgba(15,23,42,.12);border-radius:14px;padding:16px;font-size:11.5px;line-height:1.6;overflow-x:auto;max-height:calc(100vh - 240px)}
+.tk-key{color:#0284c7;font-weight:600}.tk-str{color:#059669}.tk-num{color:#7c3aed;font-weight:500}.tk-bool{color:#d97706}.tk-null{color:#94a3b8}
+.term-csv-block{width:100%;height:calc(100vh - 250px);min-height:360px;background:#ffffff;border:1px solid rgba(15,23,42,.12);border-radius:14px;padding:14px;font-family:inherit;font-size:11px;line-height:1.6;color:#0f172a;resize:none;outline:none}
 /* ============ BOTÕES PREMIUM SKYLAB (Topbar & Hero) ============ */
 .pill{
   display:inline-flex;
@@ -905,24 +1039,126 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
 <div class="wrap">
 <header id="hd">
  <div class="logo" id="logo"><span class="lg"></span>Skylab</div>
+ 
+ <!-- Expanded & Spacious Search Bar -->
  <div class="search">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
   <input id="q" type="search" placeholder="Search a city" autocomplete="off" aria-label="Search a city" aria-controls="sg">
   <kbd>/</kbd>
   <div class="sugg" id="sg" role="listbox"></div>
  </div>
- <button class="pill solid" id="inst" hidden>Install app</button>
- <button class="pill warn" id="wrn" hidden aria-expanded="false" aria-controls="wpop"></button>
- <button class="pill" id="loc">Locate</button>
- <button class="pill" id="sur" title="Jump to a place with interesting weather">Surprise</button>
- <button class="pill sndb" id="snd" aria-pressed="false" title="Ambient weather sound">Sound</button>
- <button class="pill lang" id="lng"><img id="lngi" alt="" width="20" height="20"><span id="lngt"></span></button>
-  <div class="seg" role="group" aria-label="Units"><button data-u="c">°C</button><button data-u="f">°F</button></div>
-  <button class="pill hbtn" id="hbtn" aria-haspopup="dialog" aria-expanded="false" title="Hurricane tracker" aria-label="Hurricane tracker"><img src="hurricane.png" alt="" width="26" height="26" onerror="this.replaceWith(document.createTextNode('🌀'))"></button>
-  <button class="pill auth-btn" id="authBtn" aria-haspopup="dialog" aria-expanded="false" title="Account / Sign In"><img id="authIco" class="auth-ico" src="imgs/icons/person.png" alt="" width="18" height="18" onerror="imgFBAuth(this)"><span id="authTxt">Sign In</span></button>
-  <div class="wpop" id="wpop" hidden role="dialog" aria-label="IPMA warnings"></div>
+
+ <!-- Clean, Uncrowded Action Group -->
+ <div class="header-actions">
+  <!-- New Stylized Quick Tools Menu ('...') -->
+  <div style="position:relative">
+   <button class="pill dots-btn" id="toolsBtn" title="Tools &amp; Preferences" aria-label="Tools">•••</button>
+   <div class="tools-pop" id="toolsPop" role="menu">
+    <div class="tools-grid">
+     <div class="tool-item">
+      <span>Units</span>
+      <div class="seg" role="group" aria-label="Units"><button data-u="c">°C</button><button data-u="f">°F</button></div>
+     </div>
+     <div class="tool-item">
+      <span>Language</span>
+      <button class="pill lang" id="lng" style="padding:4px 10px;font-size:12px"><img id="lngi" alt="" width="18" height="18"><span id="lngt"></span></button>
+     </div>
+     <div class="tool-item">
+      <span>Sound</span>
+      <button class="pill sndb" id="snd" aria-pressed="false" style="padding:4px 10px;font-size:12px" title="Ambient weather sound">Sound</button>
+     </div>
+     <div class="tools-divider"></div>
+     <button class="tool-item-btn" id="loc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+      <span>Locate Me</span>
+     </button>
+     <button class="tool-item-btn" id="sur">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+      <span>Surprise Location</span>
+     </button>
+     <button class="tool-item-btn" id="inst" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Install App</span>
+     </button>
+    </div>
+   </div>
+  </div>
+
+ <!-- Terminal Button (Expands on hover) -->
+ <button class="pill term-btn" id="termBtn" title="Terminal" aria-label="Terminal View">
+  <img src="terminal.png" alt="" width="18" height="18" onerror="imgFBTerm(this)">
+  <span class="term-lbl">Terminal</span>
+ </button>
+
+  <!-- Hurricane Tracker -->
+  <button class="pill hbtn" id="hbtn" aria-haspopup="dialog" aria-expanded="false" title="Hurricane tracker" aria-label="Hurricane tracker">
+   <img src="hurricane.png" alt="" width="26" height="26" onerror="this.replaceWith(document.createTextNode('🌀'))">
+  </button>
+
+  <!-- IPMA Alert Pill (Dynamic) -->
+  <button class="pill warn" id="wrn" hidden aria-expanded="false" aria-controls="wpop"></button>
+
+  <!-- Account / Sign In -->
+  <button class="pill auth-btn" id="authBtn" aria-haspopup="dialog" aria-expanded="false" title="Account / Sign In">
+   <img id="authIco" class="auth-ico" src="imgs/icons/person.png" alt="" width="18" height="18" onerror="imgFBAuth(this)">
+   <span id="authTxt">Sign In</span>
+  </button>
+ </div>
+ 
+ <div class="wpop" id="wpop" hidden role="dialog" aria-label="IPMA warnings"></div>
 </header>
 <main id="main"></main>
+
+<!-- ============ RAW / TERMINAL VIEW DRAWER ============ -->
+<div class="term-overlay" id="termOverlay" aria-hidden="true">
+ <aside class="term-drawer" id="termDrawer" role="dialog" aria-modal="true" aria-label="Skylab Atmospheric Physics Terminal">
+  <div class="term-header">
+   <div class="term-brand">
+    <div class="term-brand-icon">
+     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+    </div>
+    <div class="term-titles">
+     <h2>SKYLAB // ATMOSPHERIC PHYSICS TERMINAL <span class="term-cursor">_</span></h2>
+     <p id="termOpTag">OPERATOR: LEVEL-2 TELEMETRY LINK</p>
+    </div>
+   </div>
+   <div class="term-controls">
+    <button class="term-btn-icon" id="termFsBtn" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">⛶</button>
+    <button class="term-btn-icon" id="termCloseBtn" title="Close Terminal (Esc)" aria-label="Close Terminal">✕</button>
+   </div>
+  </div>
+
+  <div class="term-meta-strip">
+   <div style="display:flex;align-items:center;gap:12px">
+    <span><span class="term-dot" style="display:inline-block"></span> STREAM: ACTIVE</span>
+    <span id="termCoords">LAT: --.---- LON: --.----</span>
+    <span id="termElev">ELEV: -- m</span>
+   </div>
+   <div id="termUtc">UTC: ----/--/-- --:--:--</div>
+  </div>
+
+  <div class="term-nav-bar">
+   <div class="term-tabs" role="tablist">
+    <button class="term-tab active" data-v="matrix" role="tab">01 // MATRIX</button>
+    <button class="term-tab" data-v="json" role="tab">02 // JSON STREAM</button>
+    <button class="term-tab" data-v="csv" role="tab">03 // CSV EXPORT</button>
+   </div>
+   <div class="term-actions">
+    <button class="term-act-btn" id="termCopyBtn">
+     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+     <span id="termCopyTxt">Copy JSON</span>
+    </button>
+    <button class="term-act-btn" id="termDownloadBtn">
+     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+     <span>Download .dat</span>
+    </button>
+   </div>
+  </div>
+
+  <!-- Intentionally empty container: Data is populated strictly on authenticated open -->
+  <div class="term-body" id="termBody"></div>
+ </aside>
+</div>
 
 <div class="hov auth-ov" id="authOv" hidden role="dialog" aria-modal="true" aria-labelledby="authTitle">
  <div class="hcard auth-card">
@@ -1554,8 +1790,10 @@ paintLang();trTree(document.body);
 
 /* ============ fetching ============ */
 async function getWeather(lat,lon){
-  const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,dew_point_2m&hourly=temperature_2m,weather_code,precipitation_probability,is_day,surface_pressure,dew_point_2m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max&minutely_15=precipitation&forecast_minutely_15=8&timezone=auto&forecast_days=7`;
-  const r=await fetch(u);if(!r.ok)throw new Error('Weather service unavailable');return r.json();
+ const cur = 'temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,dew_point_2m,pressure_msl,wind_gusts_10m,wind_speed_80m,wind_direction_80m,shortwave_radiation,direct_normal_irradiance,diffuse_radiation,vapor_pressure_deficit';
+ const hourly = 'temperature_2m,weather_code,precipitation_probability,is_day,surface_pressure,dew_point_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,shortwave_radiation,direct_normal_irradiance,diffuse_radiation,vapor_pressure_deficit,boundary_layer_height';
+ const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${cur}&hourly=${hourly}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max&minutely_15=precipitation&forecast_minutely_15=8&timezone=auto&forecast_days=7`;
+ const r=await fetch(u);if(!r.ok)throw new Error('Weather service unavailable');return r.json();
 }
 async function reverse(lat,lon){
  try{
@@ -3173,6 +3411,8 @@ q.addEventListener('keydown',e=>{
  if(e.key=='ArrowDown'||e.key=='ArrowUp'){e.preventDefault();sel=(sel+(e.key=='ArrowDown'?1:-1)+bs.length)%bs.length;bs.forEach((b,i)=>b.setAttribute('aria-selected',i==sel))}
  else if(e.key=='Enter')pick(sel>=0?sel:0);
  else if(e.key=='Escape')closeSg();
+ if(e.key=='Escape' && termIsOpen){ termClose(); return; }
+ 
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))closeSg()});
 
@@ -4530,6 +4770,7 @@ function initAuthInputs(){
 
   // Terminar Sessão
   $('#authLogoutBtn').onclick=async()=>{
+    termClose();
     stopUserWeatherLoop();
     const tok=currentToken;
     currentUser=null;
@@ -4779,6 +5020,233 @@ addEventListener('keydown',e=>{
 initAuthInputs();
 updateAuthUI();
 if (currentUser) startUserWeatherLoop();
+/* ============ Quick Tools Popover Toggle ============ */
+const toolsBtn = $('#toolsBtn');
+const toolsPop = $('#toolsPop');
+if(toolsBtn && toolsPop){
+ toolsBtn.onclick = (e) => {
+  e.stopPropagation();
+  toolsPop.classList.toggle('on');
+ };
+ document.addEventListener('click', (e) => {
+  if(!toolsPop.contains(e.target) && e.target !== toolsBtn) toolsPop.classList.remove('on');
+ });
+}
+
+/* ============ Terminal Image Fallback ============ */
+function imgFBTerm(el){
+ const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+ svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('width','17');svg.setAttribute('height','17');
+ svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','2.2');
+ svg.setAttribute('stroke-linecap','round');svg.innerHTML='<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>';
+ el.replaceWith(svg);
+}
+
+/* ============ Secure Raw / Terminal Controller ============ */
+let termIsOpen = false;
+let termView = 'matrix'; // 'matrix' | 'json' | 'csv'
+
+function isUserAuth(){
+ return !!(currentUser && currentUser.username && currentToken);
+}
+
+function termPurgeDOM(){
+ const b = $('#termBody');
+ if(b) b.innerHTML = '';
+}
+
+function termOpen(){
+ // Extra Security Guard: If not logged in, NEVER expose data or render the terminal
+ if(!isUserAuth()){
+  authOpen();
+  toast(LANG==='pt'?'Terminal restrito a utilizadores registados. Inicia sessão.':'Terminal restricted to registered users. Please sign in.');
+  return;
+ }
+ if(!data){
+  toast(LANG==='pt'?'A aguardar dados meteorológicos...':'Waiting for meteorological data...');
+  return;
+ }
+
+ termIsOpen = true;
+ const ov = $('#termOverlay');
+ ov.classList.add('active');
+ ov.setAttribute('aria-hidden','false');
+ document.documentElement.classList.add('hlock');
+
+ $('#termOpTag').textContent = `OPERATOR: @${currentUser.username.toUpperCase()} // LEVEL-2 TELEMETRY LINK`;
+ $('#termCoords').textContent = `LAT: ${place.lat.toFixed(4)}° LON: ${place.lon.toFixed(4)}°`;
+ $('#termElev').textContent = `ELEV: ${data.elevation ?? 0} m`;
+ $('#termUtc').textContent = `UTC: ${new Date().toISOString().replace('T',' ').slice(0,19)}Z`;
+
+ termRender();
+}
+
+function termClose(){
+ termIsOpen = false;
+ const ov = $('#termOverlay');
+ if(ov){
+  ov.classList.remove('active');
+  ov.setAttribute('aria-hidden','true');
+ }
+ document.documentElement.classList.remove('hlock');
+ termPurgeDOM(); // Immediately purge telemetry from the DOM
+}
+
+function termRender(){
+ if(!isUserAuth()){ termPurgeDOM(); return; }
+ const tb = $('#termBody');
+ if(!tb || !data) return;
+
+ const c = data.current, h = data.hourly, i0 = idx0();
+
+ if(termView === 'matrix'){
+  tb.innerHTML = generateTermMatrix(c, h, i0);
+ } else if(termView === 'json'){
+  tb.innerHTML = `<pre class="term-code-block">${syntaxHighlight(data)}</pre>`;
+ } else if(termView === 'csv'){
+  tb.innerHTML = `<textarea class="term-csv-block" readonly spellcheck="false">${generateTermCSV(data)}</textarea>`;
+ }
+
+ $('#termCopyTxt').textContent = termView === 'csv' ? 'Copy CSV' : 'Copy JSON';
+}
+
+function syntaxHighlight(json){
+ const str = JSON.stringify(json, null, 2);
+ return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(m){
+  let cls = 'tk-num';
+  if(/^"/.test(m)){ cls = /:$/.test(m) ? 'tk-key' : 'tk-str'; }
+  else if(/true|false/.test(m)){ cls = 'tk-bool'; }
+  else if(/null/.test(m)){ cls = 'tk-null'; }
+  return `<span class="${cls}">${m}</span>`;
+ });
+}
+
+function generateTermCSV(d){
+ const h = d.hourly;
+ if(!h || !h.time) return 'NO_DATA';
+ const headers = ['time_iso','temperature_2m_c','relative_humidity_2m_pct','dew_point_2m_c','surface_pressure_hpa','wind_speed_10m_kmh','wind_direction_10m_deg','wind_speed_80m_kmh','shortwave_radiation_wm2','vapor_pressure_deficit_kpa'];
+ const rows = [headers.join(',')];
+ for(let i=0; i<Math.min(48, h.time.length); i++){
+  rows.push([
+   h.time[i],
+   h.temperature_2m[i] ?? '',
+   h.relative_humidity_2m[i] ?? '',
+   h.dew_point_2m[i] ?? '',
+   h.surface_pressure[i] ?? '',
+   h.wind_speed_10m[i] ?? '',
+   h.wind_direction_10m[i] ?? '',
+   h.wind_speed_80m ? h.wind_speed_80m[i] ?? '' : '',
+   h.shortwave_radiation ? h.shortwave_radiation[i] ?? '' : '',
+   h.vapor_pressure_deficit ? h.vapor_pressure_deficit[i] ?? '' : ''
+  ].join(','));
+ }
+ return rows.join('\n');
+}
+
+function generateTermMatrix(c, h, i0){
+ const tC = c.temperature_2m;
+ const td = c.dew_point_2m;
+ const rh = c.relative_humidity_2m;
+ const pVal = c.surface_pressure || 1013.25;
+ const pMsl = c.pressure_msl || pVal;
+ const v10 = c.wind_speed_10m || 0;
+ const v80 = c.wind_speed_80m ?? (v10 * 1.25);
+ const shear = ((v80 - v10) / 0.7).toFixed(1);
+ const vpd = c.vapor_pressure_deficit ?? ((0.61078 * Math.exp((17.27 * tC) / (tC + 237.3))) * (1 - rh / 100));
+ const rho = (pVal * 100 / (287.058 * (tC + 273.15))).toFixed(3);
+ const cBase = Math.max(0, (tC - td) * 125);
+ const soundSpeed = (331.3 + 0.606 * tC).toFixed(1);
+
+ let rows = '';
+ for(let j=i0; j<i0+8 && j<h.time.length; j++){
+  rows += `<tr>
+   <td><b>${h.time[j].slice(11,16)}</b></td>
+   <td>${h.temperature_2m[j]}°C</td>
+   <td>${h.dew_point_2m[j]}°C</td>
+   <td>${h.relative_humidity_2m[j]}%</td>
+   <td>${Math.round(h.surface_pressure[j])} hPa</td>
+   <td>${Math.round(h.wind_speed_10m[j])} km/h</td>
+   <td>${h.wind_speed_80m ? Math.round(h.wind_speed_80m[j]) : '—'} km/h</td>
+   <td>${h.shortwave_radiation ? Math.round(h.shortwave_radiation[j]) : 0} W/m²</td>
+  </tr>`;
+ }
+
+ return `
+  <div class="tmatrix-grid">
+   <div class="tcard">
+    <div class="tcard-hd"><h3>[01] THERMODYNAMICS &amp; MOISTURE</h3><span>STATE VECTORS</span></div>
+    <div class="trow"><span class="trow-label">Surface Pressure (P₀)</span><span class="trow-val">${pVal.toFixed(1)} <span class="tunit">hPa</span></span></div>
+    <div class="trow"><span class="trow-label">MSL Pressure (P_msl)</span><span class="trow-val">${pMsl.toFixed(1)} <span class="tunit">hPa</span></span></div>
+    <div class="trow"><span class="trow-label">Dew Point Spread (T - T_d)</span><span class="trow-val">${(tC - td).toFixed(2)} <span class="tunit">°C</span></span></div>
+    <div class="trow"><span class="trow-label">Vapor Pressure Deficit (VPD)</span><span class="trow-val">${Number(vpd).toFixed(2)} <span class="tunit">kPa</span></span></div>
+    <div class="trow"><span class="trow-label">Air Density (ρ)</span><span class="trow-val">${rho} <span class="tunit">kg/m³</span></span></div>
+    <div class="trow"><span class="trow-label">LCL Cloud Base</span><span class="trow-val">~${Math.round(cBase)} <span class="tunit">m AGL</span></span></div>
+    <div class="trow"><span class="trow-label">Speed of Sound</span><span class="trow-val">${soundSpeed} <span class="tunit">m/s</span></span></div>
+   </div>
+   <div class="tcard">
+    <div class="tcard-hd"><h3>[02] KINEMATICS &amp; SHEAR</h3><span>MULTI-LEVEL</span></div>
+    <div class="trow"><span class="trow-label">Surface Wind (10m)</span><span class="trow-val">${v10.toFixed(1)} <span class="tunit">km/h</span> @ ${c.wind_direction_10m}°</span></div>
+    <div class="trow"><span class="trow-label">Boundary Wind (80m)</span><span class="trow-val">${Number(v80).toFixed(1)} <span class="tunit">km/h</span> @ ${c.wind_direction_80m ?? c.wind_direction_10m}°</span></div>
+    <div class="trow"><span class="trow-label">Vertical Shear (∂u/∂z)</span><span class="trow-val">${shear} <span class="tunit">kt/100m</span></span></div>
+    <div class="trow"><span class="trow-label">Peak Surface Gust (10m)</span><span class="trow-val">${c.wind_gusts_10m ? c.wind_gusts_10m.toFixed(1) : '—'} <span class="tunit">km/h</span></span></div>
+    <div class="trow"><span class="trow-label">Boundary Layer Ht (PBLH)</span><span class="trow-val">${h.boundary_layer_height ? Math.round(h.boundary_layer_height[i0]) : '~850'} <span class="tunit">m AGL</span></span></div>
+   </div>
+   <div class="tcard">
+    <div class="tcard-hd"><h3>[03] RADIATIVE FLUX</h3><span>PYRANOMETER</span></div>
+    <div class="trow"><span class="trow-label">Shortwave Flux (GHI)</span><span class="trow-val">${Number(c.shortwave_radiation ?? 0).toFixed(0)} <span class="tunit">W/m²</span></span></div>
+    <div class="trow"><span class="trow-label">Direct Irradiance (DNI)</span><span class="trow-val">${Number(c.direct_normal_irradiance ?? 0).toFixed(0)} <span class="tunit">W/m²</span></span></div>
+    <div class="trow"><span class="trow-label">Diffuse Radiation (DHI)</span><span class="trow-val">${Number(c.diffuse_radiation ?? 0).toFixed(0)} <span class="tunit">W/m²</span></span></div>
+    <div class="trow"><span class="trow-label">Solar Noon Peak UV</span><span class="trow-val">${data.daily.uv_index_max[0]} <span class="tunit">UV-INDEX</span></span></div>
+   </div>
+  </div>
+  <div class="ttable-wrap">
+   <div style="padding:12px 16px;border-bottom:1px solid rgba(15,23,42,.08);display:flex;justify-content:space-between">
+    <b>[04] SOUNDING HORIZON (NEXT 8 HOURS)</b>
+    <span style="color:#64748b">INTERVAL: 60 MIN</span>
+   </div>
+   <table class="ttable">
+    <thead>
+     <tr><th>TIME</th><th>TEMP</th><th>DEW PT</th><th>RH</th><th>PRESSURE</th><th>WIND 10M</th><th>WIND 80M</th><th>SOLAR</th></tr>
+    </thead>
+    <tbody>${rows}</tbody>
+   </table>
+  </div>
+ `;
+}
+
+/* Event bindings */
+$('#termBtn').onclick = () => termOpen();
+$('#termCloseBtn').onclick = () => termClose();
+$('#termFsBtn').onclick = () => $('#termDrawer').classList.toggle('fullscreen');
+$('#termOverlay').onclick = (e) => { if(e.target === $('#termOverlay')) termClose(); };
+
+$$('.term-tab').forEach(b => {
+ b.onclick = () => {
+  $$('.term-tab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  termView = b.dataset.v;
+  termRender();
+ };
+});
+
+$('#termCopyBtn').onclick = () => {
+ if(!data || !isUserAuth()) return;
+ const text = termView === 'csv' ? generateTermCSV(data) : JSON.stringify(data, null, 2);
+ navigator.clipboard.writeText(text).then(() => toast(LANG==='pt'?'Copiado com sucesso!':'Copied to clipboard!'));
+};
+
+$('#termDownloadBtn').onclick = () => {
+ if(!data || !isUserAuth()) return;
+ const isCsv = termView === 'csv';
+ const content = isCsv ? generateTermCSV(data) : JSON.stringify(data, null, 2);
+ const blob = new Blob([content], {type: isCsv ? 'text/csv' : 'application/json'});
+ const a = document.createElement('a');
+ a.href = URL.createObjectURL(blob);
+ a.download = `skylab_telemetry_${place.name.toLowerCase().replace(/[^a-z0-9]/g,'_')}.${isCsv?'csv':'json'}`;
+ a.click();
+ URL.revokeObjectURL(a.href);
+ toast(LANG==='pt'?'Ficheiro gerado com sucesso.':'File downloaded.');
+};
 
 /* ============ PWA install ============ */
 let installEv=null;
