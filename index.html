@@ -1043,12 +1043,12 @@ function emoji(code,day=1){
  else if(code==45||code==48)n='fog'; else if(code<=57)n='drizzle';
  else if(code<=67||code>=80&&code<=82)n='rain'; else if(code<=77||code==85||code==86)n='snow'; else n='storm';
  return ic(n);
- const IPMA_TO_WMO={
+}
+const IPMA_TO_WMO={
   1:0,2:2,3:3,4:3,5:3,6:3,7:3,8:3,9:3,10:3,11:3,12:3,13:3,
   14:51,15:61,16:45,17:61,18:65,19:95,20:95,21:95,22:95,
   23:71,24:71,25:75,26:75,27:77,28:85,29:86,30:95
 };
-}
 
 /* ============ colour theme: cool blue -> teal -> gold -> orange (never red) ============ */
 const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
@@ -2226,7 +2226,7 @@ async function weekPaneAsync(){
   const d=data.daily,h=data.hourly,i0=idx0();
   const c=data.current;
   const inPT=place&&isPortugal(place.lat,place.lon);
-  if(inPT){
+  if(inPT&&!data.__noIpma){
     const ip=await ipmaDaily(place.lat,place.lon);
     if(ip&&ip.daily.length){
       const days=ip.daily.slice(0,7);
@@ -2257,7 +2257,10 @@ function weekPane(){
   // devolve um placeholder; o conteúdo real chega via weekPaneAsync
   setTimeout(async()=>{
     const pane=$('#pane');if(!pane||tab!=='week')return;
-    pane.innerHTML=await weekPaneAsync();
+    let html;
+    try{html=await weekPaneAsync()}catch(e){console.warn('[Week]',e);data.__noIpma=1;html=await weekPaneAsync().catch(()=>'')}
+    if(tab!=='week'||!$('#pane'))return;
+    $('#pane').innerHTML=html;
     moveInd();
   },0);
   return `<div class="pane sk" style="min-height:260px"></div>`;
@@ -3096,7 +3099,7 @@ async function updateWindVectors(){
       const ng=await windFetchGrid(b);
       if(tok!==windTok||radarKind!=='wind'||!radarMap)return;     // trocou de camada entretanto
       windGrid=ng;
-    }catch(err){console.warn('[Wind]',err.message);if(tok!==windTok||!windGrid)return}
+    }catch(err){console.warn('[Wind]',err.message);if(tok!==windTok)return;if(!windGrid){const n=$('#rnote');if(n)n.textContent='Wind particles unavailable right now.';return}}
   }
   const{W,H}=windEnsure();
   windStopLoop();windClear();windBuild(W,H);
@@ -3338,7 +3341,7 @@ async function radarInit(){
  const MAP_KEY='cb1_4644_2_e1ddc0590e0bf3595329dba5';
  L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${MAP_KEY}`,{maxZoom:19}).addTo(radarMap);
  const att = radarScope === 'pt'
-   ? '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · rain <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a> · wind/clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · sat <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>'
+   ? '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · rain <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> · wind/clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · sat <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>'
    : '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · rain <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> · wind/clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · sat <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>';
  radarMap.attributionControl.addAttribution(att);
  L.marker([place.lat,place.lon],{keyboard:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(radarMap);
@@ -3476,7 +3479,7 @@ async function radarLoadKind(k){
   $('#rleg2').hidden = k!=='rain';
 
   try{
-    if(k==='rain')    return isPT ? loadRainPT(stale)     : loadRainGlobal(stale);
+    if(k==='rain')    return loadRainGlobal(stale);
     if(k==='wind')    return loadWind(stale);
     if(k==='cloud')   return loadCloud(stale,isPT);
     if(k==='sat')     return loadSat(stale);
@@ -3524,9 +3527,9 @@ async function loadRainGlobal(stale){
     console.info('[RainViewer] host=%s first-path=%s tile=%s',
     rv.host, frames[0].path,
     rainViewerTileURL(rv.host, frames[0].path, 2, '0_0'));
-  radarLayers=frames.map(f=>mkLayer(rainViewerTileURL(rv.host,f.path,2,'0_0'),{maxNativeZoom:6,maxZoom:9}));
+  radarLayers=frames.map(f=>mkLayer(rainViewerTileURL(rv.host,f.path,2,'0_0'),{maxNativeZoom:7,maxZoom:radarScope==='pt'?11:9}));
   sl.disabled=false;pl.disabled=false;sl.max=frames.length-1;
-  note.textContent='RainViewer · global · 10 min · 2h past + 30 min nowcast';
+  note.textContent='RainViewer · 10 min · past 2 h'+(radarScope==='pt'?' · Portugal':' · Global');
   $('#rlmin').textContent='0.1 mm/h';
   $('#rlmax').textContent='> 50 mm/h';
   $('#rlbar').style.background='linear-gradient(90deg,#88ddee,#36bae5,#00a3e0,#007fb4,#005588,#c2b482,#cec087,#ffee00,#ffd200,#ffaa00,#ff8100,#ff4400)';
@@ -3543,14 +3546,14 @@ async function loadWind(stale){
   let ok=false;
   try{ok=(await fetch(`${WORKER}/owm/${ow.layer}/0/0/0.png`)).ok}catch(e){}
   if(stale())return;
-  if(!ok){note.textContent='Wind layer needs OWM_KEY in the worker.';return}
   const isPT=radarScope==='pt';
-  radarLayers=[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,
-    {maxNativeZoom:6,maxZoom:isPT?11:9,className:'rlayer rcloud'})];
+  radarLayers=ok?[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,
+    {maxNativeZoom:6,maxZoom:isPT?11:9,className:'rlayer rcloud'})]:[];
   radarFrames=[{}];sl.max=0;
-  note.textContent=ow.note+(isPT?' · Portugal':' · Global');
+  note.textContent=ok?ow.note+(isPT?' · Portugal':' · Global'):'Wind particles · ECMWF + Open-Meteo (colour layer needs OWM_KEY in the worker)';
   $('#rtime').textContent='Current';
   $('#rleg').innerHTML=`<span>${ow.lo}</span><i style="background:${ow.grad}"></i><span>${ow.hi}</span><span style="margin-left:8px;font-size:10px;opacity:.7">ECMWF/IFS</span>`;
+  $('#rleg').hidden=!ok;
   radarShow(0);radarBtn();
   requestAnimationFrame(()=>requestAnimationFrame(updateWindVectors));
 }
