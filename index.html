@@ -1991,6 +1991,25 @@ const PD_ICONS={
  'foehn':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M20 110l40-60 25 35 20-25 35 50z" fill="currentColor" opacity=".7"/><line x1="90" y1="120" x2="90" y2="140" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`
 };
 
+function pressureSeries(){
+ if(!data||!data.hourly)return null;
+ const h=data.hourly, i0=idx0();
+ const back=6, fwd=6; // ~12h de janela centrada em "agora"
+ const start=Math.max(0, i0-back);
+ const end=Math.min(h.time.length-1, i0+fwd);
+ const out=[];
+ for(let i=start;i<=end;i++){
+  const v=h.surface_pressure ? h.surface_pressure[i] : null;
+  if(v==null||!isFinite(v))continue;
+  out.push({
+   t:new Date(h.time[i]).toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'}),
+   v:v,
+   now:i===i0
+  });
+ }
+ return out;
+}
+
 function pressureSparkSVG(){
  const hrs = pressureSeries(); // assume que já existe: [{t:'14:00', v:1013.2, now:false}, ...]
  if(!hrs || hrs.length<2){
@@ -2366,6 +2385,7 @@ function setTab(k){
  tab=k;$$('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t==k));moveInd();
  const pane=$('#pane');pane.innerHTML=PANES[k]();
  if(INIT[k])INIT[k]();
+ if(k==='sky')initSparkTooltip();   // <-- adicionar esta linha
  runCounters(pane);
 }
 
