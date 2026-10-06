@@ -817,27 +817,63 @@ html.hlock{overflow:hidden}
 .station-src{font-size:11px;color:var(--mut);white-space:nowrap}
 
 /* ==== céu explicado ==== */
-.exp{display:grid;gap:14px}
-.expHero{padding:22px 24px 20px;border-radius:26px;position:relative;overflow:hidden;
-background:linear-gradient(155deg,color-mix(in srgb,var(--a) 14%,#fff),color-mix(in srgb,var(--acc) 8%,#fff));
+.exp{display:grid;gap:16px}
+.expHero{padding:26px 28px 24px;border-radius:28px;position:relative;overflow:hidden;
+display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center;
+background:linear-gradient(155deg,color-mix(in srgb,var(--a) 16%,#fff),color-mix(in srgb,var(--acc) 9%,#fff));
 border:1px solid rgba(20,49,79,.1);box-shadow:0 22px 50px -28px rgba(10,40,90,.45)}
-.expHero::before{content:"";position:absolute;top:-40%;right:-15%;width:340px;height:340px;border-radius:50%;
-background:radial-gradient(circle,color-mix(in srgb,var(--a) 22%,transparent),transparent 68%);pointer-events:none}
-.expCat{display:inline-block;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--acc);background:rgba(255,255,255,.6);border:1px solid rgba(20,49,79,.1);border-radius:99px;padding:4px 11px;margin-bottom:14px;position:relative}
-.expH{font-family:var(--serif);font-weight:400;font-size:29px;line-height:1.1;margin-bottom:14px;color:var(--ink);position:relative;letter-spacing:-.01em}
-.expP{font-size:15.5px;line-height:1.68;color:var(--ink);max-width:66ch;position:relative;opacity:.92}
-.expP b{font-weight:600;color:var(--ink)}
-.expP i{font-style:normal;font-weight:600;color:var(--ink)}
-.expSig{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;position:relative}
-.expSig span{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;background:rgba(255,255,255,.72);border:1px solid rgba(20,49,79,.1);font-size:11.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
-.expSig span i{width:5px;height:5px;border-radius:50%;background:var(--acc);display:block;flex:none}
+.expHero::before{content:"";position:absolute;top:-40%;right:-15%;width:380px;height:380px;border-radius:50%;
+background:radial-gradient(circle,color-mix(in srgb,var(--a) 24%,transparent),transparent 68%);pointer-events:none}
+.expTxt{position:relative;min-width:0}
+.expCat{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--acc);
+background:rgba(255,255,255,.65);border:1px solid rgba(20,49,79,.1);border-radius:99px;padding:4px 11px;margin-bottom:14px}
+.expCat.ib{color:#b4552e;background:rgba(255,236,214,.85);border-color:rgba(180,85,46,.22)}
+.expH{font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.12;margin-bottom:12px;color:var(--ink);letter-spacing:-.01em;position:relative}
+.expP{font-size:15.5px;line-height:1.68;color:var(--ink);max-width:62ch;opacity:.92;position:relative}
+.expP b,.expP i{font-weight:600;font-style:normal;color:var(--ink)}
+.expSig{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;position:relative}
+.expSig .sg{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.75);
+border:1px solid rgba(20,49,79,.1);font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.expSig .sg i{width:6px;height:6px;border-radius:50%;background:var(--acc);display:block;flex:none}
+
+/* diagrama animado */
+.expDiagram{position:relative;flex:none;width:clamp(108px,16vw,148px);height:clamp(108px,16vw,148px);display:grid;place-items:center}
+.expDiagram::before{content:"";position:absolute;inset:-10%;border-radius:50%;
+background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animation:expHalo 5s ease-in-out infinite alternate}
+@keyframes expHalo{to{transform:scale(1.08);opacity:.75}}
+.expDiagram svg{width:100%;height:100%;position:relative;filter:drop-shadow(0 10px 20px rgba(10,40,90,.18))}
+
+/* mini-gráfico de tendência */
+.expSpark{margin-top:18px;padding-top:16px;border-top:1px solid rgba(20,49,79,.1)}
+.expSpark h5{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);font-weight:600;margin-bottom:8px}
+.expSpark svg{width:100%;height:56px;display:block}
+.expSpark .sparkline{fill:none;stroke:var(--acc);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.expSpark .sparkfill{opacity:.14}
+.expSpark .nowdot{fill:var(--acc);stroke:#fff;stroke-width:1.6}
+
 .expGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.expGrid.three{grid-template-columns:1fr 1fr 1fr}
 .expCard{padding:18px 20px}
-.expCard h4{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:10px;font-weight:600}
+.expCard h4{display:flex;align-items:center;gap:7px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:12px;font-weight:600}
+.expCard h4 svg{width:15px;height:15px;color:var(--acc);flex:none}
 .expCard p{font-size:14.5px;line-height:1.62;color:var(--mut)}
 .expCard p b{color:var(--ink);font-weight:600}
 .expCard p i{font-style:normal;background:linear-gradient(180deg,transparent 62%,color-mix(in srgb,var(--a) 30%,transparent) 62%);padding:0 2px;font-weight:500;color:var(--ink)}
-@media(max-width:860px){.expGrid{grid-template-columns:1fr}.expH{font-size:24px}.expP{font-size:15px}}
+
+/* mini-métricas com barras */
+.expMetrics{display:grid;gap:11px}
+.expM{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:10px;font-size:12.5px}
+.expM svg{width:16px;height:16px;color:var(--acc)}
+.expM .mb{height:6px;border-radius:9px;background:rgba(20,49,79,.1);overflow:hidden;margin-top:4px}
+.expM .mb i{display:block;height:100%;border-radius:9px;background:var(--acc);width:var(--w,30%);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.expM b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+@media(max-width:860px){
+ .expHero{grid-template-columns:1fr;text-align:left}
+ .expDiagram{width:96px;height:96px;margin:0 0 4px}
+ .expGrid,.expGrid.three{grid-template-columns:1fr}
+ .expH{font-size:24px}.expP{font-size:15px}
+}
 </style>
 </head>
 <body>
@@ -969,12 +1005,15 @@ background:radial-gradient(circle,color-mix(in srgb,var(--a) 22%,transparent),tr
  </div>
 </div>
 
-<footer>Weather by Open-Meteo · Places by BigDataCloud · Pollen by Atmospore
-  <span class="db-badge">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-    <span>Precipitação (PT) por <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a></span>
-    <span>Data stored on <strong>Cloudflare D1</strong></span>
-  </span>
+<footer>
+ Weather by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+ Places by <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a> ·
+ Pollen by <a href="https://atmospore.ai/" target="_blank" rel="noopener">Atmospore</a> ·
+ Portugal forecasts &amp; warnings by <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a>
+ <span class="db-badge">
+ <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+ <span>Data stored on <strong>Cloudflare D1</strong></span>
+ </span>
 </footer>
 </div>
 
@@ -1629,9 +1668,31 @@ function skySignals(){
   return {dP,dDew,dT,dewNow:c.dew_point_2m,rhNow:c.relative_humidity_2m,wind:c.wind_speed_10m,dir:c.wind_direction_10m,temp:c.temperature_2m,code:c.weather_code,isDay:c.is_day,p:p3,i0};
 }
 
+/* ============ Céu Explicado: Península Ibérica ============ */
+function isIberia(lat,lon){return lat>=35.8&&lat<=43.9&&lon>=-9.6&&lon<=3.5}
+function isAtlanticPT(lat,lon){return isIberia(lat,lon)&&lon<=-7.4}
+function isStraitZone(lat,lon){return isIberia(lat,lon)&&lat<=37.6&&lon>=-7&&lon<=-4.5}
+function isMedSpain(lat,lon){return isIberia(lat,lon)&&lon>=-1.2}
+const monthNow=()=>new Date().getMonth()+1;
+
+function patternDetectIberia(s){
+ if(!place||!isIberia(place.lat,place.lon))return null;
+ const m=monthNow();
+ const fromN=(s.dir>=315||s.dir<=45),fromE=(s.dir>=55&&s.dir<=125);
+ if(isAtlanticPT(place.lat,place.lon)&&fromN&&s.wind>=25&&m>=4&&m<=9&&s.code<=3)return'ib-nortada';
+ if(isStraitZone(place.lat,place.lon)&&fromE&&s.wind>=30)return'ib-levante';
+ if(isIberia(place.lat,place.lon)&&fromE&&s.temp>=26&&s.rhNow<35&&m>=5&&m<=9)return'ib-suao';
+ if(isIberia(place.lat,place.lon)&&s.dir>=100&&s.dir<=220&&s.temp>=20&&s.rhNow<=30&&(s.code==2||s.code==3))return'ib-calima';
+ if(isMedSpain(place.lat,place.lon)&&m>=9&&m<=11&&s.dP<=-1.2&&(s.code>=61&&s.code<=82))return'ib-gotafria';
+ return null;
+}
+
 function patternDetect(){
   const s=skySignals();
+  const ibId=patternDetectIberia(s);
+  if(ibId)return{id:ibId,cat:'Iberia',s};
   const code=s.code;
+  // ...o resto da função mantém-se exatamente igual...
   const isRain=(code>=51&&code<=67)||(code>=80&&code<=82);
   const isStorm=code>=95;
   const isClear=code<=2;
@@ -1776,6 +1837,100 @@ const PATTERNS={
  })
 };
 
+Object.assign(PATTERNS,{
+'ib-nortada':s=>({
+ title:T2('Nortada: the Portuguese upwelling wind','Nortada: o vento que arrefece a costa'),
+ body:T2(
+ `A strong, steady wind from the north (${Math.round(s.wind)} km/h) is blowing down the Portuguese Atlantic coast. This is the nortada, driven by the summer pressure gap between the Azores High and the thermal low over Iberia. It pushes surface water offshore, pulling cold, nutrient-rich water up from the deep — which is why the sea feels so much colder on the coast than a few kilometres inland, even in the middle of summer.`,
+ `Um vento forte e constante de norte (${Math.round(s.wind)} km/h) sopra ao longo da costa atlântica portuguesa. É a nortada, resultado da diferença de pressão de verão entre o Anticiclone dos Açores e a baixa térmica sobre a Península Ibérica. Empurra a água da superfície para o largo, trazendo à tona água fria e rica em nutrientes das profundezas — por isso o mar está muito mais frio na costa do que a poucos quilómetros terra adentro, mesmo em pleno verão.`
+ ),
+ signals:[T2(`Wind from N · ${Math.round(s.wind)} km/h`,`Vento de N · ${Math.round(s.wind)} km/h`),T2('Clear/few clouds','Céu limpo/pouco nublado'),T2('Coastal upwelling likely','Upwelling costeiro provável')]
+}),
+'ib-levante':s=>({
+ title:T2('Levante: wind through the Strait','Levante: o vento que atravessa o Estreito'),
+ body:T2(
+ `A strong easterly (${Math.round(s.wind)} km/h) is funnelling through the Strait of Gibraltar. The levante forms when high pressure sits over the western Mediterranean and lower pressure over the Atlantic, squeezing air through the narrow gap between Europe and Africa. It brings the trademark lens-shaped cloud over the Rock, choppy seas in the Strait, and noticeably drier air on the Atlantic side once it spills through.`,
+ `Um vento forte de leste (${Math.round(s.wind)} km/h) atravessa o Estreito de Gibraltar. O levante forma-se quando há alta pressão sobre o Mediterrâneo ocidental e pressão mais baixa sobre o Atlântico, espremendo o ar pelo estreito corredor entre a Europa e África. Traz a característica nuvem em forma de lente sobre o Rochedo, mar agitado no Estreito e ar bem mais seco do lado atlântico depois de transpor a passagem.`
+ ),
+ signals:[T2(`Wind from E · ${Math.round(s.wind)} km/h`,`Vento de E · ${Math.round(s.wind)} km/h`),T2('Strait of Gibraltar','Estreito de Gibraltar'),T2('Pressure gradient: Med vs Atlantic','Gradiente: Mediterrâneo vs Atlântico')]
+}),
+'ib-suao':s=>({
+ title:T2('Suão: a hot, dry easterly','Suão: vento quente e seco de leste'),
+ body:T2(
+ `The wind is coming from the east and the air is both hot (${dec1(s.temp)}°) and dry (${s.rhNow}% humidity). This is a suão — continental air from inland Iberia reaching the coast before the sea breeze can moderate it. It is Portugal's cousin of the sirocco: it can push temperatures up by several degrees within an hour and sharply raises wildfire risk.`,
+ `O vento vem de leste e o ar está quente (${dec1(s.temp)}°) e seco (${s.rhNow}% de humidade). É um suão — ar continental do interior ibérico a chegar à costa antes de a brisa marítima o conseguir suavizar. É o primo português do siroco: pode fazer a temperatura subir vários graus numa hora e aumenta muito o risco de incêndio.`
+ ),
+ signals:[T2('Wind from E','Vento de leste'),T2(`Temp ${dec1(s.temp)}°`,`Temp ${dec1(s.temp)}°`),T2(`Humidity ${s.rhNow}%`,`Humidade ${s.rhNow}%`)]
+}),
+'ib-calima':s=>({
+ title:T2('Calima: Saharan dust overhead','Calima: poeira do Sara no ar'),
+ body:T2(
+ `A southerly flow (${dec1(s.temp)}°, only ${s.rhNow}% humidity) is carrying fine Saharan dust across Iberia. Calima turns the sky a milky, slightly orange hue even without a single cloud, dulls the sunlight, and can irritate eyes and airways. It usually clears within a day or two once the wind swings back round to the Atlantic.`,
+ `Um fluxo de sul (${dec1(s.temp)}°, apenas ${s.rhNow}% de humidade) transporta poeira fina do Sara sobre a Península Ibérica. A calima deixa o céu com um tom leitoso e ligeiramente alaranjado mesmo sem uma única nuvem, embacia a luz do sol e pode irritar os olhos e as vias respiratórias. Costuma dissipar-se em um ou dois dias, quando o vento volta a rodar para o Atlântico.`
+ ),
+ signals:[T2('Wind from S/SE','Vento de S/SE'),T2(`Humidity ${s.rhNow}%`,`Humidade ${s.rhNow}%`),T2('Hazy sky likely','Céu com neblina provável')]
+}),
+'ib-gotafria':s=>({
+ title:T2('Gota fría: an isolated cold pocket aloft','Gota fria: uma bolsa de ar frio isolada'),
+ body:T2(
+ `Pressure has dropped sharply (${dec1(s.dP)} hPa in 3h) and heavy rain is falling — classic signs of a gota fría (DANA), a pocket of cold air that has broken away from the polar jet stream and drifted south over a still-warm Mediterranean. The temperature contrast fuels explosive, slow-moving storms that can drop huge amounts of rain in just a few hours, especially along Spain's eastern coast in autumn.`,
+ `A pressão caiu de forma acentuada (${dec1(s.dP)} hPa em 3 h) e está a chover com intensidade — sinais clássicos de uma gota fria (DANA), uma bolsa de ar frio que se separou da corrente de jato polar e desceu sobre um Mediterrâneo ainda quente. O contraste de temperaturas alimenta tempestades explosivas e de movimento lento, capazes de descarregar enormes quantidades de chuva em poucas horas, sobretudo na costa leste de Espanha no outono.`
+ ),
+ signals:[T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),T2(`Code ${s.code} — heavy rain`,`Código ${s.code} — chuva forte`),T2('Mediterranean Spain, autumn','Espanha mediterrânica, outono')]
+})
+});
+
+Object.assign(PT,{'Iberia':'Península Ibérica','Signals right now':'Sinais neste momento'});
+
+/* ============ Céu Explicado: diagramas + sparkline ============ */
+const SVG_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
+const SVG_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+const SVG_PULSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>';
+
+const PD_ICONS={
+'front-cold':`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#2f7ee0" opacity=".10"/><path d="M14 72 Q 60 40 106 72" fill="none" stroke="#2f7ee0" stroke-width="5" stroke-linecap="round"/><polygon points="34,70 42,70 38,58" fill="#2f7ee0"/><polygon points="58,60 66,60 62,48" fill="#2f7ee0"/><polygon points="82,60 90,60 86,48" fill="#2f7ee0"/></svg>`,
+'front-warm':`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#e5652e" opacity=".10"/><path d="M14 72 Q 60 40 106 72" fill="none" stroke="#e5652e" stroke-width="5" stroke-linecap="round"/><circle cx="38" cy="68" r="7" fill="#e5652e"/><circle cx="62" cy="58" r="7" fill="#e5652e"/><circle cx="86" cy="58" r="7" fill="#e5652e"/></svg>`,
+'post-front':`<svg viewBox="0 0 120 120"><circle cx="66" cy="46" r="20" fill="#f2a51a"/><g stroke="#f2a51a" stroke-width="4" stroke-linecap="round"><line x1="66" y1="12" x2="66" y2="20"/><line x1="66" y1="72" x2="66" y2="80"/><line x1="32" y1="46" x2="40" y2="46"/><line x1="92" y1="46" x2="100" y2="46"/><line x1="42" y1="22" x2="48" y2="28"/><line x1="84" y1="22" x2="78" y2="28"/></g><path d="M12 92 q10 -14 26 -8 q8 -10 22 -4" fill="none" stroke="#9fb3c4" stroke-width="6" stroke-linecap="round" opacity=".5"/></svg>`,
+'high':`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="22" fill="#f2a51a"/><g stroke="#f2a51a" stroke-width="4" stroke-linecap="round"><line x1="60" y1="18" x2="60" y2="28"/><line x1="60" y1="92" x2="60" y2="102"/><line x1="18" y1="60" x2="28" y2="60"/><line x1="92" y1="60" x2="102" y2="60"/><line x1="30" y1="30" x2="37" y2="37"/><line x1="83" y1="83" x2="90" y2="90"/><line x1="90" y1="30" x2="83" y2="37"/><line x1="37" y1="83" x2="30" y2="90"/></g><circle cx="60" cy="60" r="44" fill="none" stroke="#f2a51a" stroke-width="2" stroke-dasharray="3 7" opacity=".55"/></svg>`,
+'tropical':`<svg viewBox="0 0 120 120"><circle cx="46" cy="44" r="18" fill="#f2a51a"/><path d="M16 86 q7 -8 14 0 q7 -8 14 0 q7 -8 14 0" fill="none" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><path d="M78 92 c0 -10 14 -14 14 -24 0 10 14 14 14 24 a14 14 0 0 1 -28 0z" fill="#3b8fe0" opacity=".85"/></svg>`,
+'polar':`<svg viewBox="0 0 120 120"><g stroke="#8fd0ef" stroke-width="5" stroke-linecap="round"><line x1="60" y1="20" x2="60" y2="100"/><line x1="27" y1="37" x2="93" y2="83"/><line x1="93" y1="37" x2="27" y2="83"/></g><polygon points="60,6 50,20 70,20" fill="#5aa7ff"/></svg>`,
+'storm-conv':`<svg viewBox="0 0 120 120"><path d="M30 64 h54 a16 16 0 0 0 0 -32 24 24 0 0 0 -46 -6 18 18 0 0 0 -8 38z" fill="#6f8aa8"/><polyline points="58,70 46,88 60,88 50,106" fill="none" stroke="#f0cf45" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><line x1="80" y1="74" x2="74" y2="90" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="94" y1="74" x2="88" y2="90" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
+'fog-rad':`<svg viewBox="0 0 120 120"><circle cx="60" cy="46" r="16" fill="#cdd9e3"/><g stroke="#8aa0b5" stroke-width="5" stroke-linecap="round" opacity=".8"><line x1="18" y1="68" x2="102" y2="68"/><line x1="26" y1="82" x2="94" y2="82"/><line x1="34" y1="96" x2="86" y2="96"/></g></svg>`,
+'showers':`<svg viewBox="0 0 120 120"><circle cx="38" cy="40" r="15" fill="#f2a51a"/><path d="M46 68 h38 a14 14 0 0 0 0 -28 20 20 0 0 0 -38 -4 15 15 0 0 0 0 32z" fill="#6f8aa8"/><line x1="50" y1="80" x2="45" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="68" y1="80" x2="63" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="86" y1="80" x2="81" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
+'transition':`<svg viewBox="0 0 120 120"><circle cx="44" cy="44" r="17" fill="#f2a51a"/><path d="M52 72 h34 a13 13 0 0 0 0 -26 18 18 0 0 0 -35 -3 14 14 0 0 0 1 29z" fill="#6f8aa8"/></svg>`,
+'ib-nortada':`<svg viewBox="0 0 120 120"><path d="M14 10 L34 10 L26 110 L14 110 Z" fill="#cfe3ee"/><g stroke="#1d5f8c" stroke-width="6" stroke-linecap="round"><line x1="72" y1="14" x2="72" y2="34"/><line x1="72" y1="46" x2="72" y2="66"/><line x1="72" y1="78" x2="72" y2="98"/><polyline points="62,28 72,38 82,28"/><polyline points="62,60 72,70 82,60"/><polyline points="62,92 72,102 82,92"/></g><path d="M40 108 q8 -6 16 0 q8 -6 16 0" fill="none" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
+'ib-levante':`<svg viewBox="0 0 120 120"><polygon points="4,36 40,36 30,84 4,84" fill="#d8c7a8"/><polygon points="116,36 80,36 90,84 116,84" fill="#d8c7a8"/><line x1="44" y1="60" x2="76" y2="60" stroke="#b4552e" stroke-width="6" stroke-linecap="round"/><polyline points="64,48 78,60 64,72" fill="none" stroke="#b4552e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+'ib-suao':`<svg viewBox="0 0 120 120"><circle cx="34" cy="32" r="16" fill="#e0892f"/><rect x="28" y="60" width="12" height="30" rx="6" fill="#e0352b"/><circle cx="34" cy="92" r="9" fill="#e0352b"/><line x1="60" y1="66" x2="98" y2="66" stroke="#b4552e" stroke-width="5" stroke-linecap="round"/><polyline points="86,54 100,66 86,78" fill="none" stroke="#b4552e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+'ib-calima':`<svg viewBox="0 0 120 120"><circle cx="60" cy="44" r="20" fill="#e0a046"/><g stroke="#c9873a" stroke-width="6" stroke-linecap="round" opacity=".75"><line x1="14" y1="74" x2="106" y2="74"/><line x1="20" y1="88" x2="100" y2="88"/><line x1="28" y1="102" x2="92" y2="102"/></g></svg>`,
+'ib-gotafria':`<svg viewBox="0 0 120 120"><circle cx="60" cy="52" r="30" fill="none" stroke="#5d6391" stroke-width="3" stroke-dasharray="4 6" opacity=".55"/><path d="M44 64 h32 a14 14 0 0 0 0 -28 20 20 0 0 0 -38 -2 15 15 0 0 0 6 30z" fill="#5d6391" opacity=".8"/><line x1="46" y1="78" x2="40" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="62" y1="80" x2="56" y2="94" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="78" y1="78" x2="72" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`
+};
+
+function pressureSparkSVG(){
+ const h=data.hourly,i0=idx0();
+ const from=Math.max(0,i0-6),to=Math.min(h.time.length-1,i0+6);
+ const vals=h.surface_pressure.slice(from,to+1);
+ const lo=Math.min(...vals),hi=Math.max(...vals),sp=(hi-lo)||1;
+ const W=300,H=56,n=vals.length-1;
+ const X=i=>8+i*(W-16)/n,Y=v=>H-8-(v-lo)/sp*(H-16);
+ let d=`M${X(0)},${Y(vals[0])}`;
+ for(let i=1;i<vals.length;i++)d+=` L${X(i)},${Y(vals[i])}`;
+ const nowI=Math.max(0,Math.min(n,i0-from));
+ const area=`${d} L${X(n)},${H} L${X(0)},${H} Z`;
+ return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" class="sparkfill" fill="var(--acc)"/><path d="${d}" class="sparkline"/><circle cx="${X(nowI)}" cy="${Y(vals[nowI])}" r="4" class="nowdot"/></svg>`;
+}
+
+function expMetricsHTML(s){
+ const items=[
+ [T2('Pressure change (3h)','Variação de pressão (3h)'),s.dP,5,' hPa','wind'],
+ [T2('Dew point change (3h)','Variação do ponto de orvalho (3h)'),s.dDew,5,'°','drop'],
+ [T2('Wind speed','Velocidade do vento'),s.wind,80,' km/h','wind']
+ ];
+ return items.map(([lbl,val,max,unit,icn])=>{
+ const pct=Math.max(4,Math.min(100,Math.abs(val)/max*100));
+ return`<div class="expM">${ic(icn)}<div><div style="margin-bottom:4px">${lbl}</div><div class="mb"><i style="--w:${pct}%"></i></div></div><b>${dec1(val)}${unit}</b></div>`;
+ }).join('');
+}
+
 function next6hText(){
   const h=data.hourly,i0=idx0();
   const i6=Math.min(i0+6,h.time.length-1);
@@ -1840,20 +1995,27 @@ function contextWeekText(){
 }
 
 function skyPane(){
-  const p=patternDetect();
-  const det=PATTERNS[p.id](p.s);
-  return`<div class="pane exp">
-   <section class="card expHero">
-    <span class="expCat">${tr(p.cat)}</span>
-    <h2 class="expH">${det.title}</h2>
-    <p class="expP">${det.body}</p>
-    <div class="expSig">${det.signals.map(s=>`<span><i></i>${s}</span>`).join('')}</div>
-   </section>
-   <div class="expGrid">
-    <section class="card expCard"><h4>${tr('Next 6 hours')}</h4><p>${next6hText()}</p></section>
-    <section class="card expCard"><h4>${tr('This week in context')}</h4><p>${contextWeekText()}</p></section>
-   </div>
-  </div>`;
+ const p=patternDetect();
+ const det=PATTERNS[p.id](p.s);
+ const icon=PD_ICONS[p.id]||PD_ICONS.transition;
+ const isIb=p.cat==='Iberia';
+ return`<div class="pane exp">
+ <section class="card expHero">
+ <div class="expTxt">
+ <span class="expCat${isIb?' ib':''}">${tr(p.cat)}</span>
+ <h2 class="expH">${det.title}</h2>
+ <p class="expP">${det.body}</p>
+ <div class="expSig">${det.signals.map(s=>`<span class="sg"><i></i>${s}</span>`).join('')}</div>
+ </div>
+ <div class="expDiagram">${icon}</div>
+ </section>
+ <div class="expGrid three">
+ <section class="card expCard"><h4>${SVG_CLOCK}${tr('Next 6 hours')}</h4><p>${next6hText()}</p>
+ <div class="expSpark"><h5>${T2('Pressure trend','Tendência da pressão')}</h5>${pressureSparkSVG()}</div></section>
+ <section class="card expCard"><h4>${SVG_CAL}${tr('This week in context')}</h4><p>${contextWeekText()}</p></section>
+ <section class="card expCard"><h4>${SVG_PULSE}${T2('Signals right now','Sinais neste momento')}</h4><div class="expMetrics">${expMetricsHTML(p.s)}</div></section>
+ </div>
+ </div>`;
 }
 /* ============ IPMA: descodificação ============ */
 let ipmaMeta=null;
@@ -2018,11 +2180,6 @@ ${LABEL[c.weather_code]||'—'}</div>
 </div>
 <div class="scene"><div class="bigwrap"><i class="halo"></i><div class="bigic" id="bigic">
 ${emoji(c.weather_code,c.is_day)}</div></div>${nowcastHTML()}
- <div class="src-line">
-  <span>${tr('Data by')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></span>
-  <span>·</span>
-  <span>${tr('Places by')} <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a></span>
- </div>
 </div>
 </section>`;
 }
@@ -2138,11 +2295,9 @@ function sourceBadge(){
  const dot = stale ? '#f59a3a' : '#2fb34a';
  const label = stale ? tr('Stale data') : tr('Live');
  return`<div class="src-badge">
-   <span class="src-dot${stale?'':' live'}" style="background:${dot}"></span>
-   <span>${label}</span>
-   <span class="src-sep">·</span>
-   <span>${tr('Source')}: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></span>
-   ${place.lat!=null?`<span class="src-sep">·</span><span class="src-coords">${place.lat.toFixed(2)}, ${place.lon.toFixed(2)}</span>`:''}
+ <span class="src-dot${stale?'':' live'}" style="background:${dot}"></span>
+ <span>${label}</span>
+ ${place.lat!=null?`<span class="src-sep">·</span><span class="src-coords">${place.lat.toFixed(2)}, ${place.lon.toFixed(2)}</span>`:''}
  </div>`;
 }
 function stationHTML(){
