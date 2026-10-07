@@ -5913,7 +5913,7 @@ commands
   out.kv([['date', day],['sunrise', hhmm(d.sunrise[i])],['solar noon', hhmm(isoLocal(new Date((r.getTime()+s.getTime())/2)))],['sunset', hhmm(d.sunset[i])],['day length', `${Math.floor(dl/60)} h ${Math.round(dl%60)} min`],
    ['UV max today', fmt(d.uv_index_max && d.uv_index_max[i],1)],['next event', nowT < r ? `sunrise in ${Math.round((r-nowT)/60000)} min` : nowT < s ? `sunset in ${Math.round((s-nowT)/60000)} min` : 'sun is down']]);
  }})
-.register('calc', { group:'math', usage:'calc <metric|all> [--at h] [--moist] [--t °C --rh % --p hPa]', summary:'Run an atmospheric calculation on the current state (calc to list metrics)', maxArgs:0,
+.register('calc', { group:'math', usage:'calc <metric|all> [--at h] [--moist] [--t °C --rh % --p hPa]', summary:'Run an atmospheric calculation on the current state (calc to list metrics)', maxArgs:1,
  flags:{ at:{type:'str',help:'evaluate at hour offset (forecast)'}, moist:{type:'bool',help:'humid-air variant where supported'}, t:{type:'str',help:'override temperature °C'}, rh:{type:'str',help:'override humidity %'}, p:{type:'str',help:'override pressure hPa'} },
  examples:['calc air_density','calc dew_point','calc lcl --at 6','calc cape','calc air_density --t 30 --rh 70 --p 1000 --moist','calc all'],
  complete:(p)=>[...metrics.names(),'all'],
