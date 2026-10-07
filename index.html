@@ -407,6 +407,21 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)
 .sk{animation:pulse 1.2s infinite alternate}
 @keyframes pulse{from{opacity:.4}to{opacity:.9}}
 
+.src-results{max-width:720px;margin:40px auto 0;padding:0 20px 40px}
+.src-list{display:flex;flex-direction:column}
+.src-row{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  padding:14px 6px;background:none;border:0;border-top:1px solid rgba(255,255,255,.18);
+  cursor:pointer;text-align:left;color:inherit;
+  transition:background .2s ease,transform .2s ease;
+  animation:rise .4s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--n)*40ms)
+}
+.src-list .src-row:last-child{border-bottom:1px solid rgba(255,255,255,.18)}
+.src-row:hover{background:rgba(255,255,255,.12);transform:translateX(4px)}
+.src-main b{font-family:var(--serif);font-weight:400;font-size:19px;margin-right:10px}
+.src-main small{opacity:.75;font-size:12.5px}
+.src-wx{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:17px}
+
 /* today */
 .strip{display:grid;grid-template-columns:auto repeat(4,1fr);gap:16px;align-items:center;padding-bottom:14px;margin-bottom:10px;border-bottom:1px solid rgba(20,49,79,.1)}
 .ringw{text-align:center}.ringw small{display:block;font-size:12px;color:var(--mut);margin-top:-2px}
@@ -2254,6 +2269,12 @@ Object.assign(PT,{'Global extremes':'Fenómenos extremos'});
 
 Object.assign(PT,{'Iberia':'Península Ibérica','Signals right now':'Sinais neste momento'});
 
+Object.assign(PT,{
+  'No exact match for':'Sem correspondência exata para',
+  'Here are the closest cities we could find.':'Estas são as cidades mais parecidas que encontrámos.',
+  'Back':'Voltar'
+});
+
 /* ============ Céu Explicado: diagramas + sparkline ============ */
 const SVG_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
 const SVG_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
@@ -3134,7 +3155,16 @@ function startTicker(){
 /* ============ render ============ */
 function render(){
  const c=data.current,k=cat(c.weather_code,c.is_day),key=place.lat+','+place.lon,fresh=key!==lastKey,y=scrollY;
- if(fresh){factI=0}
+ if(fresh){
+   factI=0;
+   const wantScope = isPortugal(place.lat, place.lon) ? 'pt' : 'global';
+   if(wantScope !== radarScope){
+     radarScope = wantScope;
+     lsSet('radarScope', radarScope);
+     $$('#rscope button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.rs===radarScope));
+     if(tab==='radar'){ radarStop(); radarInit(); }
+   }
+ }
  lastKey=key;
  main.className=fresh?'enter':'';
  main.innerHTML=heroHTML()+`<div class="ticker" id="tk" title="Open in Science"></div>`+shell();
@@ -3196,6 +3226,90 @@ ${emoji(x.current.weather_code,x.current.is_day)}<b>${T(x.current.temperature_2m
 }
 const EXTREMES=[['Oymyakon','Sakha, Russia',63.46,142.79],['Cherrapunji','Meghalaya, India',25.27,91.72],['Ushuaia','Tierra del Fuego, Argentina',-54.8,-68.3],['Singapore','Singapore',1.35,103.82],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Quito','Ecuador',-.18,-78.47],['Cairo','Egypt',30.04,31.24],['Vancouver','Canada',49.28,-123.12],['Nairobi','Kenya',-1.29,36.82]];
 function surprise(){const p=EXTREMES[Math.floor(Math.random()*EXTREMES.length)];show(p[2],p[3],p[0],p[1])}
+
+/* ============ fuzzy city search (fallback results page) ============ */
+function levenshtein(a,b){
+  a=a.toLowerCase();b=b.toLowerCase();
+  const m=a.length,n=b.length;
+  if(!m)return n; if(!n)return m;
+  const d=Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++)d[i][0]=i;
+  for(let j=0;j<=n;j++)d[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){
+    d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  }
+  return d[m][n];
+}
+function strSim(a,b){
+  a=String(a||'').trim().toLowerCase();b=String(b||'').trim().toLowerCase();
+  if(!a||!b)return 0;
+  if(a===b)return 1;
+  if(b.startsWith(a)||a.startsWith(b))return .92;
+  if(b.includes(a))return .8;
+  const dist=levenshtein(a,b),maxLen=Math.max(a.length,b.length);
+  return Math.max(0,1-dist/maxLen);
+}
+const SEARCH_POOL=[
+  ...CITIES.map(c=>({name:c[0],sub:c[1],lat:c[2],lon:c[3]})),
+  ...EXTREMES.map(e=>({name:e[0],sub:e[1],lat:e[2],lon:e[3]}))
+];
+function citySimilarityList(query,extra=[],n=10){
+  const pool=[...extra.map(c=>({name:c.name,sub:c.sub||'',lat:c.lat,lon:c.lon})),...SEARCH_POOL];
+  const seen=new Set(),out=[];
+  for(const c of pool){
+    const id=c.name.toLowerCase()+'|'+(c.sub||'').toLowerCase();
+    if(seen.has(id))continue; seen.add(id);
+    out.push({...c,score:strSim(query,c.name)});
+  }
+  return out.sort((a,b)=>b.score-a.score).slice(0,n);
+}
+async function handleSearchEnter(){
+  const v=q.value.trim();
+  if(!v)return;
+  let candidates = items && items.length ? items : [];
+  if(!candidates.length){
+    try{ candidates = await geo(v,5) || []; }catch(e){ candidates = []; }
+  }
+  const best=candidates[0];
+  if(best && strSim(v,best.name) >= .45){
+    items=candidates; closeSg(); pick(0); return;
+  }
+  showSearchResultsPage(v, candidates);
+}
+async function showSearchResultsPage(query, apiCandidates=[]){
+  closeSg(); q.blur();
+  clearInterval(tickT);
+  if(typeof radarStop==='function')try{radarStop()}catch(e){}
+  const list = citySimilarityList(query, apiCandidates);
+  main.className='enter';
+  main.innerHTML = `<section class="pane src-results">
+    <button class="pill" id="srcBack" style="margin-bottom:18px">${tr('Back')}</button>
+    <h2 class="story" style="margin-bottom:4px">${tr('No exact match for')} “${escH(query)}”</h2>
+    <p class="note" style="margin-bottom:18px">${tr('Here are the closest cities we could find.')}</p>
+    <div class="src-list" id="srcList">
+      ${list.map((c,i)=>`
+        <button class="src-row" data-i="${i}" style="--n:${i}">
+          <span class="src-main"><b>${escH(c.name)}</b><small>${escH(c.sub||'')}</small></span>
+          <span class="src-wx" id="srcWx${i}"><span class="sk" style="display:inline-block;width:46px;height:14px;border-radius:7px;background:rgba(20,49,79,.1)"></span></span>
+        </button>`).join('')}
+    </div>
+  </section>`;
+  $('#srcBack').onclick=()=>{ place?render():landing(); };
+  $('#srcList').addEventListener('click',e=>{
+    const b=e.target.closest('.src-row'); if(!b)return;
+    const c=list[+b.dataset.i]; if(!c)return;
+    lsSet('recent',[c,...(lsGet('recent')||[]).filter(x=>!(x.name==c.name&&x.sub==c.sub))].slice(0,5));
+    show(c.lat,c.lon,c.name,c.sub);
+  });
+  list.forEach(async(c,i)=>{
+    try{
+      const w = await getWeather(c.lat,c.lon);
+      const cur = w.current;
+      const el = document.getElementById('srcWx'+i);
+      if(el) el.innerHTML = `${emoji(cur.weather_code, cur.is_day)}<b>${T(cur.temperature_2m)}°</b>`;
+    }catch(e){}
+  });
+}
 
 /* ============ landing globe ============ */
 const GLOBE_JS=['https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js','https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/dist/d3-geo.min.js','https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js'];
@@ -3441,13 +3555,13 @@ function recents(){
 }
 q.addEventListener('focus',()=>{if(!q.value)recents()});
 q.addEventListener('input',()=>{
- clearTimeout(timer);const v=q.value.trim();if(v.length<2)return v?closeSg():recents();
+ clearTimeout(timer);sel=-1;const v=q.value.trim();if(v.length<2)return v?void(sel=-1):recents();
  timer=setTimeout(async()=>{
-  const tk=++sgTok;
+  sgTok++;const tk=sgTok;
   try{
-   const res=await geo(v,6);
-   if(tk!==sgTok||q.value.trim()!==v)return;       // resposta antiga de uma pesquisa já substituída
-   items=res;
+   const res=await geo(v);
+   if(tk!=sgTok)return;
+   items=res;sel=-1;
    openSg(items.length?items.map((p,i)=>`<button role="option" data-i="${i}">${escH(p.name)}<small>${escH(p.sub)}</small></button>`).join(''):'<div class="hd">No matches. Check the spelling.</div>');
   }catch(e){if(tk===sgTok)openSg('<div class="hd">Search is unavailable right now.</div>')}
  },250);
@@ -3461,9 +3575,8 @@ function pick(i){
 q.addEventListener('keydown',e=>{
  const bs=[...sg.querySelectorAll('button')];if(!bs.length)return;
  if(e.key=='ArrowDown'||e.key=='ArrowUp'){e.preventDefault();sel=(sel+(e.key=='ArrowDown'?1:-1)+bs.length)%bs.length;bs.forEach((b,i)=>b.setAttribute('aria-selected',i==sel))}
- else if(e.key=='Enter')pick(sel>=0?sel:0);
+ else if(e.key=='Enter'){ e.preventDefault(); handleSearchEnter(); }
  else if(e.key=='Escape')closeSg();
- 
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))closeSg()});
 
@@ -3496,15 +3609,20 @@ $$('.seg button').forEach(b=>{
  b.setAttribute('aria-pressed',b.dataset.u==unit);
  b.onclick=()=>setUnit(b.dataset.u,true);
 });
-$('#logo').onclick=()=>{lsSet('place',null);landing()};
-addEventListener('scroll',()=>{
-  const isScrolled = scrollY > 60;
-  $('#hd').classList.toggle('stuck', scrollY > 20);
-  const btn = $('#cardSearchBtn');
-  if(btn) btn.classList.toggle('visible', isScrolled);
-  const cst = $('#cardSearchTrigger');
-  if(cst) cst.classList.toggle('scrolled', isScrolled);
-},{passive:true});
+$('#logo').onclick=()=>{
+  lsSet('place',null);
+  closeSg();
+  landing();
+  window.scrollTo(0,0);
+};
+function syncHeaderGlass(){
+  const stuck = scrollY > 20; // same condition the glass card uses
+  $('#hd').classList.toggle('stuck', stuck);
+  const btn = $('#cardSearchBtn'); if(btn) btn.classList.toggle('visible', stuck);
+  const cst = $('#cardSearchTrigger'); if(cst) cst.classList.toggle('scrolled', stuck);
+}
+addEventListener('scroll', syncHeaderGlass, {passive:true});
+syncHeaderGlass(); // run once on load too (fixes refresh mid-scroll / back-nav)
 
 // Delegação de clique da lupa para focar na pesquisa
 document.addEventListener('click', e => {
@@ -3948,11 +4066,10 @@ async function radarInit(){
  $('#rmap').textContent='';
   if(radarMap){try{radarMap.remove()}catch(e){}radarMap=null}
  const rmapEl=$('#rmap');if(rmapEl&&rmapEl._leaflet_id)delete rmapEl._leaflet_id;
- const isPT = radarScope === 'pt';
- const mapOpts = isPT
-   ? { center:[39.5,-8.0], zoom:7, minZoom:6, maxZoom:11,
-       maxBounds:[[36.0,-10.8],[42.8,-5.4]], maxBoundsViscosity:1.0 }
-   : { center:[place.lat,place.lon], zoom:6, minZoom:3, maxZoom:9 };
+const isPT = radarScope === 'pt';
+const mapOpts = isPT
+ ? { center:[place.lat,place.lon], zoom:7, minZoom:6, maxZoom:11, maxBounds:[[36.0,-10.8],[42.8,-5.4]], maxBoundsViscosity:1.0 }
+ : { center:[place.lat,place.lon], zoom:6, minZoom:3, maxZoom:9 };
  radarMap=L.map('rmap',{scrollWheelZoom:false,...mapOpts});
  radarMap.createPane('radar').style.zIndex=250;
  const lp=radarMap.createPane('labels');lp.style.zIndex=260;lp.style.pointerEvents='none';
@@ -4079,6 +4196,7 @@ async function nasaLegend(){
 
 async function radarLoadKind(k){
   if(!radarMap)return;
+  if(place) radarMap.setView([place.lat, place.lon], radarMap.getZoom(), {animate:false});
   const tok=radarTok,kt=++radarKT;
   const stale=()=>tok!==radarTok||kt!==radarKT||!radarMap;
   const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
