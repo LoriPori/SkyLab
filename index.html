@@ -1219,15 +1219,15 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
   </div>
 
 <div class="term-nav-bar">
- <div class="term-chips" id="cliChips" role="toolbar" aria-label="Quick commands">
-  <button class="term-chip" data-cmd="help">help</button>
-  <button class="term-chip" data-cmd="now">now</button>
-  <button class="term-chip" data-cmd="calc all">calc all</button>
-  <button class="term-chip" data-cmd="calc solar_budget">solar_budget</button>
-  <button class="term-chip" data-cmd="simulate inversion">sim inversion</button>
-  <button class="term-chip" data-cmd="simulate plume --wind 12 --source 120">sim plume</button>
-  <button class="term-chip" data-cmd="simulate parcel">sim parcel</button>
- </div>
+    <div class="term-chips" id="cliChips" role="toolbar" aria-label="Quick commands">
+      <button class="term-chip" data-cmd="help">help</button>
+      <button class="term-chip" data-cmd="now">now</button>
+      <button class="term-chip" data-cmd="storms">storms</button>
+      <button class="term-chip" data-cmd="calc all">calc all</button>
+      <button class="term-chip" data-cmd="simulate inversion">sim inversion</button>
+      <button class="term-chip" data-cmd="simulate plume --wind 12 --source 120">sim plume</button>
+      <button class="term-chip" data-cmd="simulate parcel">sim parcel</button>
+    </div>
    <div class="term-actions">
     <button class="term-act-btn" id="cliCopyBtn" title="Copy the previous output">Copy last</button>
     <button class="term-act-btn" id="cliThemeBtn" title="Cycle modern / retro / amber">Theme: modern</button>
@@ -3189,7 +3189,11 @@ function render(){
  setTab(tab);loadExtras();
  checkAlerts();
  document.title=`${T(c.temperature_2m)}° ${place.name} — Skylab`;
- if(!fresh)scrollTo(0,y);
+  if(fresh){
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    scrollTo(0, y);
+  }
 }
 
 /* ============ landing ============ */
@@ -3583,9 +3587,10 @@ q.addEventListener('input',()=>{
 });
 sg.addEventListener('click',e=>{const b=e.target.closest('button');if(b)pick(+b.dataset.i)});
 function pick(i){
- const p=items[i];if(!p)return;closeSg();q.value='';q.blur();
- lsSet('recent',[p,...(lsGet('recent')||[]).filter(r=>r.name!==p.name||r.sub!==p.sub)].slice(0,5));
- show(p.lat,p.lon,p.name,p.sub);
+  const p=items[i];if(!p)return;closeSg();q.value='';q.blur();
+  window.scrollTo({ top: 0, behavior: 'smooth' }); // <--- Add this line
+  lsSet('recent',[p,...(lsGet('recent')||[]).filter(r=>r.name!==p.name||r.sub!==p.sub)].slice(0,5));
+  show(p.lat,p.lon,p.name,p.sub);
 }
 q.addEventListener('keydown',e=>{
  const bs=[...sg.querySelectorAll('button')];if(!bs.length)return;
@@ -3727,7 +3732,8 @@ let radarKT=0;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 /* ===== Vento: partículas animadas (substitui as setas) ===== */
 let windTok=0,windT=0,windCv=null,windCx=null,windRaf=0,windLast=0,windGrid=null,windFld=null,windP=[];
-const WGR={rows:6,cols:8},WSTEP=6,WK=.045,WFADE=.045,WBK=[[0,12,.38,1],[12,35,.58,1.2],[35,60,.78,1.5],[60,1e9,.92,1.8]];
+// Change from {rows:6, cols:8} to:
+const WGR = { rows: 8, cols: 12 }, WSTEP = 6, WK = .045, WFADE = .045;WBK=[[0,12,.38,1],[12,35,.58,1.2],[35,60,.78,1.5],[60,1e9,.92,1.8]];
 
 function windStopLoop(){cancelAnimationFrame(windRaf);windRaf=0}
 function windClear(){if(windCx&&windCv)windCx.clearRect(0,0,windCv.width,windCv.height)}
@@ -3754,44 +3760,67 @@ function windEnsure(){
   return{W,H};
 }
 
-/* grelha 10x7 de vento sobre a área visível (+30% de margem), numa só chamada à Open-Meteo */
+/* grelha de vento sobre a área visível (+35% de margem), numa só chamada à Open-Meteo */
 async function windFetchGrid(b){
-  let s,n,w,e;
-  if(radarScope==='pt'){
-    s=36.5;n=42.5;w=-10.0;e=-5.5;
-  }else{
-    const dl=b.getNorth()-b.getSouth(),dg=b.getEast()-b.getWest();
-    s=Math.max(-80,b.getSouth()-dl*.3);
-    n=Math.min(80,b.getNorth()+dl*.3);
-    w=b.getWest()-dg*.3;
-    e=b.getEast()+dg*.3;
-  }
-  const{rows,cols}=WGR,lats=[],lons=[];
-  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-    lats.push((s+r*(n-s)/(rows-1)).toFixed(3));
-    lons.push(((((w+c*(e-w)/(cols-1))%360)+540)%360-180).toFixed(3));
-  }
-  const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`);
-  if(!res.ok)throw new Error('HTTP '+res.status);
-  const j=await res.json(),arr=Array.isArray(j)?j:[j],N=rows*cols,u=new Float32Array(N),v=new Float32Array(N);
-  for(let i=0;i<N;i++){
-    const c=arr[i]&&arr[i].current,sp=c?+c.wind_speed_10m||0:0,d=c?+c.wind_direction_10m||0:0;
-    const fl=((d+180)%360)*Math.PI/180;      // o vento VEM de d° (0° = Norte) e MOVE-SE para d+180° (→ Sul)
-    u[i]=sp*Math.sin(fl);v[i]=sp*Math.cos(fl);   // u = este, v = norte (km/h)
+  // Calculate bounds dynamically from the map viewport so the canvas is always covered
+  const dl = b.getNorth() - b.getSouth();
+  const dg = b.getEast() - b.getWest();
+
+  // 35% margin beyond the screen edge so no borders are ever visible
+  const s = Math.max(-80, b.getSouth() - dl * 0.35);
+  const n = Math.min(80, b.getNorth() + dl * 0.35);
+  const w = b.getWest() - dg * 0.35;
+  const e = b.getEast() + dg * 0.35;
+
+  const { rows, cols } = WGR, lats = [], lons = [];
+  for(let r = 0; r < rows; r++){
+    for(let c = 0; c < cols; c++){
+      lats.push((s + r * (n - s) / (rows - 1)).toFixed(3));
+      lons.push(((((w + c * (e - w) / (cols - 1)) % 360) + 540) % 360 - 180).toFixed(3));
+    }
   }
 
-  console.info('[Wind] grid max km/h',Math.max(...u.map(Math.abs),...v.map(Math.abs)).toFixed(1));
-  return{s,n,w,e,rows,cols,u,v,z:radarMap.getZoom(),t:Date.now()};
+  const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`);
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+
+  const j = await res.json(), arr = Array.isArray(j) ? j : [j], N = rows * cols;
+  const u = new Float32Array(N), v = new Float32Array(N);
+
+  for(let i = 0; i < N; i++){
+    const c = arr[i] && arr[i].current, sp = c ? +c.wind_speed_10m || 0 : 0, d = c ? +c.wind_direction_10m || 0 : 0;
+    const fl = ((d + 180) % 360) * Math.PI / 180;
+    u[i] = sp * Math.sin(fl);
+    v[i] = sp * Math.cos(fl);
+  }
+
+  return { s, n, w, e, rows, cols, u, v, z: radarMap.getZoom(), t: Date.now() };
 }
 
 /* interpolação bilinear dos vetores (u,v) – nunca se interpolam ângulos */
-function windSample(g,lat,lng,o){
-  const span=g.e-g.w;
-  const x=Math.min(span,((lng-g.w)%360+360)%360);
-  const fx=span>0?x/span*(g.cols-1):0,fy=(Math.min(g.n,Math.max(g.s,lat))-g.s)/(g.n-g.s)*(g.rows-1);
-  const x0=Math.min(g.cols-2,Math.floor(fx)),y0=Math.min(g.rows-2,Math.floor(fy)),tx=fx-x0,ty=fy-y0,i=y0*g.cols+x0,c=g.cols;
-  const bl=a=>a[i]*(1-tx)*(1-ty)+a[i+1]*tx*(1-ty)+a[i+c]*(1-tx)*ty+a[i+c+1]*tx*ty;
-  o[0]=bl(g.u);o[1]=bl(g.v);
+function windSample(g, lat, lng, o){
+  const span = g.e - g.w;
+  let x;
+  // If global (full 360), wrap around; otherwise clamp to grid edges smoothly
+  if (span >= 355) {
+    x = ((lng - g.w) % 360 + 360) % 360;
+  } else {
+    const clampedLng = Math.max(g.w, Math.min(g.e, lng));
+    x = clampedLng - g.w;
+  }
+
+  const clampedLat = Math.max(g.s, Math.min(g.n, lat));
+  const fx = span > 0 ? (x / span) * (g.cols - 1) : 0;
+  const fy = (g.n - g.s) > 0 ? ((clampedLat - g.s) / (g.n - g.s)) * (g.rows - 1) : 0;
+
+  const x0 = Math.min(g.cols - 2, Math.floor(fx));
+  const y0 = Math.min(g.rows - 2, Math.floor(fy));
+  const tx = Math.max(0, Math.min(1, fx - x0));
+  const ty = Math.max(0, Math.min(1, fy - y0));
+  const i = y0 * g.cols + x0, c = g.cols;
+
+  const bl = a => a[i]*(1 - tx)*(1 - ty) + a[i + 1]*tx*(1 - ty) + a[i + c]*(1 - tx)*ty + a[i + c + 1]*tx*ty;
+  o[0] = bl(g.u);
+  o[1] = bl(g.v);
 }
 
 /* campo em pixéis: um vetor por cada 6 px do ecrã, recalculado só quando a vista muda */
@@ -6178,6 +6207,164 @@ commands.register('simulate', {
   const c = needCtx(term);
   const v = nowVals(c);
 
+
+  /* =====================================================================
+ CLI STORM TELEMETRY — LIVE HURRICANE TRACKER SYNC
+ ===================================================================== */
+commands.register('storms', {
+  group: 'data',
+  alias: ['storm', 'cyclone', 'hurricanes', 'hurricane', 'tc'],
+  usage: 'storms [<name|#>] [--refresh]',
+  summary: 'Active tropical cyclones, hurricanes & typhoons from the Hurricane Tracker',
+  flags: {
+    refresh: { type: 'bool', alias: ['r', 'f'], help: 'Force fresh query to NHC & GDACS feeds' }
+  },
+  examples: [
+    'storms',
+    'storms 1',
+    'storms beryl',
+    'storms --refresh'
+  ],
+  complete(parts, term) {
+    const list = (typeof hurrD !== 'undefined' && hurrD && hurrD.storms)
+      ? hurrD.storms.map(s => s.name.toLowerCase())
+      : [];
+    return ['--refresh', ...list];
+  },
+  async run({ term, out, args, flags }) {
+    out.dim('Connecting to Hurricane Tracker telemetry link…');
+    let data;
+    try {
+      data = await hurrGet(flags.refresh);
+    } catch (e) {
+      throw new Error(`Failed to query Hurricane Tracker: ${e.message}`);
+    }
+
+    const storms = (data && data.storms) ? data.storms : [];
+    if (!storms.length) {
+      out.ok('ALL OCEANIC BASINS CALM: No active tropical storms or cyclones currently tracked.');
+      return;
+    }
+
+    const query = args.join(' ').trim().toLowerCase();
+
+    // Specific storm requested by index or name
+    if (query) {
+      let s = null;
+      if (/^\d+$/.test(query)) {
+        const idx = parseInt(query, 10) - 1;
+        if (idx >= 0 && idx < storms.length) s = storms[idx];
+      }
+      if (!s) {
+        s = storms.find(x => x.name.toLowerCase().includes(query) || (x.id && x.id.toLowerCase().includes(query)));
+      }
+
+      if (!s) {
+        out.warn(`No tracked storm matches "${query}". Active storms: ${storms.map(x => x.name).join(', ')}`);
+        return;
+      }
+
+      const c = hCat(s.windKt);
+      const windKt = s.windKt || 0;
+      const windKmh = Math.round(windKt * 1.852);
+      const gustKt = Math.round(windKt * 1.25);
+      const gustKmh = Math.round(gustKt * 1.852);
+      const pCen = s.pressure || 1010;
+      const deltaP = Math.max(0, 1013.25 - pCen);
+
+      // Estimated radii of destructive winds (R64, R50, R34)
+      const r64 = windKt >= 64 ? Math.round(25 * Math.pow(windKt / 64, 1.4)) : 0;
+      const r50 = windKt >= 50 ? Math.round(55 * Math.pow(windKt / 50, 1.3)) : 0;
+      const r34 = windKt >= 34 ? Math.round(130 * Math.pow(windKt / 34, 1.1)) : 0;
+
+      // Storm surge potential
+      const surge = c >= 5 ? '> 5.5 m (Catastrophic)' : c === 4 ? '4.0 – 5.5 m (Extreme)' : c === 3 ? '2.7 – 3.8 m (Devastating)' : c === 2 ? '1.8 – 2.6 m (Significant)' : c === 1 ? '1.2 – 1.6 m (Moderate)' : '< 1.0 m (Minor)';
+
+      // 24h dead reckoning projection
+      const dest24 = (s.moveDir != null && s.moveMph >= 1) ? hDest(s.lat, s.lon, s.moveDir, s.moveMph * 1.609 * 24) : null;
+
+      // Distance from current context city
+      let distStr = 'No context location loaded';
+      if (typeof place !== 'undefined' && place && isFinite(place.lat)) {
+        const dKm = Math.round(hav(place.lat, place.lon, s.lat, s.lon));
+        distStr = `${hDist(dKm)} from ${place.name}`;
+      }
+
+      out.hd(`HURRICANE TRACKER // STORM DOSSIER: ${s.name.toUpperCase()}`);
+      out.dim(`ID: ${s.id} · Source: ${s.src || 'NHC/GDACS'} · Basin: ${s.lat >= 0 ? 'North' : 'South'} · Advisory: ${s.updated ? hAgo(Date.parse(s.updated)) : 'active'}`);
+      out.line();
+
+      out.section('[01] SYSTEM CLASSIFICATION & INTENSITY');
+      out.kv([
+        ['System Name', `${s.name} (${hLabel(s)})`],
+        ['Intensity Class', c > 1 ? `Saffir-Simpson Category ${c - 1}` : (c === 1 ? 'Tropical Storm' : 'Tropical Depression / Disturbance')],
+        ['Max Sustained Wind', `${windKt} kt (${windKmh} km/h · ${Math.round(windKt * 1.15078)} mph)`],
+        ['Estimated Peak Gusts', `${gustKt} kt (${gustKmh} km/h)`],
+        ['Central Minimum Pressure', `${pCen} hPa (Core deficit ΔP = ${deltaP.toFixed(1)} hPa)`]
+      ]);
+
+      out.line();
+      out.section('[02] POSITION & MOTION VECTOR');
+      out.kv([
+        ['Eye Coordinates', `${s.lat.toFixed(3)}° ${s.lat >= 0 ? 'N' : 'S'}, ${Math.abs(s.lon).toFixed(3)}° ${s.lon >= 0 ? 'E' : 'W'}`],
+        ['Movement Vector', hMove(s)],
+        ['Distance to You', distStr],
+        ['24h Projected Eye', dest24 ? `${dest24[0].toFixed(3)}° ${dest24[0] >= 0 ? 'N' : 'S'}, ${Math.abs(dest24[1]).toFixed(3)}° ${dest24[1] >= 0 ? 'E' : 'W'}` : 'Stationary or erratic']
+      ]);
+
+      out.line();
+      out.section('[03] ESTIMATED DESTRUCTIVE WIND RADII & SURGE');
+      out.table(
+        ['WIND SWATH', 'SPEED', 'RADIUS (NM)', 'RADIUS (km)', 'ESTIMATED IMPACT'],
+        [
+          ['R64 (Hurricane Core)', '≥ 64 kt', r64 ? `${r64} NM` : '—', r64 ? `${Math.round(r64 * 1.852)} km` : '—', 'Catastrophic structural damage'],
+          ['R50 (Storm Force)', '≥ 50 kt', r50 ? `${r50} NM` : '—', r50 ? `${Math.round(r50 * 1.852)} km` : '—', 'Severe roof & infrastructure damage'],
+          ['R34 (Gale Force)', '≥ 34 kt', r34 ? `${r34} NM` : '—', r34 ? `${Math.round(r34 * 1.852)} km` : '—', 'Downed trees, gale conditions']
+        ],
+        ['l', 'r', 'r', 'r', 'l']
+      );
+      out.kv([['Estimated Coastal Surge', surge]]);
+
+      if (s.url) {
+        out.line();
+        out.dim(`Official Advisory: ${s.url}`);
+      }
+      return;
+    }
+
+    // Default overview table of all storms in the tracker
+    out.hd(`HURRICANE TRACKER // ACTIVE TROPICAL SYSTEMS (${storms.length})`);
+    out.dim(`Telemetry updated: ${hAgo(data.at)} · Source: NHC / GDACS`);
+    out.line();
+
+    const rows = storms.map((s, idx) => {
+      const c = hCat(s.windKt);
+      const catLabel = c > 1 ? `Cat ${c - 1}` : (c === 1 ? 'TS' : (c === 0 ? 'TD' : 'DIST'));
+      let dStr = '—';
+      if (typeof place !== 'undefined' && place && isFinite(place.lat)) {
+        dStr = hDist(Math.round(hav(place.lat, place.lon, s.lat, s.lon)));
+      }
+      return [
+        String(idx + 1),
+        s.name.toUpperCase(),
+        catLabel,
+        hWind(s.windKt),
+        s.pressure ? `${s.pressure} hPa` : '—',
+        hMove(s),
+        dStr
+      ];
+    });
+
+    out.table(
+      ['#', 'NAME', 'CAT', 'WIND', 'PRESSURE', 'HEADING', 'DIST TO YOU'],
+      rows,
+      ['r', 'l', 'l', 'r', 'r', 'l', 'r']
+    );
+
+    out.line();
+    out.dim(`Tip: Run 'storms <name|#>' for the full dossier (e.g. 'storms 1' or 'storms ${storms[0].name.toLowerCase()}').`);
+  }
+});
   /* -----------------------------------------------------------
      1. INVERSION SIMULATION
      ----------------------------------------------------------- */
