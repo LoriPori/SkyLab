@@ -788,7 +788,7 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .land .ticker{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:9px;align-items:start;height:4.2em;min-width:0;margin:4px 0 12px}
 .land .ticker .spark{grid-row:1/3;line-height:1.4}
 .land .ticker b{grid-column:2;white-space:normal}
-.land .ticker .tkb{grid-column:2;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.land .ticker .tkb{grid-column:2;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 @media(min-width:861px){
  .land{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);min-height:0;gap:18px}
  .land .gwrap{width:min(100%,max(340px,calc(100vh - 230px)))}
@@ -1189,14 +1189,15 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
   </div>
 
 <div class="term-nav-bar">
-   <div class="term-chips" id="cliChips" role="toolbar" aria-label="Quick commands">
-    <button class="term-chip" data-cmd="help">help</button>
-    <button class="term-chip" data-cmd="now">now</button>
-    <button class="term-chip" data-cmd="calc all">calc all</button>
-    <button class="term-chip" data-cmd="plot --var temp">plot</button>
-    <button class="term-chip" data-cmd="daily">daily</button>
-    <button class="term-chip" data-cmd="export --format cpp_struct">cpp_struct</button>
-   </div>
+ <div class="term-chips" id="cliChips" role="toolbar" aria-label="Quick commands">
+  <button class="term-chip" data-cmd="help">help</button>
+  <button class="term-chip" data-cmd="now">now</button>
+  <button class="term-chip" data-cmd="calc all">calc all</button>
+  <button class="term-chip" data-cmd="calc solar_budget">solar_budget</button>
+  <button class="term-chip" data-cmd="simulate inversion">sim inversion</button>
+  <button class="term-chip" data-cmd="simulate plume --wind 12 --source 120">sim plume</button>
+  <button class="term-chip" data-cmd="simulate parcel">sim parcel</button>
+ </div>
    <div class="term-actions">
     <button class="term-act-btn" id="cliCopyBtn" title="Copy the previous output">Copy last</button>
     <button class="term-act-btn" id="cliThemeBtn" title="Cycle modern / retro / amber">Theme: modern</button>
@@ -5303,18 +5304,50 @@ metrics
   const s = es(v.temperature_2m), e = vaporPressure(v.temperature_2m, v.relative_humidity_2m);
   return { value:e, unit:'hPa', d:2, inputs:[['T',fmt(v.temperature_2m,1)+' °C'],['RH',fmt(v.relative_humidity_2m,0)+' %']],
    extra:[['saturation es', fmt(s,2)+' hPa'],['deficit (VPD)', fmt((s-e)/10,2)+' kPa'],['abs. humidity', fmt(e*100/(Rv*toK(v.temperature_2m))*1000,2)+' g/m³']] }; }})
-.register('heat_index', { group:'comfort', alias:['hi'], formula:'Rothfusz regression (NWS) — only valid for T ≥ 26.7 °C and RH ≥ 40 %',
- summary:'Heat index ("feels-like" in hot, humid air)',
- run(v){ need(v,['temperature_2m','relative_humidity_2m']);
-  const hi = heatIndexC(v.temperature_2m, v.relative_humidity_2m);
-  return { value:hi, unit:'°C', d:1, inputs:[['T',fmt(v.temperature_2m,1)+' °C'],['RH',fmt(v.relative_humidity_2m,0)+' %']],
-   extra:[['API apparent_temperature', fmt(v.apparent_temperature,1)+' °C']], note: hi===null ? 'outside validity range (needs T ≥ 26.7 °C and RH ≥ 40 %)' : '' }; }})
-.register('wind_chill', { group:'comfort', alias:['wc'], formula:'JAG/TI (2001) — only valid for T ≤ 10 °C and wind > 4.8 km/h',
- summary:'Wind chill',
- run(v){ need(v,['temperature_2m','wind_speed_10m']);
-  const wc = windChillC(v.temperature_2m, v.wind_speed_10m);
-  return { value:wc, unit:'°C', d:1, inputs:[['T',fmt(v.temperature_2m,1)+' °C'],['wind',fmt(v.wind_speed_10m,1)+' km/h']],
-   extra:[['API apparent_temperature', fmt(v.apparent_temperature,1)+' °C']], note: wc===null ? 'outside validity range (needs T ≤ 10 °C and wind > 4.8 km/h)' : '' }; }})
+.register('heat_index', { group:'comfort', alias:['hi'], formula:'Rothfusz regression (NWS) — valid for T ≥ 27.0 °C and RH ≥ 40 %',
+ summary:'Heat index & apparent thermal deviation',
+ run(v){
+  need(v,['temperature_2m','relative_humidity_2m']);
+  const T = v.temperature_2m, RH = v.relative_humidity_2m;
+  if(T < 27.0 || RH < 40){
+   return { value:T, unit:'°C', d:1, inputs:[['T',fmt(T,1)+' °C'],['RH',fmt(RH,0)+' %']],
+    extra:[['ΔT (deviation)', '0.0 °C'],['status', 'outside heat index threshold (T < 27°C or RH < 40%)']],
+    note:'Heat index is equal to dry-bulb temperature below threshold' };
+  }
+  const hi = heatIndexC(T, RH);
+  const diff = hi - T;
+  const risk = hi >= 54 ? 'EXTREME DANGER (heat stroke imminent)' :
+               hi >= 41 ? 'DANGER (cramps, exhaustion & heat stroke likely)' :
+               hi >= 32 ? 'EXTREME CAUTION (cramps & exhaustion possible)' : 'CAUTION (fatigue with prolonged activity)';
+  return { value:hi, unit:'°C', d:1,
+   inputs:[['T',fmt(T,1)+' °C'],['RH',fmt(RH,0)+' %']],
+   extra:[['ΔT (deviation)', `${diff>=0?'+':''}${diff.toFixed(1)} °C`],
+          ['thermal stress', risk],
+          ['apparent_temperature (model)', num(v.apparent_temperature)?fmt(v.apparent_temperature,1)+' °C':'—']],
+   note: `Humid air impedes evaporative cooling: thermal load is increased by ${diff.toFixed(1)} °C` };
+ }})
+.register('wind_chill', { group:'comfort', alias:['wc'], formula:'JAG/TI (2001) formula — valid for T ≤ 10.0 °C and wind ≥ 4.8 km/h',
+ summary:'Wind chill factor & convective convective thermal loss',
+ run(v){
+  need(v,['temperature_2m','wind_speed_10m']);
+  const T = v.temperature_2m, spd = v.wind_speed_10m;
+  if(T > 10.0 || spd < 4.8){
+   return { value:T, unit:'°C', d:1, inputs:[['T',fmt(T,1)+' °C'],['wind',fmt(spd,1)+' km/h']],
+    extra:[['ΔT (deviation)', '0.0 °C'],['status', 'outside wind chill threshold (T > 10°C or wind < 4.8 km/h)']],
+    note:'Wind chill is equal to ambient temperature under mild/calm conditions' };
+  }
+  const wc = windChillC(T, spd);
+  const diff = wc - T;
+  const frostbite = wc <= -40 ? 'SEVERE (frostbite in < 10 minutes)' :
+                    wc <= -28 ? 'HIGH RISK (frostbite in ~30 minutes)' :
+                    wc <= -15 ? 'MODERATE (hypothermia risk with prolonged exposure)' : 'LOW RISK';
+  return { value:wc, unit:'°C', d:1,
+   inputs:[['T',fmt(T,1)+' °C'],['wind',fmt(spd,1)+' km/h']],
+   extra:[['ΔT (deviation)', `${diff.toFixed(1)} °C`],
+          ['frostbite risk', frostbite],
+          ['apparent_temperature (model)', num(v.apparent_temperature)?fmt(v.apparent_temperature,1)+' °C':'—']],
+   note: `Forced aerodynamic convection accelerates sensible heat loss by ${Math.abs(diff).toFixed(1)} °C` };
+ }})
 .register('shear', { group:'dynamics', alias:['wind_shear'], formula:'|V80 − V10| (vector difference) / 70 m',
  summary:'Low-level vector wind shear, 10 m → 80 m',
  run(v){ need(v,['wind_speed_10m','wind_direction_10m','wind_speed_80m','wind_direction_80m']);
@@ -5351,10 +5384,81 @@ metrics
    note: classify(v.cape, CAPE_CLS) }; }})
 .register('uv', { group:'radiation', alias:['uv_index'], formula:'WHO UV-index categories',
  summary:'UV index & category, with clear-sky comparison',
+ 
  run(v){ need(v,['uv_index']);
   return { value:v.uv_index, unit:'UVI', d:1, inputs:[['model','best_match']],
    extra:[['clear-sky UVI', fmt(v.uv_index_clear_sky,1)],['cloud attenuation', num(v.uv_index_clear_sky)&&v.uv_index_clear_sky>0 ? fmt((1-v.uv_index/v.uv_index_clear_sky)*100,0)+' %' : '—']],
-   note: classify(v.uv_index, UV_CLS) }; }});
+   note: classify(v.uv_index, UV_CLS) }; }})
+
+.register('solar_budget', { group:'radiation', alias:['solar_flux','rad_budget','irradiance'], formula:'Erbs (1982) decomposition + Brutsaert downwelling longwave',
+ summary:'Surface radiative budget (Direct, Diffuse, GHI, Clearness Index & Net Flux)',
+ run(v, f){
+  need(v,['temperature_2m']);
+  const lat = (v.latitude !== undefined ? v.latitude : (f.lat !== undefined ? +f.lat : 41.15));
+  const tC = v.temperature_2m;
+  const ghi = num(v.shortwave_radiation) ? Math.max(0, v.shortwave_radiation) : 0;
+  const clouds = num(v.cloud_cover) ? v.cloud_cover : 0;
+  
+  // Calculate approximate Solar Zenith Angle
+  const dateObj = new Date(v.time || Date.now());
+  const dayOfYear = Math.floor((dateObj - new Date(dateObj.getFullYear(), 0, 0)) / 864e5);
+  const hour = dateObj.getUTCHours() + dateObj.getUTCMinutes() / 60;
+  const delta = 23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear - 172)) * (Math.PI / 180);
+  const phi = lat * (Math.PI / 180);
+  const omega = (15 * (hour - 12)) * (Math.PI / 180);
+  const cosZenith = Math.max(0, Math.sin(phi) * Math.sin(delta) + Math.cos(phi) * Math.cos(delta) * Math.cos(omega));
+  const zenithDeg = Math.acos(cosZenith) * (180 / Math.PI);
+  
+  // Extraterrestrial Irradiance on Horizontal Surface (G0)
+  const I0 = 1361.0; // Solar constant W/m2
+  const g0 = I0 * cosZenith;
+  const kt = g0 > 10 ? Math.min(1.0, ghi / g0) : 0; // Clearness Index
+  
+  // Erbs decomposition model for Diffuse Fraction (DHI / GHI)
+  let dhi = 0;
+  if(ghi > 0 && g0 > 10){
+    const df = kt <= 0.22 ? (1.0 - 0.09 * kt) :
+               kt <= 0.80 ? (0.9511 - 0.1604 * kt + 4.388 * Math.pow(kt, 2) - 16.638 * Math.pow(kt, 3) + 12.336 * Math.pow(kt, 4)) : 0.165;
+    dhi = Math.min(ghi, ghi * df);
+  }
+  const dni = cosZenith > 0.08 ? Math.max(0, (ghi - dhi) / cosZenith) : 0;
+  
+  // Net Shortwave Absorbed (Albedo alpha ≈ 0.18 for standard ground)
+  const albedo = 0.18;
+  const netShortwave = ghi * (1 - albedo);
+  
+  // Downwelling Longwave (Brutsaert clear sky + cloud correction)
+  const Tk = toK(tC);
+  const vp = num(v.relative_humidity_2m) ? vaporPressure(tC, v.relative_humidity_2m) : 10;
+  const epsClear = 1.24 * Math.pow(vp / Tk, 1 / 7);
+  const epsEff = epsClear * (1 + 0.22 * Math.pow(clouds / 100, 2));
+  const sigmaSB = 5.670374e-8;
+  const lwDown = epsEff * sigmaSB * Math.pow(Tk, 4);
+  const lwUp = 0.98 * sigmaSB * Math.pow(Tk, 4);
+  const netRadiation = netShortwave + (lwDown - lwUp);
+
+  return {
+    value: ghi, unit:'W/m²', d:0,
+    inputs:[
+      ['GHI (Global Horiz.)', fmt(ghi, 0) + ' W/m²'],
+      ['Cloud Cover', fmt(clouds, 0) + ' %'],
+      ['Solar Zenith', fmt(zenithDeg, 1) + '° (' + (cosZenith <= 0 ? 'Night / Below Horizon' : 'Daylight') + ')']
+    ],
+    extra:[
+      ['Direct Normal (DNI)', fmt(dni, 0) + ' W/m²'],
+      ['Diffuse Horiz. (DHI)', fmt(dhi, 0) + ' W/m²'],
+      ['Clearness Index (k_t)', fmt(kt, 3) + (kt > 0.65 ? ' [Clear Beam]' : kt > 0.35 ? ' [Intermittent/Partly]' : ' [Overcast/Attenuated]')],
+      ['Extraterrestrial G₀', fmt(g0, 0) + ' W/m²'],
+      ['Net Shortwave Absorbed', fmt(netShortwave, 0) + ' W/m² (albedo α=0.18)'],
+      ['Downwelling Longwave', fmt(lwDown, 0) + ' W/m²'],
+      ['Net All-Wave Radiation (R_n)', `${netRadiation >= 0 ? '+' : ''}${fmt(netRadiation, 0)} W/m²`]
+    ],
+    note: netRadiation > 0 ? 'Surface energy surplus (driving upward sensible & latent heat flux)' : 'Surface radiative cooling deficit (nighttime/inversion regime)'
+  };
+ }})
+
+   
+   
 
 /* derived values used by compare / export / now */
 const derivedOf = v => {
@@ -5577,15 +5681,31 @@ class Terminal{
   this.hIdx = this.history.length; this.draft = '';
   let tokens;
   try{ tokens = tokenize(line); }catch(e){ out.err(`parse error: ${e.message}`); return; }
-  const name = tokens.shift().toLowerCase(), def = commands.get(name);
-  if(!def){
-   out.err(`skylab: command not found: ${name}`);
-   const near = commands.names().filter(n => n.startsWith(name.slice(0,2))).slice(0,4);
-   out.dim(near.length ? `did you mean: ${near.join(', ')}?   (type 'help')` : "type 'help' for the command list");
-   this.scroll(); return;
-  }
-  const { args, flags, errors } = parseArgs(tokens, def.flags);
-  if(errors.length){ out.err(`${def.name}: ${errors.join('; ')}`); out.dim(`usage: ${def.usage}`); this.scroll(); return; }
+      if(!tokens.length) return;
+      const name = tokens.shift().toLowerCase(), def = commands.get(name);
+      if(!def){
+        out.err(`Error: Command not found. Type 'help' for available commands.`);
+        const near = commands.names().filter(n => n.startsWith(name.slice(0,2))).slice(0,4);
+        if(near.length) out.dim(`did you mean: ${near.join(', ')}?`);
+        this.scroll(); return;
+      }
+      const { args, flags, errors } = parseArgs(tokens, def.flags);
+      if(errors.length){ 
+        out.err(`Error: Syntax/argument error in '${def.name}': ${errors.join('; ')}`); 
+        out.dim(`Usage: ${def.usage}`); 
+        this.scroll(); return; 
+      }
+      // Strict argument count validation (prevents silent failure on commands like 'date ffff')
+      if(def.maxArgs !== undefined && args.length > def.maxArgs){
+        out.err(`Error: Invalid arguments for '${def.name}'. Expected at most ${def.maxArgs} argument(s), received ${args.length} (${args.map(a => `'${a}'`).join(', ')}).`);
+        out.dim(`Usage: ${def.usage}`);
+        this.scroll(); return;
+      }
+      if(def.minArgs !== undefined && args.length < def.minArgs){
+        out.err(`Error: Missing required arguments for '${def.name}'. Expected at least ${def.minArgs} argument(s).`);
+        out.dim(`Usage: ${def.usage}`);
+        this.scroll(); return;
+      }
   this.setBusy(true);
   try{ await def.run({ term:this, out, args, flags, line }); }
   catch(e){ out.err(`${def.name}: ${e.message}`); }
@@ -5682,7 +5802,7 @@ commands
   out.dim(`  now = ${r.raw.current ? r.raw.current.time : h.time[term.ctx.i0]}${r.cached ? ' · served from cache' : ''}${r.raw._mock ? ' · MOCK DATA' : ''}`);
   if(r.dropped.length) out.warn(`  ! API rejected ${r.dropped.length} variable(s): ${r.dropped.join(', ')} — they are skipped`);
  }})
-.register('clear', { group:'data', alias:['cls'], usage:'clear', summary:'Clear the terminal output', keepLast:true, run({ term }){ term.clear(); }})
+.register('clear', { group:'data', alias:['cls'], usage:'clear', summary:'Clear the terminal output', maxArgs:0, keepLast:true, run({ term }){ term.clear(); }})
 .register('history', { group:'data', alias:['hist'], usage:'history [-c]', summary:'List the command history (-c to wipe it)',
  flags:{ c:{type:'bool',help:'clear history'} },
  run({ term, out, flags }){
@@ -5691,7 +5811,7 @@ commands
   out.pre(term.history.map((h,i) => String(i+1).padStart(4) + '  ' + h).join('\n'));
   out.dim('re-run with !<n> or !!');
  }})
-.register('status', { group:'data', alias:['info','ctx'], usage:'status', summary:'Show the active context (location, rows, variables, cache)',
+.register('status', { group:'data', alias:['info','ctx'], usage:'status', summary:'Show the active context (location, rows, variables, cache)', maxArgs:0,
  run({ term, out }){
   const c = term.ctx; if(!c){ out.warn('context: empty — run  fetch -loc <city>'); return; }
   const h = c.raw.hourly;
@@ -5762,7 +5882,7 @@ commands
   out.kv([['850 hPa', `${fmt(v.temperature_850hPa,1)} °C · ${fmt(v.wind_speed_850hPa,0)} km/h @ ${fmt(v.wind_direction_850hPa,0)}° · Z ${fmt(v.geopotential_height_850hPa,0)} m`],
    ['500 hPa', `${fmt(v.temperature_500hPa,1)} °C · ${fmt(v.wind_speed_500hPa,0)} km/h @ ${fmt(v.wind_direction_500hPa,0)}° · Z ${fmt(v.geopotential_height_500hPa,0)} m`]]);
  }})
-.register('daily', { group:'parse', alias:['week'], usage:'daily', summary:'7-day table: min/max, rain, wind, UV, sunrise/sunset, solar energy',
+.register('daily', { group:'parse', alias:['week'], usage:'daily', summary:'7-day table: min/max, rain, wind, UV, sunrise/sunset, solar energy', maxArgs:0,
  run({ term, out }){
   const c = needCtx(term), d = c.raw.daily; if(!d) throw new Error('no daily data in context');
   const g = (k,i,dec=1) => d[k] ? fmt(d[k][i],dec) : '—';
@@ -5770,7 +5890,7 @@ commands
    d.sunrise ? hhmm(d.sunrise[i]) : '—', d.sunset ? hhmm(d.sunset[i]) : '—', d.shortwave_radiation_sum ? g('shortwave_radiation_sum',i) : '—', g('et0_fao_evapotranspiration',i,1)]);
   out.table(['DATE','TMIN','TMAX','RAIN','POP%','WIND','GUST','UVMAX','RISE','SET','MJ/m²','ET0'], rows, ['l','r','r','r','r','r','r','r','l','l','r','r']);
  }})
-.register('upper', { group:'parse', alias:['sounding'], usage:'upper [--at <hours>]', summary:'Upper-air levels (850/500 hPa), lapse rate and stability',
+.register('upper', { group:'parse', alias:['sounding'], usage:'upper [--at <hours>]', summary:'Upper-air levels (850/500 hPa), lapse rate and stability', maxArgs:0,
  flags:{ at:{type:'str',help:'hour offset from now'} },
  run({ term, out, flags }){
   const c = needCtx(term), off = flags.at ? +flags.at : 0, v = off ? hourAt(c, c.i0+off) : nowVals(c);
@@ -5785,7 +5905,7 @@ commands
     ['CAPE / CIN / LI', `${fmt(v.cape,0)} / ${fmt(v.convective_inhibition,0)} J/kg / ${fmt(v.lifted_index,1)}`],['freezing level', fmt(v.freezing_level_height,0)+' m']]);
   } else out.warn('upper-air variables are not available for this location/model');
  }})
-.register('sun', { group:'parse', usage:'sun', summary:'Sunrise, sunset, day length and next solar event',
+.register('sun', { group:'parse', usage:'sun', summary:'Sunrise, sunset, day length and next solar event', maxArgs:0,
  run({ term, out }){
   const c = needCtx(term), d = c.raw.daily; if(!d || !d.sunrise) throw new Error('no sunrise/sunset data');
   const day = (c.raw.current && c.raw.current.time || c.raw.hourly.time[c.i0]).slice(0,10), i = Math.max(0, d.time.indexOf(day));
@@ -5793,7 +5913,7 @@ commands
   out.kv([['date', day],['sunrise', hhmm(d.sunrise[i])],['solar noon', hhmm(isoLocal(new Date((r.getTime()+s.getTime())/2)))],['sunset', hhmm(d.sunset[i])],['day length', `${Math.floor(dl/60)} h ${Math.round(dl%60)} min`],
    ['UV max today', fmt(d.uv_index_max && d.uv_index_max[i],1)],['next event', nowT < r ? `sunrise in ${Math.round((r-nowT)/60000)} min` : nowT < s ? `sunset in ${Math.round((s-nowT)/60000)} min` : 'sun is down']]);
  }})
-.register('calc', { group:'math', usage:'calc <metric|all> [--at h] [--moist] [--t °C --rh % --p hPa]', summary:'Run an atmospheric calculation on the current state (calc to list metrics)',
+.register('calc', { group:'math', usage:'calc <metric|all> [--at h] [--moist] [--t °C --rh % --p hPa]', summary:'Run an atmospheric calculation on the current state (calc to list metrics)', maxArgs:0,
  flags:{ at:{type:'str',help:'evaluate at hour offset (forecast)'}, moist:{type:'bool',help:'humid-air variant where supported'}, t:{type:'str',help:'override temperature °C'}, rh:{type:'str',help:'override humidity %'}, p:{type:'str',help:'override pressure hPa'} },
  examples:['calc air_density','calc dew_point','calc lcl --at 6','calc cape','calc air_density --t 30 --rh 70 --p 1000 --moist','calc all'],
  complete:(p)=>[...metrics.names(),'all'],
@@ -5897,7 +6017,225 @@ commands
   out.table(['VARIABLE','MIN','MAX','MEAN','MEDIAN','σ','TREND','SHAPE'], rows, ['l','r','r','r','r','r','r','l']);
   out.dim(`window: ${times[0]} → ${times[times.length-1]} (${times.length} h)`);
  }})
-.register('export', { group:'export', alias:['exp'], usage:'export --format <csv|cpp_struct|json> [--vars a,b] [--hours n] [--all] [--copy] [--download]', summary:'Export the context as CSV, a C++ struct for ESP32/Arduino, or JSON',
+/* =====================================================================
+ ADVANCED ATMOSPHERIC SIMULATION ENGINE (Inversion, Plume, Parcel)
+ ===================================================================== */
+commands.register('simulate', {
+ group:'math', alias:['sim'],
+ usage:'simulate <inversion|plume|parcel> [--alt m] [--depth m] [--dtemp °C] [--wind km/h] [--source g/s]',
+ summary:'Run dynamic physics simulations (thermal inversion, Gaussian plume dispersion, parcel sounding)',
+ minArgs: 1, maxArgs: 4,
+ flags:{
+  alt:{type:'str',alias:['a'],help:'inversion capping altitude (m AGL)'},
+  depth:{type:'str',alias:['d'],help:'inversion layer thickness (m)'},
+  dtemp:{type:'str',alias:['dt'],help:'temperature inversion magnitude (°C)'},
+  wind:{type:'str',alias:['w'],help:'wind speed override (km/h)'},
+  source:{type:'str',alias:['q','s'],help:'source pollutant emission rate (g/s)'},
+  stability:{type:'str',help:'Pasquill stability class A-F (default: D)'}
+ },
+ examples:[
+  'simulate inversion',
+  'simulate inversion --alt 400 --depth 200 --dtemp 6.0',
+  'simulate plume --wind 12 --source 150',
+  'simulate parcel'
+ ],
+ complete: () => ['inversion', 'plume', 'parcel'],
+ async run({ term, out, args, flags }){
+  const sub = (args[0] || '').toLowerCase();
+  const c = needCtx(term);
+  const v = nowVals(c);
+
+  /* -----------------------------------------------------------
+     1. INVERSION SIMULATION
+     ----------------------------------------------------------- */
+  if(sub === 'inversion'){
+    const t0 = v.temperature_2m;
+    const p0 = v.surface_pressure || 1013.25;
+    const u10 = num(+flags.wind) ? +flags.wind : Math.max(0.5, v.wind_speed_10m || 8.0);
+    const pblh = num(v.boundary_layer_height) ? v.boundary_layer_height : 750;
+    const invBase = num(+flags.alt) ? +flags.alt : Math.round(pblh * 0.65);
+    const invDepth = num(+flags.depth) ? +flags.depth : 220;
+    const invTop = invBase + invDepth;
+    const dTemp = num(+flags.dtemp) ? +flags.dtemp : 4.8;
+
+    // Environmental temperature lapse below inversion (-6.5 °C / km)
+    const gammaStd = 0.0065;
+    const tBase = t0 - (gammaStd * invBase);
+    const tTop = tBase + dTemp; // Inversion: temperature increases with height!
+    const invGradient = (dTemp / invDepth) * 100; // °C per 100m
+
+    // Ventilation Index (m²/s) = Mixing Height (m) * Wind Speed (m/s)
+    const u10ms = u10 / 3.6;
+    const ventIndex = Math.round(invBase * u10ms);
+    const ventRating = ventIndex < 1500 ? 'HAZARDOUS (Severe Trapping)' :
+                       ventIndex < 3000 ? 'POOR (Stagnant Airshed)' :
+                       ventIndex < 5000 ? 'MARGINAL (Moderate Retention)' : 'GOOD (Active Cleansing)';
+
+    // Stagnation Factor (0 to 100%)
+    const windPenalty = Math.max(0, 1 - (u10 / 25));
+    const invPenalty = Math.min(1.0, dTemp / 8.0);
+    const altPenalty = Math.max(0.2, Math.min(1.0, 1000 / invBase));
+    const stagnation = Math.min(99, Math.round((windPenalty * 0.45 + invPenalty * 0.35 + altPenalty * 0.20) * 100));
+
+    // Trapped Pollutant Dispersion Index (PDI) [1 - 100]
+    const pdi = Math.min(99, Math.max(1, Math.round((10000 / (ventIndex + 120)) * (dTemp / 2.5))));
+
+    out.hd(`SIMULATION // LOW-LEVEL THERMAL INVERSION & AIRSHED STAGNATION`);
+    out.dim(`Context: ${c.place.name} · Baseline Surface Temp: ${t0.toFixed(1)} °C · Surface Wind: ${u10.toFixed(1)} km/h`);
+    out.line();
+
+    const metricsTable = [
+      ['Inversion Base Height', `${invBase} m AGL`],
+      ['Inversion Top Height', `${invTop} m AGL`],
+      ['Inversion Thickness', `${invDepth} m`],
+      ['Thermal Inversion Jump (ΔT)', `+${dTemp.toFixed(1)} °C (dT/dz = +${invGradient.toFixed(2)} °C/100m)`],
+      ['Ventilation Index (V_i)', `${ventIndex} m²/s [${ventRating}]`],
+      ['Surface Stagnation Factor', `${stagnation}% [${stagnation > 75 ? 'CRITICAL' : stagnation > 45 ? 'ELEVATED' : 'NOMINAL'}]`],
+      ['Trapped Dispersion Index (PDI)', `${pdi} / 100`],
+      ['Stability Regimes', `Sub-inversion: Neutral/Stable | Inversion Lid: Strongly Inverted (LID)`]
+    ];
+    out.kv(metricsTable);
+    out.line();
+
+    // ASCII Vertical Profile Matrix
+    out.section('VERTICAL THERMAL SOUNDING PROFILE:');
+    const zLevels = [
+      { name:'TROPO FREE ', z: invTop + 350, t: tTop - (gammaStd * 350), tag:'COOLING' },
+      { name:'INV TOP    ', z: invTop,       t: tTop,                  tag:'WARM CAP' },
+      { name:'INV BASE   ', z: invBase,      t: tBase,                 tag:'COLD BASE' },
+      { name:'MID BOUND  ', z: Math.round(invBase * 0.5), t: t0 - (gammaStd * invBase * 0.5), tag:'MIXING' },
+      { name:'SURFACE    ', z: 0,            t: t0,                    tag:'GROUND' }
+    ];
+    const profRows = zLevels.map(lvl => [
+      lvl.name,
+      `${lvl.z} m`,
+      `${lvl.t.toFixed(1)} °C`,
+      `[${'='.repeat(Math.max(1, Math.min(18, Math.round((lvl.t + 10) * 0.4))))}]`,
+      lvl.tag
+    ]);
+    out.table(['ATMOS LAYER','ALTITUDE','TEMP','GRAPH','LAYER DYNAMICS'], profRows, ['l','r','r','l','l']);
+    return;
+  }
+
+  /* -----------------------------------------------------------
+     2. GAUSSIAN PLUME DISPERSION SIMULATION
+     ----------------------------------------------------------- */
+  if(sub === 'plume'){
+    const qRate = num(+flags.source) ? +flags.source : 100; // g/s
+    const windKmh = num(+flags.wind) ? +flags.wind : (v.wind_speed_10m || 14.0);
+    const u = Math.max(0.8, windKmh / 3.6); // wind speed m/s
+    const stackH = 25; // Release height (m)
+
+    out.hd(`SIMULATION // 2D ATMOSPHERIC GAUSSIAN PLUME DISPERSION`);
+    out.dim(`Source Emission: ${qRate.toFixed(1)} g/s | Advection Wind: ${windKmh.toFixed(1)} km/h (${u.toFixed(1)} m/s) | Effective Stack H: ${stackH} m`);
+    out.line();
+
+    // Crosswind Y grid (-250m to +250m) vs Downwind X grid (100m to 1500m)
+    const yGrid = [250, 150, 80, 0, -80, -150, -250];
+    const xGrid = [100, 200, 350, 500, 700, 950, 1200, 1500];
+
+    // Compute ground-level concentration matrix (mg/m³)
+    let maxC = 0, xPeak = 0;
+    const matrix = [];
+    for(const y of yGrid){
+      const row = [];
+      for(const x of xGrid){
+        // Briggs dispersion coefficients for neutral (Class D) conditions
+        const sigY = 0.08 * x * Math.pow(1 + 0.0001 * x, -0.5);
+        const sigZ = 0.06 * x * Math.pow(1 + 0.0015 * x, -0.5);
+        const cVal = (qRate / (Math.PI * u * sigY * sigZ)) *
+                     Math.exp(-0.5 * Math.pow(y / sigY, 2)) *
+                     Math.exp(-0.5 * Math.pow(stackH / sigZ, 2));
+        if(cVal > maxC){ maxC = cVal; xPeak = x; }
+        row.push(cVal);
+      }
+      matrix.push(row);
+    }
+
+    // ASCII Density Shading
+    const charShade = val => {
+      const r = maxC > 0 ? val / maxC : 0;
+      if(r >= 0.75) return '█';
+      if(r >= 0.45) return '▓';
+      if(r >= 0.20) return '▒';
+      if(r >= 0.05) return '░';
+      return '·';
+    };
+
+    let asciiMap = '    Y (cross) │ Downwind Distance X ──► (100 m to 1500 m)\n';
+    asciiMap   += '  ────────────┼─────────────────────────────────────────────\n';
+    yGrid.forEach((y, i) => {
+      const yLabel = (y >= 0 ? `+${y}` : `${y}`).padStart(6, ' ') + ' m │ ';
+      const cells = matrix[i].map(cVal => '  ' + charShade(cVal) + '  ').join('');
+      asciiMap += yLabel + cells + '\n';
+    });
+    asciiMap   += '              │  100m   200m   350m   500m   700m   950m  1200m  1500m\n';
+
+    out.pre(asciiMap, 'c-spark');
+    out.line();
+    out.kv([
+      ['Peak Ground Level Conc. (C_max)', `${(maxC * 1000).toFixed(2)} µg/m³`],
+      ['Peak Ground Impact Distance', `~${xPeak} m downwind`],
+      ['Plume Lateral Spread (2·σ_y @ 1km)', `~${Math.round(2 * (0.08 * 1000 * Math.pow(1 + 0.0001 * 1000, -0.5)))} m`],
+      ['Dilution Rate (X=200m vs X=1500m)', `1 : ${(matrix[3][1] / Math.max(1e-6, matrix[3][7])).toFixed(1)}`],
+      ['Legend', '· <5%  |  ░ 5-20%  |  ▒ 20-45%  |  ▓ 45-75%  |  █ ≥75% of C_max']
+    ]);
+    return;
+  }
+
+  /* -----------------------------------------------------------
+     3. SOUNDING PARCEL ASCENT SIMULATION
+     ----------------------------------------------------------- */
+  if(sub === 'parcel'){
+    const t0 = v.temperature_2m;
+    const td0 = tdOf(v);
+    const p0 = v.surface_pressure || 1013.25;
+    const lclH = Math.max(0, 125 * (t0 - td0));
+
+    out.hd(`SIMULATION // CONVECTIVE PARCEL ASCENT & THERMODYNAMIC SOUNDING`);
+    out.dim(`Parcel Source: Ground (${p0.toFixed(0)} hPa, T₀=${t0.toFixed(1)} °C, Td₀=${td0.toFixed(1)} °C)`);
+    out.line();
+
+    // Ascent steps: Surface, 300m, LCL, 1500m, 3000m, 5000m
+    const zSteps = [0, 300, Math.round(lclH), 1500, 3000, 5000].sort((a,b)=>a-b);
+    const uniqueSteps = [...new Set(zSteps)];
+
+    const parcelSounding = uniqueSteps.map(z => {
+      let tParcel, phase;
+      if(z <= lclH){
+        // Dry adiabatic cooling (9.8 °C / km)
+        tParcel = t0 - (0.0098 * z);
+        phase = 'DRY ADIABATIC (Unsaturated)';
+      } else {
+        // Moist pseudo-adiabatic cooling (~5.5 °C / km)
+        const tAtLcl = t0 - (0.0098 * lclH);
+        tParcel = tAtLcl - (0.0055 * (z - lclH));
+        phase = 'MOIST ADIABATIC (Condensing)';
+      }
+      // Estimated environmental ambient temperature
+      const tEnv = t0 - (0.0065 * z);
+      const buoyancy = tParcel - tEnv; // Virtual temperature buoyancy approximation
+      return [
+        `${z} m`,
+        `${tParcel.toFixed(1)} °C`,
+        `${tEnv.toFixed(1)} °C`,
+        `${buoyancy >= 0 ? '+' : ''}${buoyancy.toFixed(1)} °C`,
+        buoyancy > 0.5 ? 'ACCELERATING (Pos. Buoyant)' : buoyancy >= -0.5 ? 'NEUTRAL' : 'STABLE (Inhibited)',
+        phase
+      ];
+    });
+
+    out.table(['ALTITUDE','PARCEL TEMP','ENV TEMP','BUOYANCY (ΔT)','PARCEL VECTOR','STATE'], parcelSounding, ['r','r','r','r','l','l']);
+    out.dim(`Lifting Condensation Level (LCL): ${Math.round(lclH)} m AGL. Above LCL, latent heat of condensation offsets dry expansion.`);
+    return;
+  }
+
+  // If sub-command is not recognized:
+  out.err(`Error: Unknown simulation '${sub}'.`);
+  out.dim(`Available simulations: 'simulate inversion', 'simulate plume', 'simulate parcel'`);
+ }
+});
+commands.register('export', { group:'export', alias:['exp'], usage:'export --format <csv|cpp_struct|json> [--vars a,b] [--hours n] [--all] [--copy] [--download]', summary:'Export the context as CSV, a C++ struct for ESP32/Arduino, or JSON',
  flags:{ format:{type:'str',alias:['f']}, vars:{type:'list',alias:['v']}, hours:{type:'str',alias:['n'],help:'rows (csv, default 24) / forecast arrays (cpp_struct, default 0)'}, name:{type:'str',help:'C++ struct name'}, all:{type:'bool',help:'every variable'}, copy:{type:'bool'}, download:{type:'bool'} },
  examples:['export --format csv','export --format cpp_struct','export --format cpp_struct --vars temp,pressure,wind --hours 12','export --format csv --all --hours 48 --download'],
  complete:(p)=> /^(--?f(ormat)?)$/.test(p[p.length-2]||'') ? exporters.names() : ['--format','--vars','--hours','--all','--copy','--download'],
@@ -5932,7 +6270,7 @@ commands
  complete:()=>['on','off'],
  run({ out, args }){ if(args[0]) CFG.mock = /^(on|1|true)$/i.test(args[0]); cache.clear(); out.line(`mock data: ${CFG.mock ? 'ON' : 'OFF'}  (cache cleared — run fetch)`); }})
 .register('echo', { group:'sys', usage:'echo <text>', summary:'Print text', run({ out, args }){ out.line(args.join(' ')); }})
-.register('date', { group:'sys', alias:['utc'], usage:'date', summary:'Current UTC time and local time at the context location', keepLast:true,
+.register('date', { group:'sys', alias:['utc'], usage:'date', summary:'Current UTC time and local time at the context location', maxArgs:0, keepLast:true,
  run({ term, out }){ out.kv([['UTC', new Date().toISOString().replace('T',' ').slice(0,19)+'Z'], ['location now', term.ctx && term.ctx.raw.current ? term.ctx.raw.current.time.replace('T',' ') + '  ' + (term.ctx.raw.timezone||'') : '—']]); }});
 
 /* =====================================================================
