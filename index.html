@@ -793,7 +793,7 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .rcloud{filter:drop-shadow(0 0 4px rgba(150,205,255,.55)) contrast(1.2) brightness(1.08)}
 
 /* ---- radar de temperatura ---- */
-.rtemp{filter:blur(1.4px) saturate(1.12)}
+.rtemp{filter:blur(1.4px) saturate(1.12);transition:opacity .9s ease}
 /* ---- isóbaras + A/B ---- */
 .isoln{animation:isoIn .6s ease both}
 @keyframes isoIn{from{opacity:0}}
@@ -804,6 +804,8 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .isoax small{transform:translate(-50%,13px);font:700 11px/1 system-ui,sans-serif;color:#14314f}
 .isoax.hi b{color:#1d5fd0}
 .isoax.lo b{color:#d0301f}
+.card.radar{overflow-anchor:none}
+.rtop .rnow{flex:1 1 180px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
 .rleg3{align-items:flex-start;gap:10px}
 .rleg3 .tunit{font-weight:700;color:var(--ink);min-width:22px}
 .tscale{position:relative;flex:1;max-width:440px;margin:0 16px 0 6px;padding-bottom:20px}
@@ -4149,7 +4151,7 @@ async function radarInit(){
 const isPT = radarScope === 'pt';
 const mapOpts = isPT
  ? { center:[place.lat,place.lon], zoom:7, minZoom:6, maxZoom:11, maxBounds:[[36.0,-10.8],[42.8,-5.4]], maxBoundsViscosity:1.0 }
- : { center:[place.lat,place.lon], zoom:6, minZoom:3, maxZoom:9 };
+ : { center:[place.lat,place.lon], zoom:6, minZoom:3, maxZoom:9, maxBounds:[[-85,-180],[85,180]], maxBoundsViscosity:1.0 };
  radarMap=L.map('rmap',{scrollWheelZoom:false,...mapOpts});
  radarMap.createPane('radar').style.zIndex=250;
  const lp=radarMap.createPane('labels');lp.style.zIndex=260;lp.style.pointerEvents='none';
@@ -4498,7 +4500,7 @@ async function tempFetch(z,nodes){
 }
 
 /* caixa visível + margem (25 % para a imagem, que assim acompanha o mapa sem cortes ao arrastar) */
-function tempBox(f=.25){
+function tempBox(f=.15){
   const sz=radarMap.getSize(),px=sz.x*f,py=sz.y*f;
   return{sz,px,py,nw:radarMap.containerPointToLatLng([-px,-py]),se:radarMap.containerPointToLatLng([sz.x+px,sz.y+py])};
 }
@@ -4524,7 +4526,7 @@ function tempRender(){
   ov.addTo(radarMap);
   requestAnimationFrame(()=>requestAnimationFrame(()=>ov.setOpacity(.8)));
   const old=tempOv;tempOv=ov;
-  if(old)setTimeout(()=>{try{radarMap&&radarMap.removeLayer(old)}catch(e){}},450);   // fica por baixo durante o fade
+  if(old)setTimeout(()=>{try{radarMap&&radarMap.removeLayer(old)}catch(e){}},1100);   // o novo faz fade por cima do antigo
 }
 
 function tempStatus(){
@@ -4620,7 +4622,7 @@ async function tempExact(h){                                       // valor exat
 }
 
 const tempMoveStart=()=>{tempMoving=true;tempTipHide()};
-function tempMoved(){tempMoving=false;clearTimeout(tempMoveT);tempMoveT=setTimeout(tempUpdate,260)}
+function tempMoved(){tempMoving=false;clearTimeout(tempMoveT);tempMoveT=setTimeout(tempUpdate,700)}
 function tempMount(){
   const cont=radarMap.getContainer();
   if(!tempTip||tempTip.parentNode!==cont){tempTip=document.createElement('div');tempTip.className='rttip';tempTip.setAttribute('aria-hidden','true');cont.appendChild(tempTip)}
@@ -4686,15 +4688,15 @@ async function tempBordersOn(){
 /* ============ Linhas de pressão (isóbaras) + A/B · Open-Meteo pressure_msl ============ */
 const ISO_KINDS=['rain','cloud','temp'];                           // radares com isóbaras (sem vento nem satélite)
 const ISO_TTL=18e5;                                                // dados válidos 30 min
-const isoStepOf=z=>Math.max(1,tempStepOf(z));                      // mesmo reticulado da temperatura (mín. 1°)
-let isoCache={},isoGrp=null,isoGen=0,isoT=0,isoBlock=0,isoRun=false,isoAgain=false,isoOn=false;
+const isoStepOf=z=>Math.max(2.5,tempStepOf(z));                    // reticulado da temperatura, mas nunca mais fino que 2,5° (a pressão é suave)
+let isoCache={},isoGrp=null,isoOld=new Set(),isoGen=0,isoT=0,isoBlock=0,isoRun=false,isoAgain=false,isoOn=false;
 
 const isoNode=(z,i,j)=>{const m=isoCache[z],e=m&&m.get(tempKey(j,i));return e?e[0]:NaN};
 function isoGridBox(){
-  const b=radarMap.getBounds(),z=tempZ(),st=isoStepOf(z);
-  const mLa=Math.max((b.getNorth()-b.getSouth())*.2,2*st),mLo=Math.max((b.getEast()-b.getWest())*.2,2*st);
-  const s=Math.max(-84,b.getSouth()-mLa),n=Math.min(84,b.getNorth()+mLa),w=b.getWest()-mLo,e=b.getEast()+mLo;
-  return{z,st,i0:Math.floor(w/st),i1:Math.ceil(e/st),j0:Math.floor(s/st),j1:Math.ceil(n/st)};
+  const b=radarMap.getBounds(),z=tempZ(),st=isoStepOf(z),jm=Math.floor(84/st);      // nunca pedir latitudes > 84°
+  const mLa=Math.max((b.getNorth()-b.getSouth())*.12,2*st),mLo=Math.max((b.getEast()-b.getWest())*.12,2*st);
+  const s=b.getSouth()-mLa,n=b.getNorth()+mLa,w=b.getWest()-mLo,e=b.getEast()+mLo;
+  return{z,st,i0:Math.floor(w/st),i1:Math.ceil(e/st),j0:Math.max(-jm,Math.floor(s/st)),j1:Math.min(jm,Math.ceil(n/st))};
 }
 function isoMissing(g){                                            // nós em falta / expirados
   const N=Math.round(360/g.st),m=isoCache[g.z]||new Map(),now=Date.now(),out=[],seen=new Set();
@@ -4770,24 +4772,36 @@ function isoBuild(g){
 }
 function isoDraw(M){
   if(!radarMap||!isoGrp)return;
-  isoGrp.clearLayers();
-  if(!M)return;
-  const multi=M.lines.flatMap(l=>l.segs.map(s=>[[s[0],s[1]],[s[2],s[3]]])),o={pane:'isobars',className:'isoln',interactive:false,lineCap:'round',lineJoin:'round',smoothFactor:.4};
-  if(multi.length){
-    L.polyline(multi,{...o,color:'#ffffff',weight:3.6,opacity:.65}).addTo(isoGrp);     // halo
-    L.polyline(multi,{...o,color:'#14314f',weight:1.4,opacity:.9}).addTo(isoGrp);
+  const nu=L.layerGroup(),old=isoGrp;
+  if(M){
+    const multi=M.lines.flatMap(l=>l.segs.map(s=>[[s[0],s[1]],[s[2],s[3]]])),o={pane:'isobars',className:'isoln',interactive:false,lineCap:'round',lineJoin:'round',smoothFactor:.4};
+    if(multi.length){
+      L.polyline(multi,{...o,color:'#ffffff',weight:3.6,opacity:.65}).addTo(nu);     // halo
+      L.polyline(multi,{...o,color:'#14314f',weight:1.4,opacity:.9}).addTo(nu);
+    }
+    /* etiquetas hPa: posição ligada à grelha do mundo (não ao ecrã) → não saltam ao arrastar */
+    const cd=260*360/(256*Math.pow(2,tempZ())),best=new Map(),bd=radarMap.getBounds().pad(-.04);
+    M.lines.forEach(l=>l.segs.forEach(s=>{
+      const lat=(s[0]+s[2])/2,lng=(s[1]+s[3])/2,ci=Math.floor(lat/cd),cj=Math.floor(lng/cd),k=l.lv+'|'+ci+'|'+cj;
+      const d=Math.hypot(lat-(ci+.5)*cd,lng-(cj+.5)*cd),b=best.get(k);
+      if(!b||d<b.d)best.set(k,{d,lat,lng,lv:l.lv});
+    }));
+    const placed=[];
+    [...best.values()].sort((a,b)=>a.d-b.d).forEach(c=>{
+      const ll=L.latLng(c.lat,c.lng);if(!bd.contains(ll))return;
+      const p=radarMap.latLngToContainerPoint(ll);
+      if(placed.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<150))return;
+      placed.push(p);
+      L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,icon:L.divIcon({className:'isolbl',html:`<span>${Math.round(c.lv)}</span>`,iconSize:[0,0]})}).addTo(nu);
+    });
+    /* A = alta pressão · B = baixa pressão */
+    const vb=radarMap.getBounds();
+    M.ext.forEach(e=>{const ll=L.latLng(e.lat,e.lng);if(!vb.contains(ll))return;
+      L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,zIndexOffset:500,icon:L.divIcon({className:'isoax '+(e.hi?'hi':'lo'),html:`<b>${e.hi?'A':'B'}</b><small>${Math.round(e.p)}</small>`,iconSize:[0,0]})}).addTo(nu)});
   }
-  /* etiquetas hPa: uma por linha, depois mais algumas bem espaçadas */
-  const bd=radarMap.getBounds().pad(-.04),placed=[],lab=[];
-  const vis=M.lines.map(l=>({lv:l.lv,c:l.segs.map(s=>{const ll=L.latLng((s[0]+s[2])/2,(s[1]+s[3])/2);return bd.contains(ll)?[ll,radarMap.latLngToContainerPoint(ll)]:null}).filter(Boolean)}));
-  const put=(lv,c,d)=>{if(placed.some(q=>Math.hypot(q.x-c[1].x,q.y-c[1].y)<d))return false;placed.push(c[1]);lab.push([c[0],lv]);return true};
-  vis.forEach(v=>{const n=v.c.length;for(let t=0;t<n;t++)if(put(v.lv,v.c[(Math.floor(n/2)+t)%n],110))break});
-  vis.forEach(v=>v.c.forEach(c=>put(v.lv,c,200)));
-  lab.forEach(([ll,lv])=>L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,icon:L.divIcon({className:'isolbl',html:`<span>${Math.round(lv)}</span>`,iconSize:[0,0]})}).addTo(isoGrp));
-  /* A = alta pressão · B = baixa pressão */
-  const vb=radarMap.getBounds();
-  M.ext.forEach(e=>{const ll=L.latLng(e.lat,e.lng);if(!vb.contains(ll))return;
-    L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,zIndexOffset:500,icon:L.divIcon({className:'isoax '+(e.hi?'hi':'lo'),html:`<b>${e.hi?'A':'B'}</b><small>${Math.round(e.p)}</small>`,iconSize:[0,0]})}).addTo(isoGrp)});
+  nu.addTo(radarMap);isoGrp=nu;                                    // o novo entra com fade; o antigo sai logo a seguir
+  isoOld.add(old);
+  setTimeout(()=>{isoOld.delete(old);try{radarMap&&radarMap.removeLayer(old)}catch(e){}},900);
 }
 async function isoUpdate(){
   if(!radarMap||!isoOn)return;
@@ -4795,15 +4809,19 @@ async function isoUpdate(){
   isoRun=true;const gen=isoGen;
   try{
     const g=isoGridBox(),need=isoMissing(g);
-    if(need.length&&Date.now()>isoBlock){
+    if(need.length&&Date.now()>Math.max(isoBlock,tempBlock)){        // respeita também o bloqueio do radar de temperatura
       try{await isoFetch(g.z,need)}
-      catch(err){console.warn('[Isobars]',err.message);isoBlock=Date.now()+(err.message==='429'?12e4:3e4)}
+      catch(err){
+        console.warn('[Isobars]',err.message);
+        isoBlock=Date.now()+(err.message==='429'?12e4:3e4);
+        if(err.message==='429')tempBlock=Math.max(tempBlock,isoBlock);   // 429: ambos param de pedir
+      }
     }
     if(gen!==isoGen||!radarMap||!isoOn)return;
     isoDraw(isoBuild(g));
   }finally{isoRun=false;if(isoAgain){isoAgain=false;isoUpdate()}}
 }
-const isoMoved=()=>{clearTimeout(isoT);isoT=setTimeout(isoUpdate,250)};
+const isoMoved=()=>{clearTimeout(isoT);isoT=setTimeout(isoUpdate,900)};
 function isoStart(){
   if(!radarMap)return;
   isoStop();
@@ -4817,8 +4835,9 @@ function isoStop(){
   if(radarMap){
     try{radarMap.off('moveend',isoMoved)}catch(e){}
     if(isoGrp){try{radarMap.removeLayer(isoGrp)}catch(e){}}
+    isoOld.forEach(g=>{try{radarMap.removeLayer(g)}catch(e){}});
   }
-  isoGrp=null;
+  isoOld.clear();isoGrp=null;
 }
 
 /* ============ IPMA warnings (topbar) ============ */
@@ -5006,25 +5025,28 @@ async function hurrMap(){
  try{await loadLeaflet()}catch(e){const m=$('#hmap');if(m)m.textContent=hT('The map library couldn’t load.','Não foi possível carregar o mapa.');return}
  const box=$('#hmap');if(tok!==hTok||!hOpen||!box)return;
  box.textContent='';if(box._leaflet_id)delete box._leaflet_id;
- hMap=L.map(box,{minZoom:2,maxZoom:8,worldCopyJump:true,scrollWheelZoom:false});
+ hMap=L.map(box,{minZoom:2,maxZoom:8,worldCopyJump:true,scrollWheelZoom:false,maxBounds:[[-85,-Infinity],[85,Infinity]],maxBoundsViscosity:1.0});
  L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_4644_2_e1ddc0590e0bf3595329dba5',{maxZoom:19}).addTo(hMap);
  hMap.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>');
  hMap.on('click focus',()=>hMap.scrollWheelZoom.enable());
  hMap.on('mouseout',()=>hMap.scrollWheelZoom.disable());
- const pts=[];
+ const pts=[],OFF=[-360,0,360];                                   // cópias do mundo: aparecem de ambos os lados
  list.forEach((s,i)=>{
   const c=hCat(s.windKt),col=hCol(c);
-  if(s.moveDir!=null&&s.moveMph>=1){
-   const e=hDest(s.lat,s.lon,s.moveDir,s.moveMph*1.609*24);
-   L.polyline([[s.lat,s.lon],e],{color:col,weight:3,opacity:.9,dashArray:'6 9',interactive:false}).addTo(hMap);
-   L.circleMarker(e,{radius:4,color:'#fff',weight:2,fillColor:col,fillOpacity:1,interactive:false}).addTo(hMap);
-  }
-  const m=L.marker([s.lat,s.lon],{icon:L.divIcon({className:'hmk',html:hSpiral(col,c,s.lat>=0),iconSize:[46,46],iconAnchor:[23,23]}),keyboard:false,riseOnHover:true}).addTo(hMap);
-  m.bindTooltip(`<b>${escH(s.name)}</b> · ${hWind(s.windKt)}`,{direction:'top',offset:[0,-22]});
-  m.on('click',()=>hurrSel(i,false));
-  hMk[i]=m;pts.push([s.lat,s.lon]);
+  const e=(s.moveDir!=null&&s.moveMph>=1)?hDest(s.lat,s.lon,s.moveDir,s.moveMph*1.609*24):null;
+  OFF.forEach(o=>{
+   if(e){
+    L.polyline([[s.lat,s.lon+o],[e[0],e[1]+o]],{color:col,weight:3,opacity:.9,dashArray:'6 9',interactive:false}).addTo(hMap);
+    L.circleMarker([e[0],e[1]+o],{radius:4,color:'#fff',weight:2,fillColor:col,fillOpacity:1,interactive:false}).addTo(hMap);
+   }
+   const m=L.marker([s.lat,s.lon+o],{icon:L.divIcon({className:'hmk',html:hSpiral(col,c,s.lat>=0),iconSize:[46,46],iconAnchor:[23,23]}),keyboard:false,riseOnHover:true}).addTo(hMap);
+   m.bindTooltip(`<b>${escH(s.name)}</b> · ${hWind(s.windKt)}`,{direction:'top',offset:[0,-22]});
+   m.on('click',()=>hurrSel(i,false));
+   if(o===0)hMk[i]=m;
+  });
+  pts.push([s.lat,s.lon]);
  });
- if(place&&isFinite(place.lat))L.marker([place.lat,place.lon],{keyboard:false,interactive:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(hMap);
+ if(place&&isFinite(place.lat))OFF.forEach(o=>L.marker([place.lat,place.lon+o],{keyboard:false,interactive:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(hMap));
  if(pts.length==1)hMap.setView(pts[0],5);else hMap.fitBounds(pts,{padding:[50,50],maxZoom:5});
  setTimeout(()=>{if(hMap&&tok===hTok)hMap.invalidateSize()},450);   // o cartão ainda está a animar quando o mapa nasce
 }
