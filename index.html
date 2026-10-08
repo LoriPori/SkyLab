@@ -792,6 +792,25 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 #rmap.cloudy .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.78) contrast(.95) saturate(.9)}
 .rcloud{filter:drop-shadow(0 0 4px rgba(150,205,255,.55)) contrast(1.2) brightness(1.08)}
 
+/* ---- radar de temperatura ---- */
+.rtemp{filter:blur(1.4px) saturate(1.12)}
+.rleg3{align-items:flex-start;gap:10px}
+.rleg3 .tunit{font-weight:700;color:var(--ink);min-width:22px}
+.tscale{position:relative;flex:1;max-width:440px;margin:0 16px 0 6px;padding-bottom:20px}
+.tbar{height:8px;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(20,49,79,.14)}
+.tticks{position:absolute;left:0;right:0;top:11px;height:14px}
+.tticks span{position:absolute;transform:translateX(-50%);font-size:10.5px;font-variant-numeric:tabular-nums;color:var(--mut);white-space:nowrap}
+.tticks span::before{content:"";position:absolute;left:50%;top:-4px;width:1px;height:3px;background:rgba(20,49,79,.35)}
+.rleg3 .tsrc{font-size:10px;opacity:.75;color:inherit;text-decoration:none;white-space:nowrap}
+.rleg3 .tsrc:hover{text-decoration:underline;opacity:1}
+.rttip{position:absolute;z-index:700;pointer-events:none;padding:8px 13px 9px;border-radius:14px;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);box-shadow:0 10px 26px rgba(10,40,90,.28);color:var(--ink);line-height:1.2;white-space:nowrap;opacity:0;transform:translate(-50%,-100%) translateY(-16px) scale(.96);transition:opacity .15s,transform .15s}
+.rttip.below{transform:translate(-50%,0) translateY(18px) scale(.96)}
+.rttip.on{opacity:1;transform:translate(-50%,-100%) translateY(-16px) scale(1)}
+.rttip.on.below{transform:translate(-50%,0) translateY(18px) scale(1)}
+.rttip b{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-weight:400;font-size:22px}
+.rttip b i{flex:none;width:11px;height:11px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(20,49,79,.22)}
+.rttip small{display:block;margin-top:3px;font-size:11px;color:var(--mut)}
+
 /* ---- avisos IPMA ---- */
 .pill.warn{display:inline-flex;align-items:center;gap:8px;animation:pop .6s cubic-bezier(.3,1.5,.4,1) backwards}
 .pill.warn.hot{animation:pop .6s cubic-bezier(.3,1.5,.4,1) backwards,wping 2.2s .6s infinite}
@@ -1685,6 +1704,9 @@ const PT={
  'Wind speed · OpenWeatherMap · updated regularly':'Velocidade do vento · OpenWeatherMap · atualizado regularmente',
  'Loading cloud layer…':'A carregar a camada de nuvens…','Global cloud cover · OpenWeatherMap · updated regularly':'Cobertura global de nuvens · OpenWeatherMap · atualizado regularmente',
  'Loading satellite frames…':'A carregar imagens de satélite…','Satellite imagery unavailable right now.':'Imagens de satélite indisponíveis neste momento.',
+ 'Temperature':'Temperatura','Loading temperature…':'A carregar a temperatura…','Temperature unavailable right now.':'Temperatura indisponível neste momento.',
+ 'Air temperature · Open-Meteo · hover for exact values':'Temperatura do ar · Open-Meteo · passa o rato para ver valores exatos',
+ 'Temperature data rate-limited — try again in a few minutes.':'Limite de pedidos atingido — tenta novamente dentro de alguns minutos.',
  'True-colour satellite · NASA VIIRS · global daily composite':'Satélite em cor real · NASA VIIRS · composição diária global',
  'Satellite rain estimate · worldwide · last ~6 h':'Estimativa de chuva por satélite · mundial · últimas ~6 h',
  /* alertas (notificações do navegador) */
@@ -3717,6 +3739,7 @@ const RADAR_KINDS = [
   ['rain', 'Rain'],
   ['wind', 'Wind'],
   ['cloud', 'Clouds'],
+  ['temp', 'Temperature'],
   ['sat', 'Satellite']
 ];
 const OWM_KINDS={wind:{
@@ -4024,9 +4047,11 @@ function radarPane(){
  <div class="rctl"><button class="pill dk" id="rplay" aria-label="Pause">❚❚</button><input type="range" id="rsl" min="0" max="0" value="0" aria-label="Radar time"><span class="rtime" id="rtime"></span></div>
  <div class="rleg" id="rleg"><span>Light</span><i></i><span>Heavy</span></div>
  <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">— mm/h</span><i id="rlbar"></i><span id="rlmax">— mm/h</span><span id="rlsrc" style="margin-left:8px;font-size:10px;opacity:.7"></span></div>
+  <div class="rleg rleg3" id="rleg3" hidden><span class="tunit" id="tunit">°C</span><div class="tscale"><div class="tbar" id="tbar"></div><div class="tticks" id="tticks"></div></div><a class="tsrc" href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a></div>
  </section></div>`;
 }
 function clearRadarLayers(){
+  tempStop();
   if(!radarMap)return;
   windTok++;   // cancela pedidos de vento a meio
   clearWindMarkers();
@@ -4123,6 +4148,7 @@ const mapOpts = isPT
    ? '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · rain <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> · wind/clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · sat <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>'
    : '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · rain <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> · wind/clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · sat <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>';
  radarMap.attributionControl.addAttribution(att);
+  radarMap.attributionControl.addAttribution('temp <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (CC BY 4.0)');
  L.marker([place.lat,place.lon],{keyboard:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(radarMap);
  radarMap.on('click focus',()=>radarMap.scrollWheelZoom.enable());
  radarMap.on('mouseout',()=>radarMap.scrollWheelZoom.disable());
@@ -4257,11 +4283,13 @@ async function radarLoadKind(k){
   $('#rmap').classList.toggle('cloudy',k==='cloud'||k==='wind');
   $('#rleg').hidden = k!=='wind';
   $('#rleg2').hidden = k!=='rain';
+  $('#rleg3').hidden = k!=='temp';
 
   try{
     if(k==='rain')    return loadRainGlobal(stale);
     if(k==='wind')    return loadWind(stale);
     if(k==='cloud')   return loadCloud(stale,isPT);
+    if(k==='temp')    return loadTemp(stale);
     if(k==='sat')     return loadSat(stale);
   }catch(e){
     console.warn('[Radar]',k,e.message);
@@ -4382,6 +4410,231 @@ async function loadSat(stale){
   note.textContent='NASA VIIRS true colour · '+(daily?'daily composite':'30 min frames');
   radarShow(times.length-1);
   radarPlay=false;radarBtn();radarWarm();
+}
+
+/* ============ Temperature radar (Open-Meteo · free, no key) ============ */
+/* Reticulado fixo (alinhado com o globo): ~114 px entre nós em qualquer zoom, em cache por nível.
+   Só se pedem à Open-Meteo os nós que faltam, por isso arrastar o mapa quase não gasta pedidos. */
+const TEMP_MIN=-40,TEMP_MAX=50,TEMP_TTL=9e5;                       // escala em °C · dados válidos 15 min
+const TEMP_RAMP=[[-40,'#4b1d91'],[-30,'#3a3fc4'],[-20,'#2f6fe0'],[-10,'#3fa7f0'],[0,'#9fe3f5'],[5,'#74dcc0'],[10,'#7bd37a'],
+  [15,'#c5e04a'],[20,'#fbe03a'],[25,'#f9b233'],[30,'#f58220'],[35,'#e8452c'],[40,'#c2192d'],[50,'#5a0a3a']];
+const TEMP_LUT=(()=>{                                              // cor a cada 0,25 °C
+  const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),st=TEMP_RAMP.map(([t,h])=>[t,rgb(h)]);
+  const n=Math.round((TEMP_MAX-TEMP_MIN)/.25)+1,lut=new Uint8ClampedArray(n*3);
+  for(let k=0;k<n;k++){
+    const t=TEMP_MIN+k*.25;let a=st[0],b=st[st.length-1];
+    for(let s=0;s<st.length-1;s++)if(t>=st[s][0]&&t<=st[s+1][0]){a=st[s];b=st[s+1];break}
+    const f=b[0]===a[0]?0:(t-a[0])/(b[0]-a[0]);
+    for(let c=0;c<3;c++)lut[k*3+c]=Math.round(a[1][c]+(b[1][c]-a[1][c])*f);
+  }
+  return lut;
+})();
+const tempIdx=c=>Math.round((Math.max(TEMP_MIN,Math.min(TEMP_MAX,c))-TEMP_MIN)*4)*3;
+const tempRgb=c=>{const k=tempIdx(c);return`rgb(${TEMP_LUT[k]},${TEMP_LUT[k+1]},${TEMP_LUT[k+2]})`};
+
+const tempStepOf=z=>160/Math.pow(2,z);                             // 20° (z3) … 0,078125° (z11) – divide 360 e 80
+const tempKey=(j,i)=>(j+1100)*10000+i;
+const tempZ=()=>Math.max(3,Math.min(11,Math.round(radarMap.getZoom())));
+let tempCache={},tempOv=null,tempGen=0,tempMoveT=0,tempTimer=0,tempHoverT=0,tempStamp=0,tempBlock=0,tempTip=null,tempHov=null,tempMoving=false;
+const tempBusy=new Set(),tempExactC=new Map(),tempNameC=new Map();
+
+function tempNode(L,i,j){
+  const m=tempCache[L];if(!m)return NaN;
+  const N=Math.round(360/tempStepOf(L)),e=m.get(tempKey(j,((i%N)+N)%N));
+  return e?e[0]:NaN;
+}
+/* interpolação bilinear; se faltar um nó, recorre ao nível mais grosseiro (zoom–1, –2…) */
+function tempAt(lat,lng,z){
+  lat=Math.max(-80,Math.min(80,lat));lng=((lng+180)%360+360)%360-180;
+  for(let L=z;L>=3;L--){
+    const s=tempStepOf(L),fx=lng/s,fy=lat/s,i0=Math.floor(fx),j0=Math.min(Math.round(80/s)-1,Math.floor(fy));
+    const tx=fx-i0,ty=fy-j0;
+    const a=tempNode(L,i0,j0),b=tempNode(L,i0+1,j0),c=tempNode(L,i0,j0+1),d=tempNode(L,i0+1,j0+1);
+    if(a===a&&b===b&&c===c&&d===d)return a*(1-tx)*(1-ty)+b*tx*(1-ty)+c*(1-tx)*ty+d*tx*ty;
+  }
+  return NaN;
+}
+function tempNeeded(z,s,n,w,e){                                    // nós da caixa que faltam / expiraram
+  const st=tempStepOf(z),N=Math.round(360/st),jm=Math.round(80/st),m=tempCache[z]||new Map(),now=Date.now(),out=[],seen=new Set();
+  const i0=Math.floor(w/st),i1=Math.ceil(e/st),j0=Math.max(-jm,Math.floor(s/st)),j1=Math.min(jm,Math.ceil(n/st));
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+    const ii=((i%N)+N)%N,k=tempKey(j,ii);
+    if(seen.has(k))continue;seen.add(k);
+    const c=m.get(k);
+    if((!c||now-c[1]>TEMP_TTL)&&!tempBusy.has(z+':'+k))out.push([ii,j,k]);
+  }
+  return out;
+}
+async function tempFetch(z,nodes){
+  const st=tempStepOf(z),m=tempCache[z]||(tempCache[z]=new Map()),CH=150,jobs=[];
+  nodes.forEach(n=>tempBusy.add(z+':'+n[2]));
+  for(let o=0;o<nodes.length;o+=CH)jobs.push(nodes.slice(o,o+CH));
+  try{
+    await Promise.all(jobs.map(async part=>{
+      const lats=part.map(n=>(n[1]*st).toFixed(3)),lons=part.map(n=>{const x=n[0]*st;return(x>=180?x-360:x).toFixed(3)});
+      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=temperature_2m&timeformat=unixtime`);
+      if(!r.ok)throw new Error(r.status==429?'429':'HTTP '+r.status);
+      const j=await r.json(),arr=Array.isArray(j)?j:[j],now=Date.now();
+      part.forEach((n,k)=>{
+        const c=arr[k]&&arr[k].current;
+        if(c&&c.temperature_2m!=null&&isFinite(+c.temperature_2m)){m.set(n[2],[+c.temperature_2m,now]);if(c.time)tempStamp=Math.max(tempStamp,c.time*1000)}
+      });
+    }));
+  }finally{nodes.forEach(n=>tempBusy.delete(z+':'+n[2]))}
+  if(m.size>5000){let k=0;for(const key of m.keys()){m.delete(key);if(++k>1500)break}}   // limita a memória
+}
+
+/* caixa visível + margem (25 % para a imagem, que assim acompanha o mapa sem cortes ao arrastar) */
+function tempBox(f=.25){
+  const sz=radarMap.getSize(),px=sz.x*f,py=sz.y*f;
+  return{sz,px,py,nw:radarMap.containerPointToLatLng([-px,-py]),se:radarMap.containerPointToLatLng([sz.x+px,sz.y+py])};
+}
+function tempRender(){
+  if(!radarMap||radarKind!=='temp'||!window.L)return;
+  const z=tempZ(),{sz,px,py,nw,se}=tempBox(),pw=sz.x+2*px,ph=sz.y+2*py;
+  const cw=Math.max(48,Math.min(360,Math.ceil(pw/6))),ch=Math.max(32,Math.ceil(cw*ph/pw));
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+  const cx=cv.getContext('2d'),img=cx.createImageData(cw,ch),d=img.data,lons=new Float64Array(cw),lats=new Float64Array(ch);
+  for(let x=0;x<cw;x++)lons[x]=radarMap.containerPointToLatLng([-px+(x+.5)/cw*pw,0]).lng;
+  for(let y=0;y<ch;y++)lats[y]=radarMap.containerPointToLatLng([0,-py+(y+.5)/ch*ph]).lat;
+  let hit=0;
+  for(let y=0;y<ch;y++)for(let x=0;x<cw;x++){
+    const t=tempAt(lats[y],lons[x],z);
+    if(t!==t)continue;                                             // ainda sem dados: transparente
+    const k=tempIdx(t),o=(y*cw+x)*4;
+    d[o]=TEMP_LUT[k];d[o+1]=TEMP_LUT[k+1];d[o+2]=TEMP_LUT[k+2];d[o+3]=255;hit++;
+  }
+  if(!hit)return;
+  cx.putImageData(img,0,0);
+  const bounds=L.latLngBounds(nw,se),ov=L.imageOverlay(cv.toDataURL('image/png'),bounds,{pane:'radar',className:'rlayer rtemp',opacity:0,interactive:false});
+  ov._z=z;ov._b=bounds;ov._at=Date.now();
+  ov.addTo(radarMap);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>ov.setOpacity(.8)));
+  const old=tempOv;tempOv=ov;
+  if(old)setTimeout(()=>{try{radarMap&&radarMap.removeLayer(old)}catch(e){}},450);   // fica por baixo durante o fade
+}
+
+function tempStatus(){
+  const nt=$('#rnote'),tm=$('#rtime');
+  if(nt)nt.textContent=tr('Air temperature · Open-Meteo · hover for exact values');
+  if(tm)tm.textContent=tr('Current')+' · '+new Date(tempStamp||Date.now()).toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'});
+}
+function tempSchedule(){
+  clearTimeout(tempTimer);
+  tempTimer=setTimeout(()=>{if(radarMap&&radarKind==='temp'){if(document.hidden)tempSchedule();else tempUpdate()}},TEMP_TTL+5e3);
+}
+async function tempUpdate(){
+  if(!radarMap||radarKind!=='temp')return;
+  const gen=tempGen,z=tempZ(),box=b=>[Math.max(-85,b.se.lat),Math.min(85,b.nw.lat),b.nw.lng,b.se.lng];
+  const need=tempNeeded(z,...box(tempBox())),core=tempNeeded(z,...box(tempBox(.12)));
+  if(!core.length&&tempOv&&tempOv._z===z&&tempOv._b.contains(radarMap.getBounds())&&Date.now()-tempOv._at<TEMP_TTL)return tempSchedule();
+  tempRender();                                                    // já com o que existe em cache
+  if(tempOv&&!need.length)tempStatus();
+  if(need.length&&Date.now()>tempBlock){
+    try{await tempFetch(z,need)}
+    catch(err){
+      console.warn('[Temp]',err.message);
+      tempBlock=Date.now()+(err.message==='429'?12e4:3e4);
+      const nt=$('#rnote');
+      if(gen===tempGen&&nt&&!tempOv)nt.textContent=tr(err.message==='429'?'Temperature data rate-limited — try again in a few minutes.':'Temperature unavailable right now.');
+      return;
+    }
+    if(gen!==tempGen||!radarMap||radarKind!=='temp')return;
+    tempRender();tempStatus();
+  }
+  tempSchedule();
+}
+
+/* ---- escala (muda com °C / °F) ---- */
+function tempLegend(){
+  const bar=$('#tbar'),tk=$('#tticks'),un=$('#tunit');if(!bar||!tk)return;
+  const pos=c=>((c-TEMP_MIN)/(TEMP_MAX-TEMP_MIN)*100).toFixed(2),f=unit==='f';
+  bar.style.background=`linear-gradient(90deg,${TEMP_RAMP.map(([t,h])=>`${h} ${pos(t)}%`).join(',')})`;
+  const vals=f?[-40,-20,0,20,40,60,80,100,120]:[-40,-30,-20,-10,0,10,20,30,40,50];
+  tk.innerHTML=vals.map(v=>`<span style="left:${pos(f?(v-32)*5/9:v)}%">${v<0?'−'+(-v):v}</span>`).join('');
+  if(un)un.textContent=deg();
+}
+
+/* ---- tooltip ao passar o rato (ou tocar) ---- */
+const tempFmt2=v=>LANG==='pt'?v.toFixed(2).replace('.',','):v.toFixed(2);
+function tempCoords(ll){
+  const lat=ll.lat,lon=((ll.lng+180)%360+360)%360-180;
+  return`${tempFmt2(Math.abs(lat))}° ${lat>=0?'N':'S'} · ${tempFmt2(Math.abs(lon))}° ${lon>=0?'E':(LANG==='pt'?'O':'W')}`;
+}
+function tempTipPaint(c,ll,pending,name){
+  if(!tempTip)return;
+  if(!(c===c)){tempTip.innerHTML=`<b>—</b><small>${T2('loading…','a carregar…')}</small>`;return}
+  tempTip.innerHTML=`<b><i style="background:${tempRgb(c)}"></i>${decT(c)} ${deg()}</b><small>${name?escH(name)+' · ':''}${tempCoords(ll)}${pending?' · …':''}</small>`;
+}
+function tempTipPlace(pt){
+  const el=tempTip,W=radarMap.getContainer().clientWidth,hw=el.offsetWidth/2+8;
+  el.style.left=Math.max(hw,Math.min(W-hw,pt.x))+'px';el.style.top=pt.y+'px';
+  el.classList.toggle('below',pt.y<92);el.classList.add('on');
+}
+function tempTipHide(){clearTimeout(tempHoverT);tempHov=null;if(tempTip)tempTip.classList.remove('on')}
+function tempHover(e){
+  if(!radarMap||radarKind!=='temp'||tempMoving||!tempTip)return;
+  const ll=e.latlng,h=tempHov={ll,pt:e.containerPoint,c:tempAt(ll.lat,ll.lng,tempZ())};
+  tempTipPaint(h.c,ll,true,'');tempTipPlace(h.pt);
+  clearTimeout(tempHoverT);tempHoverT=setTimeout(()=>tempExact(h),320);   // só se o rato parar
+}
+async function tempName(lat,lon){
+  const k=lat.toFixed(2)+','+lon.toFixed(2);
+  if(tempNameC.has(k))return tempNameC.get(k);
+  let n='';
+  try{
+    const j=await(await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&localityLanguage=${LANG}`)).json();
+    n=[j.city||j.locality||j.principalSubdivision,j.countryName].filter(Boolean).join(', ');
+  }catch(e){}
+  tempNameC.set(k,n);return n;
+}
+async function tempExact(h){                                       // valor exato do ponto (+ nome do sítio)
+  if(h!==tempHov||!radarMap||radarKind!=='temp')return;
+  const gen=tempGen,lat=Math.max(-85,Math.min(85,h.ll.lat)),lon=((h.ll.lng+180)%360+360)%360-180,key=lat.toFixed(2)+','+lon.toFixed(2);
+  let v=tempExactC.get(key);
+  if(!v||Date.now()-v.at>TEMP_TTL){
+    try{
+      const[r,name]=await Promise.all([fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&current=temperature_2m&timeformat=unixtime`),tempName(lat,lon)]);
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const j=await r.json();
+      if(!j.current||j.current.temperature_2m==null)throw new Error('no data');
+      v={c:+j.current.temperature_2m,name,at:Date.now()};
+      tempExactC.set(key,v);if(tempExactC.size>300)tempExactC.delete(tempExactC.keys().next().value);
+    }catch(err){console.warn('[Temp hover]',err.message);if(gen===tempGen&&h===tempHov)tempTipPaint(h.c,h.ll,false,'');return}   // mantém o valor interpolado
+  }
+  if(gen!==tempGen||h!==tempHov||!tempTip)return;
+  tempTipPaint(v.c,h.ll,false,v.name);tempTipPlace(h.pt);
+}
+
+const tempMoveStart=()=>{tempMoving=true;tempTipHide()};
+function tempMoved(){tempMoving=false;clearTimeout(tempMoveT);tempMoveT=setTimeout(tempUpdate,260)}
+function tempMount(){
+  const cont=radarMap.getContainer();
+  if(!tempTip||tempTip.parentNode!==cont){tempTip=document.createElement('div');tempTip.className='rttip';tempTip.setAttribute('aria-hidden','true');cont.appendChild(tempTip)}
+  radarMap.on('movestart zoomstart',tempMoveStart);radarMap.on('moveend',tempMoved);
+  radarMap.on('mousemove click',tempHover);radarMap.on('mouseout',tempTipHide);
+}
+function tempStop(){
+  tempGen++;clearTimeout(tempMoveT);clearTimeout(tempTimer);clearTimeout(tempHoverT);
+  tempHov=null;tempMoving=false;
+  if(radarMap){
+    try{radarMap.off('movestart zoomstart',tempMoveStart);radarMap.off('moveend',tempMoved);radarMap.off('mousemove click',tempHover);radarMap.off('mouseout',tempTipHide)}catch(e){}
+    if(tempOv){try{radarMap.removeLayer(tempOv)}catch(e){}}
+  }
+  tempOv=null;
+  if(tempTip){tempTip.remove();tempTip=null}
+}
+
+/* ---- Temperature (Open-Meteo) ---- */
+async function loadTemp(stale){
+  const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
+  sl.disabled=true;pl.disabled=true;sl.max=0;radarFrames=[{}];radarPlay=false;radarBtn();
+  note.textContent=tr('Loading temperature…');
+  $('#rtime').textContent=tr('Current');
+  tempLegend();
+  if(stale())return;
+  tempMount();
+  await tempUpdate();
 }
 
 /* ============ IPMA warnings (topbar) ============ */
