@@ -794,6 +794,16 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 
 /* ---- radar de temperatura ---- */
 .rtemp{filter:blur(1.4px) saturate(1.12)}
+/* ---- isóbaras + A/B ---- */
+.isoln{animation:isoIn .6s ease both}
+@keyframes isoIn{from{opacity:0}}
+.isolbl span{position:absolute;left:0;top:0;transform:translate(-50%,-50%);padding:1px 6px;border-radius:9px;background:rgba(255,255,255,.9);color:#14314f;font:600 10.5px/1.35 system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:0 1px 4px rgba(10,40,90,.25);animation:isoIn .5s both}
+.isoax{pointer-events:none}
+.isoax b,.isoax small{position:absolute;left:0;top:0;text-align:center;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 7px #fff;animation:isoIn .5s both}
+.isoax b{transform:translate(-50%,-58%);font:700 32px/1 var(--serif)}
+.isoax small{transform:translate(-50%,13px);font:700 11px/1 system-ui,sans-serif;color:#14314f}
+.isoax.hi b{color:#1d5fd0}
+.isoax.lo b{color:#d0301f}
 .rleg3{align-items:flex-start;gap:10px}
 .rleg3 .tunit{font-weight:700;color:var(--ink);min-width:22px}
 .tscale{position:relative;flex:1;max-width:440px;margin:0 16px 0 6px;padding-bottom:20px}
@@ -4052,6 +4062,7 @@ function radarPane(){
 }
 function clearRadarLayers(){
   tempStop();
+  isoStop();
   if(!radarMap)return;
   windTok++;   // cancela pedidos de vento a meio
   clearWindMarkers();
@@ -4284,6 +4295,7 @@ async function radarLoadKind(k){
   $('#rleg').hidden = k!=='wind';
   $('#rleg2').hidden = k!=='rain';
   $('#rleg3').hidden = k!=='temp';
+  if(ISO_KINDS.includes(k)) isoStart();
 
   try{
     if(k==='rain')    return loadRainGlobal(stale);
@@ -4376,6 +4388,7 @@ async function loadCloud(stale,isPT){
   if(stale())return;
   if(!ok){
     note.textContent='Cloud layer needs OWM_KEY, showing satellite instead.';
+    isoStop();
     return loadSat(stale);
   }
   radarLayers=[mkLayer(WORKER+'/clouds/{z}/{x}/{y}.png',
@@ -4620,6 +4633,11 @@ function tempStop(){
   if(radarMap){
     try{radarMap.off('movestart zoomstart',tempMoveStart);radarMap.off('moveend',tempMoved);radarMap.off('mousemove click',tempHover);radarMap.off('mouseout',tempTipHide)}catch(e){}
     if(tempOv){try{radarMap.removeLayer(tempOv)}catch(e){}}
+    if(tempBd){try{radarMap.removeLayer(tempBd)}catch(e){}}
+    if(tempLab){try{radarMap.removeLayer(tempLab)}catch(e){}}
+  }
+  tempBd=null;tempLab=null;
+  if(false){
   }
   tempOv=null;
   if(tempTip){tempTip.remove();tempTip=null}
@@ -4634,7 +4652,173 @@ async function loadTemp(stale){
   tempLegend();
   if(stale())return;
   tempMount();
+  tempBordersOn();
   await tempUpdate();
+}
+
+/* ============ Fronteiras + nomes dos países (radar de temperatura) ============ */
+const mkPane=(n,z)=>{const p=radarMap.getPane(n)||radarMap.createPane(n);p.style.zIndex=z;p.style.pointerEvents='none';return p};
+const BORDERS_URL='https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json';   // Natural Earth 50m (TopoJSON)
+const BORDERS_KEY='cb1_4644_2_e1ddc0590e0bf3595329dba5';                                  // a mesma MAP_KEY do radarInit
+let bordersP=null,tempBd=null,tempLab=null;
+function bordersLoad(){                                                                   // descodifica os arcos → [[lat,lng],…]
+  return bordersP||(bordersP=fetch(BORDERS_URL).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(t=>{
+    const[sx,sy]=t.transform.scale,[tx,ty]=t.transform.translate;
+    return t.arcs.map(a=>{let x=0,y=0;return a.map(p=>{x+=p[0];y+=p[1];return[y*sy+ty,x*sx+tx]})});
+  }).catch(e=>{bordersP=null;throw e}));
+}
+async function tempBordersOn(){
+  if(!radarMap||tempBd||tempLab)return;
+  const map=radarMap,gen=tempGen;
+  mkPane('rborders',254);
+  tempLab=L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png?key=${BORDERS_KEY}`,{pane:'labels',maxZoom:19,opacity:.95}).addTo(map);
+  try{
+    const lines=await bordersLoad();
+    if(gen!==tempGen||radarMap!==map)return;                         // mudou de radar entretanto
+    const r=L.canvas({pane:'rborders',padding:.3}),o={renderer:r,pane:'rborders',interactive:false,smoothFactor:1.2,lineJoin:'round',lineCap:'round'};
+    tempBd=L.layerGroup([
+      L.polyline(lines,{...o,color:'#ffffff',weight:3.4,opacity:.7}),   // contorno branco (lê-se sobre qualquer cor)
+      L.polyline(lines,{...o,color:'#14314f',weight:1.2,opacity:.9})
+    ]).addTo(map);
+  }catch(e){console.warn('[Borders]',e.message)}
+}
+
+/* ============ Linhas de pressão (isóbaras) + A/B · Open-Meteo pressure_msl ============ */
+const ISO_KINDS=['rain','cloud','temp'];                           // radares com isóbaras (sem vento nem satélite)
+const ISO_TTL=18e5;                                                // dados válidos 30 min
+const isoStepOf=z=>Math.max(1,tempStepOf(z));                      // mesmo reticulado da temperatura (mín. 1°)
+let isoCache={},isoGrp=null,isoGen=0,isoT=0,isoBlock=0,isoRun=false,isoAgain=false,isoOn=false;
+
+const isoNode=(z,i,j)=>{const m=isoCache[z],e=m&&m.get(tempKey(j,i));return e?e[0]:NaN};
+function isoGridBox(){
+  const b=radarMap.getBounds(),z=tempZ(),st=isoStepOf(z);
+  const mLa=Math.max((b.getNorth()-b.getSouth())*.2,2*st),mLo=Math.max((b.getEast()-b.getWest())*.2,2*st);
+  const s=Math.max(-84,b.getSouth()-mLa),n=Math.min(84,b.getNorth()+mLa),w=b.getWest()-mLo,e=b.getEast()+mLo;
+  return{z,st,i0:Math.floor(w/st),i1:Math.ceil(e/st),j0:Math.floor(s/st),j1:Math.ceil(n/st)};
+}
+function isoMissing(g){                                            // nós em falta / expirados
+  const N=Math.round(360/g.st),m=isoCache[g.z]||new Map(),now=Date.now(),out=[],seen=new Set();
+  for(let j=g.j0;j<=g.j1;j++)for(let i=g.i0;i<=g.i1;i++){
+    const ii=((i%N)+N)%N,k=tempKey(j,ii);
+    if(seen.has(k))continue;seen.add(k);
+    const c=m.get(k);if(!c||now-c[1]>ISO_TTL)out.push([ii,j,k]);
+  }
+  return out;
+}
+async function isoFetch(z,nodes){
+  const st=isoStepOf(z),m=isoCache[z]||(isoCache[z]=new Map()),CH=100,jobs=[];
+  for(let o=0;o<nodes.length;o+=CH)jobs.push(nodes.slice(o,o+CH));
+  await Promise.all(jobs.map(async part=>{
+    const lats=part.map(n=>(n[1]*st).toFixed(3)),lons=part.map(n=>{const x=n[0]*st;return(x>=180?x-360:x).toFixed(3)});
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=pressure_msl&timeformat=unixtime`);
+    if(!r.ok)throw new Error(r.status==429?'429':'HTTP '+r.status);
+    const j=await r.json(),arr=Array.isArray(j)?j:[j],now=Date.now();
+    part.forEach((n,k)=>{const c=arr[k]&&arr[k].current;if(c&&c.pressure_msl!=null&&isFinite(+c.pressure_msl))m.set(n[2],[+c.pressure_msl,now])});
+  }));
+  if(m.size>4000){let k=0;for(const key of m.keys()){m.delete(key);if(++k>1200)break}}   // limita a memória
+}
+
+/* marching squares: emite segmentos (x1,y1,x2,y2) em coordenadas de grelha */
+function isoMarch(F,nx,ny,lv,emit){
+  for(let y=0;y<ny-1;y++)for(let x=0;x<nx-1;x++){
+    const a=F[y*nx+x],b=F[y*nx+x+1],c=F[(y+1)*nx+x+1],d=F[(y+1)*nx+x];
+    if(a!==a||b!==b||c!==c||d!==d)continue;
+    const k=(a>=lv?1:0)|(b>=lv?2:0)|(c>=lv?4:0)|(d>=lv?8:0);
+    if(k===0||k===15)continue;
+    const T=[x+(lv-a)/(b-a),y],R=[x+1,y+(lv-b)/(c-b)],B=[x+(lv-d)/(c-d),y+1],W=[x,y+(lv-a)/(d-a)],m=(a+b+c+d)/4>=lv;
+    const S=({1:[W,T],2:[T,R],3:[W,R],4:[R,B],5:m?[T,R,W,B]:[W,T,R,B],6:[T,B],7:[W,B],8:[W,B],9:[T,B],10:m?[W,T,R,B]:[T,R,W,B],11:[R,B],12:[W,R],13:[T,R],14:[W,T]})[k];
+    for(let s=0;s<S.length;s+=2)emit(S[s][0],S[s][1],S[s+1][0],S[s+1][1]);
+  }
+}
+const isoCR=(a,b,c,d,t)=>b+.5*t*(c-a+t*(2*a-5*b+4*c-d+t*(3*(b-c)+d-a)));   // Catmull-Rom (suaviza o campo)
+function isoBuild(g){
+  const nx=g.i1-g.i0+1,ny=g.j1-g.j0+1,N=Math.round(360/g.st),P=new Float64Array(nx*ny);let ok=0;
+  for(let y=0;y<ny;y++)for(let x=0;x<nx;x++){const v=isoNode(g.z,((g.i0+x)%N+N)%N,g.j0+y);P[y*nx+x]=v;if(v===v)ok++}
+  if(nx<5||ny<5||ok<nx*ny*.5)return null;
+  const K=Math.max(3,Math.min(8,Math.round(60/nx))),fx=(nx-1)*K+1,fy=(ny-1)*K+1,F=new Float32Array(fx*fy);
+  const at=(x,y)=>P[Math.max(0,Math.min(ny-1,y))*nx+Math.max(0,Math.min(nx-1,x))];
+  for(let Y=0;Y<fy;Y++){const y=Math.floor(Y/K),ty=Y/K-y;
+    for(let X=0;X<fx;X++){const x=Math.floor(X/K),tx=X/K-x,c=[-1,0,1,2].map(dy=>isoCR(at(x-1,y+dy),at(x,y+dy),at(x+1,y+dy),at(x+2,y+dy),tx));
+      F[Y*fx+X]=isoCR(c[0],c[1],c[2],c[3],ty)}}
+  let lo=1e9,hi=-1e9;for(const v of F)if(v===v){if(v<lo)lo=v;if(v>hi)hi=v}
+  if(!(hi>lo))return null;
+  let iv=1;for(const c of [1,2,4,8]){iv=c;if(Math.floor(hi/c)-Math.ceil(lo/c)+1<=12)break}   // 4–12 linhas
+  const X2=x=>(g.i0+x/K)*g.st,Y2=y=>(g.j0+y/K)*g.st,lines=[];
+  for(let lv=Math.ceil(lo/iv)*iv;lv<=hi;lv+=iv){
+    const segs=[];isoMarch(F,fx,fy,lv,(x1,y1,x2,y2)=>segs.push([Y2(y1),X2(x1),Y2(y2),X2(x2)]));
+    if(segs.length)lines.push({lv,segs});
+  }
+  /* máximos (A) e mínimos (B): extremos locais com raio de 2 nós e proeminência mínima */
+  const ext=[],R=2,prom=g.z<=5?2:1;
+  for(let y=R;y<ny-R;y++)for(let x=R;x<nx-R;x++){
+    const p=P[y*nx+x];if(p!==p)continue;
+    let mx=true,mn=true,sum=0,cnt=0;
+    for(let dy=-R;dy<=R&&(mx||mn);dy++)for(let dx=-R;dx<=R;dx++){
+      if(!dx&&!dy)continue;const q=P[(y+dy)*nx+x+dx];
+      if(q!==q){mx=mn=false;break}
+      if(q>p)mx=false;if(q<p)mn=false;
+      if(Math.max(Math.abs(dx),Math.abs(dy))===R){sum+=q;cnt++}
+    }
+    const d=p-sum/cnt,isHi=mx&&d>=prom,isLo=mn&&-d>=prom;
+    if(!isHi&&!isLo)continue;
+    let bx=x*K,by=y*K,bv=F[by*fx+bx];                              // afina o ponto na grelha suavizada
+    for(let Y=by-K;Y<=by+K;Y++)for(let X=bx-K;X<=bx+K;X++){const v=F[Y*fx+X];if(v===v&&(isHi?v>bv:v<bv)){bv=v;bx=X;by=Y}}
+    const e={hi:isHi,p:bv,lat:Y2(by),lng:X2(bx)};
+    if(!ext.some(o=>o.hi===e.hi&&Math.hypot(o.lat-e.lat,o.lng-e.lng)<2*R*g.st))ext.push(e);
+  }
+  return{lines,ext};
+}
+function isoDraw(M){
+  if(!radarMap||!isoGrp)return;
+  isoGrp.clearLayers();
+  if(!M)return;
+  const multi=M.lines.flatMap(l=>l.segs.map(s=>[[s[0],s[1]],[s[2],s[3]]])),o={pane:'isobars',className:'isoln',interactive:false,lineCap:'round',lineJoin:'round',smoothFactor:.4};
+  if(multi.length){
+    L.polyline(multi,{...o,color:'#ffffff',weight:3.6,opacity:.65}).addTo(isoGrp);     // halo
+    L.polyline(multi,{...o,color:'#14314f',weight:1.4,opacity:.9}).addTo(isoGrp);
+  }
+  /* etiquetas hPa: uma por linha, depois mais algumas bem espaçadas */
+  const bd=radarMap.getBounds().pad(-.04),placed=[],lab=[];
+  const vis=M.lines.map(l=>({lv:l.lv,c:l.segs.map(s=>{const ll=L.latLng((s[0]+s[2])/2,(s[1]+s[3])/2);return bd.contains(ll)?[ll,radarMap.latLngToContainerPoint(ll)]:null}).filter(Boolean)}));
+  const put=(lv,c,d)=>{if(placed.some(q=>Math.hypot(q.x-c[1].x,q.y-c[1].y)<d))return false;placed.push(c[1]);lab.push([c[0],lv]);return true};
+  vis.forEach(v=>{const n=v.c.length;for(let t=0;t<n;t++)if(put(v.lv,v.c[(Math.floor(n/2)+t)%n],110))break});
+  vis.forEach(v=>v.c.forEach(c=>put(v.lv,c,200)));
+  lab.forEach(([ll,lv])=>L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,icon:L.divIcon({className:'isolbl',html:`<span>${Math.round(lv)}</span>`,iconSize:[0,0]})}).addTo(isoGrp));
+  /* A = alta pressão · B = baixa pressão */
+  const vb=radarMap.getBounds();
+  M.ext.forEach(e=>{const ll=L.latLng(e.lat,e.lng);if(!vb.contains(ll))return;
+    L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,zIndexOffset:500,icon:L.divIcon({className:'isoax '+(e.hi?'hi':'lo'),html:`<b>${e.hi?'A':'B'}</b><small>${Math.round(e.p)}</small>`,iconSize:[0,0]})}).addTo(isoGrp)});
+}
+async function isoUpdate(){
+  if(!radarMap||!isoOn)return;
+  if(isoRun){isoAgain=true;return}
+  isoRun=true;const gen=isoGen;
+  try{
+    const g=isoGridBox(),need=isoMissing(g);
+    if(need.length&&Date.now()>isoBlock){
+      try{await isoFetch(g.z,need)}
+      catch(err){console.warn('[Isobars]',err.message);isoBlock=Date.now()+(err.message==='429'?12e4:3e4)}
+    }
+    if(gen!==isoGen||!radarMap||!isoOn)return;
+    isoDraw(isoBuild(g));
+  }finally{isoRun=false;if(isoAgain){isoAgain=false;isoUpdate()}}
+}
+const isoMoved=()=>{clearTimeout(isoT);isoT=setTimeout(isoUpdate,250)};
+function isoStart(){
+  if(!radarMap)return;
+  isoStop();
+  mkPane('isobars',258);mkPane('isolab',270);
+  isoGrp=L.layerGroup().addTo(radarMap);isoOn=true;
+  radarMap.on('moveend',isoMoved);
+  isoUpdate();
+}
+function isoStop(){
+  isoGen++;isoOn=false;clearTimeout(isoT);
+  if(radarMap){
+    try{radarMap.off('moveend',isoMoved)}catch(e){}
+    if(isoGrp){try{radarMap.removeLayer(isoGrp)}catch(e){}}
+  }
+  isoGrp=null;
 }
 
 /* ============ IPMA warnings (topbar) ============ */
