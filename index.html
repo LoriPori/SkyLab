@@ -1841,9 +1841,26 @@ const PT_RX=[
  [/^Rain expected at (.+) in about (\d+) min\.$/,'Chuva prevista em $1 dentro de cerca de $2 min.'],
  [/^Rain stops in about (\d+) min$/,'A chuva pára dentro de cerca de $1 min'],
 ];
+
+/* nomes de pólen (Atmospore) → PT; comparação sem distinguir maiúsculas */
+const PT_POLLEN={
+ 'Alder':'Amieiro','Birch':'Bétula','Hazel':'Aveleira','Hazelnut':'Aveleira','Oak':'Carvalho','Olive':'Oliveira','Cypress':'Cipreste','Pine':'Pinheiro',
+ 'Plane':'Plátano','Plane tree':'Plátano','Sycamore':'Plátano','Poplar':'Choupo','Cottonwood':'Choupo','Ash':'Freixo','Elm':'Ulmeiro','Maple':'Bordo','Willow':'Salgueiro',
+ 'Beech':'Faia','Chestnut':'Castanheiro','Hornbeam':'Carpino','Linden':'Tília','Lime':'Tília','Walnut':'Nogueira','Pecan':'Nogueira-pecã','Cedar':'Cedro','Juniper':'Zimbro',
+ 'Mulberry':'Amoreira','Acacia':'Acácia','Eucalyptus':'Eucalipto','Palm':'Palmeira','Fir':'Abeto','Spruce':'Espruce','Larch':'Lariço','Box elder':'Bordo-negundo','Tree':'Árvores','Trees':'Árvores',
+ 'Grass':'Gramíneas','Grasses':'Gramíneas','Johnson grass':'Sorgo-de-alepo','Timothy grass':'Rabo-de-gato','Timothy':'Rabo-de-gato','Ryegrass':'Azevém','Rye grass':'Azevém',
+ 'Orchard grass':'Panasco','Kentucky bluegrass':'Poa-dos-prados','Bluegrass':'Poa-dos-prados','Sweet vernal grass':'Feno-de-cheiro',
+ 'Mugwort':'Artemísia','Ragweed':'Ambrósia','Plantain':'Tanchagem','Nettle':'Urtiga','Goldenrod':'Vara-de-ouro','Sagebrush':'Artemísia','Pigweed':'Amaranto',
+ 'Lamb’s quarters':'Quenopódio',"Lamb's quarters":'Quenopódio','Chenopod':'Quenopódio','Goosefoot':'Quenopódio','Dock':'Labaça','Sorrel':'Azeda',
+ 'Wall pellitory':'Parietária','Pellitory':'Parietária','Weed':'Ervas','Weeds':'Ervas',
+ 'Mold':'Bolor','Mould':'Bolor','Spores':'Esporos','Fungi':'Fungos','Very low':'Muito baixo'
+};
+const PTL=Object.fromEntries(Object.entries(PT_POLLEN).map(([k,v])=>[k.toLowerCase(),v]));
+
 function trStr(s){
  if(LANG!='pt'||!/[A-Za-z]/.test(s))return s;
  const d=PT[s];if(d!==undefined)return d;
+ const pl=PTL[s.toLowerCase()];if(pl!==undefined)return pl;
  for(const[rx,f]of PT_RX){const m=s.match(rx);if(m)return typeof f=='function'?f(...m):s.replace(rx,f)}
  return s;
 }
@@ -2924,7 +2941,7 @@ async function weekPaneAsync(){
         const lo=(x.tMin-mn)/sp*100,ht=Math.max(10,(x.tMax-x.tMin)/sp*100);
         const code=IPMA_TO_WMO[x.code]??2;
         const isToday=i===0;
-        return`<div class="dcol" style="--n:${i}"><b>${isToday?'Today':new Date(x.date+'T12:00').toLocaleDateString('en',{weekday:'short'})}</b><span class="dic">${emoji(code,1)}</span><span class="hi">${T(x.tMax)}°</span><div class="dbar"><i style="--lo:${lo}%;--h:${ht}%;--n:${i};background:linear-gradient(${tempColor(x.tMax)},${tempColor(x.tMin)})"></i></div><span class="lo">${T(x.tMin)}°</span><small>${x.rain>=20?x.rain+'%':'&nbsp;'}</small></div>`;
+        return`<div class="dcol" style="--n:${i}"><b>${isToday?'Today':new Date(x.date+'T12:00').toLocaleDateString(LOC(),{weekday:'short'})}</b><span class="dic">${emoji(code,1)}</span><span class="hi">${T(x.tMax)}°</span><div class="dbar"><i style="--lo:${lo}%;--h:${ht}%;--n:${i};background:linear-gradient(${tempColor(x.tMax)},${tempColor(x.tMin)})"></i></div><span class="lo">${T(x.tMin)}°</span><small>${x.rain>=20?x.rain+'%':'&nbsp;'}</small></div>`;
       }).join('');
       const hrs=h.time.slice(i0,i0+24).map((t,j)=>{const i=i0+j;return`<div class="hr" style="--n:${j}"><div class="t">${j?t.slice(11,13)+'h':'Now'}</div><div class="e">${emoji(h.weather_code[i],h.is_day[i])}</div><div>${T(h.temperature_2m[i])}°</div><div class="p">${h.precipitation_probability[i]>=20?h.precipitation_probability[i]+'%':''}</div></div>`}).join('');
       return`<div class="pane"><section class="card"><p class="story">${story()}</p><div class="wk">${cols}</div><p class="note" style="margin-top:10px;font-size:12px">${tr('Forecast by')} <a href="https://www.ipma.pt/" target="_blank" rel="noopener" style="color:var(--acc)">IPMA</a> · ${tr('based on')} ECMWF + AROME</p></section>
@@ -4447,7 +4464,7 @@ const TEMP_LUT=(()=>{                                              // cor a cada
 const tempIdx=c=>Math.round((Math.max(TEMP_MIN,Math.min(TEMP_MAX,c))-TEMP_MIN)*4)*3;
 const tempRgb=c=>{const k=tempIdx(c);return`rgb(${TEMP_LUT[k]},${TEMP_LUT[k+1]},${TEMP_LUT[k+2]})`};
 
-const tempStepOf=z=>160/Math.pow(2,z);                             // 20° (z3) … 0,078125° (z11) – divide 360 e 80
+const tempStepOf=z=>320/Math.pow(2,z);                             // reticulado ~230 px (menos pedidos); divide 360 e 80
 const tempKey=(j,i)=>(j+1100)*10000+i;
 const tempZ=()=>Math.max(3,Math.min(11,Math.round(radarMap.getZoom())));
 let tempCache={},tempOv=null,tempGen=0,tempMoveT=0,tempTimer=0,tempHoverT=0,tempStamp=0,tempBlock=0,tempTip=null,tempHov=null,tempMoving=false;
@@ -4480,23 +4497,29 @@ function tempNeeded(z,s,n,w,e){                                    // nós da ca
   }
   return out;
 }
+const GRID_B=8;                                                    // blocos 8×8 nós, iguais aos do worker (/grid)
+async function gridLoad(z,nodes){                                  // pede blocos ao worker e preenche as caches de temperatura e pressão
+  const st=tempStepOf(z),N=Math.round(360/st),blocks=new Map();
+  nodes.forEach(n=>{const bi=Math.floor(n[0]/GRID_B),bj=Math.floor(n[1]/GRID_B);blocks.set(bi+','+bj,[bi,bj])});
+  const tm=tempCache[z]||(tempCache[z]=new Map()),pm=isoCache[z]||(isoCache[z]=new Map());
+  await Promise.all([...blocks.values()].slice(0,16).map(async([bi,bj])=>{
+    const r=await fetch(`${WORKER}/grid?step=${st}&bi=${bi}&bj=${bj}`);
+    if(!r.ok)throw new Error(r.status==429?'429':'HTTP '+r.status);
+    const g=await r.json(),now=Date.now();
+    for(let b=0;b<GRID_B;b++)for(let a=0;a<GRID_B;a++){
+      const t=g.t[b*GRID_B+a],p=g.p[b*GRID_B+a];if(t==null&&p==null)continue;
+      const key=tempKey(bj*GRID_B+b,(bi*GRID_B+a)%N);
+      if(t!=null)tm.set(key,[+t,now]);
+      if(p!=null)pm.set(key,[+p,now]);
+    }
+    if(g.ts)tempStamp=Math.max(tempStamp,g.ts);
+  }));
+  for(const m of [tm,pm])if(m.size>6000){let k=0;for(const key of m.keys()){m.delete(key);if(++k>1500)break}}
+}
 async function tempFetch(z,nodes){
-  const st=tempStepOf(z),m=tempCache[z]||(tempCache[z]=new Map()),CH=150,jobs=[];
   nodes.forEach(n=>tempBusy.add(z+':'+n[2]));
-  for(let o=0;o<nodes.length;o+=CH)jobs.push(nodes.slice(o,o+CH));
-  try{
-    await Promise.all(jobs.map(async part=>{
-      const lats=part.map(n=>(n[1]*st).toFixed(3)),lons=part.map(n=>{const x=n[0]*st;return(x>=180?x-360:x).toFixed(3)});
-      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=temperature_2m&timeformat=unixtime`);
-      if(!r.ok)throw new Error(r.status==429?'429':'HTTP '+r.status);
-      const j=await r.json(),arr=Array.isArray(j)?j:[j],now=Date.now();
-      part.forEach((n,k)=>{
-        const c=arr[k]&&arr[k].current;
-        if(c&&c.temperature_2m!=null&&isFinite(+c.temperature_2m)){m.set(n[2],[+c.temperature_2m,now]);if(c.time)tempStamp=Math.max(tempStamp,c.time*1000)}
-      });
-    }));
-  }finally{nodes.forEach(n=>tempBusy.delete(z+':'+n[2]))}
-  if(m.size>5000){let k=0;for(const key of m.keys()){m.delete(key);if(++k>1500)break}}   // limita a memória
+  try{await gridLoad(z,nodes)}
+  finally{nodes.forEach(n=>tempBusy.delete(z+':'+n[2]))}
 }
 
 /* caixa visível + margem (25 % para a imagem, que assim acompanha o mapa sem cortes ao arrastar) */
@@ -4549,13 +4572,13 @@ async function tempUpdate(){
     try{await tempFetch(z,need)}
     catch(err){
       console.warn('[Temp]',err.message);
-      tempBlock=Date.now()+(err.message==='429'?12e4:3e4);
+      tempBlock=Date.now()+(err.message==='429'?3e5:3e4);
       const nt=$('#rnote');
       if(gen===tempGen&&nt&&!tempOv)nt.textContent=tr(err.message==='429'?'Temperature data rate-limited — try again in a few minutes.':'Temperature unavailable right now.');
       return;
     }
     if(gen!==tempGen||!radarMap||radarKind!=='temp')return;
-    tempRender();tempStatus();
+    tempRender();tempStatus();tempSave();
   }
   tempSchedule();
 }
@@ -4589,9 +4612,9 @@ function tempTipPlace(pt){
 function tempTipHide(){clearTimeout(tempHoverT);tempHov=null;if(tempTip)tempTip.classList.remove('on')}
 function tempHover(e){
   if(!radarMap||radarKind!=='temp'||tempMoving||!tempTip)return;
-  const ll=e.latlng,h=tempHov={ll,pt:e.containerPoint,c:tempAt(ll.lat,ll.lng,tempZ())};
+  const ll=e.latlng,h=tempHov={ll,pt:e.containerPoint,c:tempAt(ll.lat,ll.lng,tempZ()),click:e.type==='click'};
   tempTipPaint(h.c,ll,true,'');tempTipPlace(h.pt);
-  clearTimeout(tempHoverT);tempHoverT=setTimeout(()=>tempExact(h),320);   // só se o rato parar
+  clearTimeout(tempHoverT);tempHoverT=setTimeout(()=>tempExact(h),800);   // só se o rato parar
 }
 async function tempName(lat,lon){
   const k=lat.toFixed(2)+','+lon.toFixed(2);
@@ -4603,20 +4626,25 @@ async function tempName(lat,lon){
   }catch(e){}
   tempNameC.set(k,n);return n;
 }
-async function tempExact(h){                                       // valor exato do ponto (+ nome do sítio)
+async function tempExact(h){                                       // nome do sítio sempre; valor exato só ao clicar (poupa pedidos)
   if(h!==tempHov||!radarMap||radarKind!=='temp')return;
   const gen=tempGen,lat=Math.max(-85,Math.min(85,h.ll.lat)),lon=((h.ll.lng+180)%360+360)%360-180,key=lat.toFixed(2)+','+lon.toFixed(2);
   let v=tempExactC.get(key);
-  if(!v||Date.now()-v.at>TEMP_TTL){
-    try{
-      const[r,name]=await Promise.all([fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&current=temperature_2m&timeformat=unixtime`),tempName(lat,lon)]);
+  const fresh=v&&v.at&&Date.now()-v.at<TEMP_TTL;
+  try{
+    const name=await tempName(lat,lon);
+    let c=fresh?v.c:h.c,at=fresh?v.at:0;
+    if(h.click&&!fresh&&Date.now()>tempBlock){
+      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&current=temperature_2m&timeformat=unixtime`);
+      if(r.status===429)tempBlock=Date.now()+3e5;
       if(!r.ok)throw new Error('HTTP '+r.status);
       const j=await r.json();
       if(!j.current||j.current.temperature_2m==null)throw new Error('no data');
-      v={c:+j.current.temperature_2m,name,at:Date.now()};
-      tempExactC.set(key,v);if(tempExactC.size>300)tempExactC.delete(tempExactC.keys().next().value);
-    }catch(err){console.warn('[Temp hover]',err.message);if(gen===tempGen&&h===tempHov)tempTipPaint(h.c,h.ll,false,'');return}   // mantém o valor interpolado
-  }
+      c=+j.current.temperature_2m;at=Date.now();
+    }
+    v={c,name,at};
+    tempExactC.set(key,v);if(tempExactC.size>300)tempExactC.delete(tempExactC.keys().next().value);
+  }catch(err){console.warn('[Temp hover]',err.message);if(gen===tempGen&&h===tempHov)tempTipPaint(h.c,h.ll,false,'');return}
   if(gen!==tempGen||h!==tempHov||!tempTip)return;
   tempTipPaint(v.c,h.ll,false,v.name);tempTipPlace(h.pt);
 }
@@ -4658,6 +4686,12 @@ async function loadTemp(stale){
   await tempUpdate();
 }
 
+/* cache da temperatura sobrevive a recarregamentos (15 min) */
+const TEMP_LS='skylabTempCache1';
+function tempSave(){try{const o={};for(const z in tempCache){const a=[];for(const[k,e]of tempCache[z])if(Date.now()-e[1]<TEMP_TTL)a.push([k,e[0],e[1]]);if(a.length)o[z]=a.slice(-1200)}localStorage.setItem(TEMP_LS,JSON.stringify(o))}catch(e){}}
+function tempLoad(){try{const o=JSON.parse(localStorage.getItem(TEMP_LS)||'{}');for(const z in o)tempCache[z]=new Map(o[z].filter(a=>Date.now()-a[2]<TEMP_TTL).map(a=>[a[0],[a[1],a[2]]]))}catch(e){}}
+tempLoad();
+
 /* ============ Fronteiras + nomes dos países (radar de temperatura) ============ */
 const mkPane=(n,z)=>{const p=radarMap.getPane(n)||radarMap.createPane(n);p.style.zIndex=z;p.style.pointerEvents='none';return p};
 const BORDERS_URL='https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json';   // Natural Earth 50m (TopoJSON)
@@ -4688,7 +4722,7 @@ async function tempBordersOn(){
 /* ============ Linhas de pressão (isóbaras) + A/B · Open-Meteo pressure_msl ============ */
 const ISO_KINDS=['rain','cloud','temp'];                           // radares com isóbaras (sem vento nem satélite)
 const ISO_TTL=18e5;                                                // dados válidos 30 min
-const isoStepOf=z=>Math.max(2.5,tempStepOf(z));                    // reticulado da temperatura, mas nunca mais fino que 2,5° (a pressão é suave)
+const isoStepOf=z=>tempStepOf(z);                                  // mesmo reticulado da temperatura → um único pedido serve os dois               // independente da temperatura
 let isoCache={},isoGrp=null,isoOld=new Set(),isoGen=0,isoT=0,isoBlock=0,isoRun=false,isoAgain=false,isoOn=false;
 
 const isoNode=(z,i,j)=>{const m=isoCache[z],e=m&&m.get(tempKey(j,i));return e?e[0]:NaN};
@@ -4707,18 +4741,7 @@ function isoMissing(g){                                            // nós em fa
   }
   return out;
 }
-async function isoFetch(z,nodes){
-  const st=isoStepOf(z),m=isoCache[z]||(isoCache[z]=new Map()),CH=100,jobs=[];
-  for(let o=0;o<nodes.length;o+=CH)jobs.push(nodes.slice(o,o+CH));
-  await Promise.all(jobs.map(async part=>{
-    const lats=part.map(n=>(n[1]*st).toFixed(3)),lons=part.map(n=>{const x=n[0]*st;return(x>=180?x-360:x).toFixed(3)});
-    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=pressure_msl&timeformat=unixtime`);
-    if(!r.ok)throw new Error(r.status==429?'429':'HTTP '+r.status);
-    const j=await r.json(),arr=Array.isArray(j)?j:[j],now=Date.now();
-    part.forEach((n,k)=>{const c=arr[k]&&arr[k].current;if(c&&c.pressure_msl!=null&&isFinite(+c.pressure_msl))m.set(n[2],[+c.pressure_msl,now])});
-  }));
-  if(m.size>4000){let k=0;for(const key of m.keys()){m.delete(key);if(++k>1200)break}}   // limita a memória
-}
+async function isoFetch(z,nodes){await gridLoad(z,nodes)}
 
 /* marching squares: emite segmentos (x1,y1,x2,y2) em coordenadas de grelha */
 function isoMarch(F,nx,ny,lv,emit){
@@ -4751,7 +4774,7 @@ function isoBuild(g){
     if(segs.length)lines.push({lv,segs});
   }
   /* máximos (A) e mínimos (B): extremos locais com raio de 2 nós e proeminência mínima */
-  const ext=[],R=2,prom=g.z<=5?2:1;
+  const ext=[],R=g.st>=20?1:2,prom=g.z<=5?2:1;                     // passos grandes → vizinhança mais curta
   for(let y=R;y<ny-R;y++)for(let x=R;x<nx-R;x++){
     const p=P[y*nx+x];if(p!==p)continue;
     let mx=true,mn=true,sum=0,cnt=0;
@@ -4813,7 +4836,7 @@ async function isoUpdate(){
       try{await isoFetch(g.z,need)}
       catch(err){
         console.warn('[Isobars]',err.message);
-        isoBlock=Date.now()+(err.message==='429'?12e4:3e4);
+        isoBlock=Date.now()+(err.message==='429'?3e5:3e4);
         if(err.message==='429')tempBlock=Math.max(tempBlock,isoBlock);   // 429: ambos param de pedir
       }
     }
