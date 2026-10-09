@@ -3813,41 +3813,29 @@ function windEnsure(){
 }
 
 /* grelha de vento sobre a área visível (+35% de margem), numa só chamada à Open-Meteo */
-async function windFetchGrid(b){
-  // Calculate bounds dynamically from the map viewport so the canvas is always covered
-  const dl = b.getNorth() - b.getSouth();
-  const dg = b.getEast() - b.getWest();
-
-  // 35% margin beyond the screen edge so no borders are ever visible
-  const s = Math.max(-80, b.getSouth() - dl * 0.35);
-  const n = Math.min(80, b.getNorth() + dl * 0.35);
-  const w = b.getWest() - dg * 0.35;
-  const e = b.getEast() + dg * 0.35;
-
-  const { rows, cols } = WGR, lats = [], lons = [];
-  for(let r = 0; r < rows; r++){
-    for(let c = 0; c < cols; c++){
-      lats.push((s + r * (n - s) / (rows - 1)).toFixed(3));
-      lons.push(((((w + c * (e - w) / (cols - 1)) % 360) + 540) % 360 - 180).toFixed(3));
-    }
+async function windFetchGrid(b){                                   // vento na mesma grelha (e cache) da temperatura
+  const z=tempZ(),st=tempStepOf(z),N=Math.round(360/st),jm=Math.floor(84/st);
+  const dl=b.getNorth()-b.getSouth(),dg=b.getEast()-b.getWest();
+  const i0=Math.floor((b.getWest()-dg*.35)/st),i1=Math.ceil((b.getEast()+dg*.35)/st);
+  const j0=Math.max(-jm,Math.floor((b.getSouth()-dl*.35)/st)),j1=Math.min(jm,Math.ceil((b.getNorth()+dl*.35)/st));
+  const wm=windCache[z]||(windCache[z]=new Map()),need=[],seen=new Set(),now=Date.now();
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+    const ii=((i%N)+N)%N,k=tempKey(j,ii);
+    if(seen.has(k))continue;seen.add(k);
+    const c=wm.get(k);if(!c||now-c[2]>WIND_TTL)need.push([ii,j,k]);
   }
-
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`);
-  if(!res.ok) throw new Error('HTTP ' + res.status);
-
-  const j = await res.json(), arr = Array.isArray(j) ? j : [j], N = rows * cols;
-  const u = new Float32Array(N), v = new Float32Array(N);
-
-  for(let i = 0; i < N; i++){
-    const c = arr[i] && arr[i].current, sp = c ? +c.wind_speed_10m || 0 : 0, d = c ? +c.wind_direction_10m || 0 : 0;
-    const fl = ((d + 180) % 360) * Math.PI / 180;
-    u[i] = sp * Math.sin(fl);
-    v[i] = sp * Math.cos(fl);
+  if(need.length)await gridLoad(z,need);
+  const cols=i1-i0+1,rows=j1-j0+1;
+  if(cols<2||rows<2)throw new Error('grid too small');
+  const u=new Float32Array(cols*rows),v=new Float32Array(cols*rows);let have=0;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const e=wm.get(tempKey(j0+r,(((i0+c)%N)+N)%N)),sp=e?e[0]:0,fl=(((e?e[1]:0)+180)%360)*Math.PI/180;
+    if(e)have++;
+    u[r*cols+c]=sp*Math.sin(fl);v[r*cols+c]=sp*Math.cos(fl);
   }
-
-  return { s, n, w, e, rows, cols, u, v, z: radarMap.getZoom(), t: Date.now() };
+  if(!have)throw new Error('no wind data');
+  return{s:j0*st,n:j1*st,w:i0*st,e:i1*st,rows,cols,u,v,z:radarMap.getZoom(),t:Date.now()};
 }
-
 /* interpolação bilinear dos vetores (u,v) – nunca se interpolam ângulos */
 function windSample(g, lat, lng, o){
   const span = g.e - g.w;
@@ -3943,7 +3931,7 @@ async function updateWindVectors(){
 /* ---- tile cache: every tile is downloaded once per session ---- */
 const tileCache=new Map(),tilePending=new Map(),noCors=new Set(),tileQ=[];
 const TILE_MAX=900;let tileActive=0;
-const tileSlot=()=>new Promise(res=>{const go=()=>{tileActive++;res()};tileActive<8?go():tileQ.push(go)});
+const tileSlot=()=>new Promise(res=>{const go=()=>{tileActive++;res()};tileActive<4?go():tileQ.push(go)});
 const tileDone=()=>{tileActive--;const n=tileQ.shift();if(n)n()};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
@@ -3957,7 +3945,7 @@ function tileBlob(url){
     try{
       for(let a=0;a<3;a++){
         let r;
-        try{r=await fetch(url)}catch(e){noCors.add(host);return url}
+        try{r=await fetch(url)}catch(e){if(a<1){await sleep(1200);continue}noCors.add(host);return url}
         if(r.status==429){await sleep(900*(a+1));continue}
         if(!r.ok)throw new Error('HTTP '+r.status);
         const u=URL.createObjectURL(await r.blob());
@@ -4153,8 +4141,9 @@ function radarWarm(){
   };
   for(let k=0;k<n;k++){
     const l=layers[(radarIdx+k)%n];                     // começa na frame atual
-    if(!radarMap.hasLayer(l)){l.setOpacity(0);l.addTo(radarMap)}
     l.on('load',upd);
+    const add=()=>{if(layers!==radarLayers||!radarMap)return;if(!radarMap.hasLayer(l)){l.setOpacity(0);l.addTo(radarMap)}};
+    if(k===0)add();else setTimeout(add,k*450);          // uma frame de cada vez, não 6 de uma vez
   }
   upd();
 }
@@ -4366,7 +4355,7 @@ async function loadRainGlobal(stale){
     console.info('[RainViewer] host=%s first-path=%s tile=%s',
     rv.host, frames[0].path,
     rainViewerTileURL(rv.host, frames[0].path, 2, '0_0'));
-  radarLayers=frames.map(f=>mkLayer(rainViewerTileURL(rv.host,f.path,2,'0_0'),{maxNativeZoom:7,maxZoom:radarScope==='pt'?11:9}));
+  radarLayers=frames.map(f=>mkLayer(`${WORKER}/rv/${f.path.split('/').pop()}/256/{z}/{x}/{y}/2/0_0.png`,{maxNativeZoom:7,maxZoom:radarScope==='pt'?11:9}));
   sl.disabled=false;pl.disabled=false;sl.max=frames.length-1;
   note.textContent='RainViewer · 10 min · past 2 h'+(radarScope==='pt'?' · Portugal':' · Global');
   $('#rlmin').textContent='0.1 mm/h';
@@ -4524,27 +4513,25 @@ async function gridDirect(z,bi,bj){
   return out;
 }
 
-const GRID_B=8;                                                    // blocos 8×8 nós, iguais aos do worker (/grid)
-async function gridLoad(z,nodes){                                  // pede blocos ao worker e preenche as caches de temperatura e pressão
+let windCache={};
+const WIND_TTL=18e5;
+async function gridLoad(z,nodes){                                  // pede blocos ao worker e preenche as caches (temperatura, pressão, vento)
   const st=tempStepOf(z),N=Math.round(360/st),blocks=new Map();
   nodes.forEach(n=>{const bi=Math.floor(n[0]/GRID_B),bj=Math.floor(n[1]/GRID_B);blocks.set(bi+','+bj,[bi,bj])});
-  const tm=tempCache[z]||(tempCache[z]=new Map()),pm=isoCache[z]||(isoCache[z]=new Map());
+  const tm=tempCache[z]||(tempCache[z]=new Map()),pm=isoCache[z]||(isoCache[z]=new Map()),wm=windCache[z]||(windCache[z]=new Map());
   await Promise.all([...blocks.values()].slice(0,16).map(async([bi,bj])=>{
     const g=await gridBlock(z,bi,bj),now=Date.now();
     for(let b=0;b<GRID_B;b++)for(let a=0;a<GRID_B;a++){
-      const t=g.t[b*GRID_B+a],p=g.p[b*GRID_B+a];if(t==null&&p==null)continue;
+      const k=b*GRID_B+a,t=g.t[k],p=g.p[k],s=g.ws&&g.ws[k],d=g.wd&&g.wd[k];
+      if(t==null&&p==null&&s==null)continue;
       const key=tempKey(bj*GRID_B+b,(bi*GRID_B+a)%N);
       if(t!=null)tm.set(key,[+t,now]);
       if(p!=null)pm.set(key,[+p,now]);
+      if(s!=null&&d!=null)wm.set(key,[+s,+d,now]);
     }
     if(g.ts)tempStamp=Math.max(tempStamp,g.ts);
   }));
-  for(const m of [tm,pm])if(m.size>6000){let k=0;for(const key of m.keys()){m.delete(key);if(++k>1500)break}}
-}
-async function tempFetch(z,nodes){
-  nodes.forEach(n=>tempBusy.add(z+':'+n[2]));
-  try{await gridLoad(z,nodes)}
-  finally{nodes.forEach(n=>tempBusy.delete(z+':'+n[2]))}
+  for(const m of [tm,pm,wm])if(m.size>6000){let k=0;for(const key of m.keys()){m.delete(key);if(++k>1500)break}}
 }
 
 /* caixa visível + margem (25 % para a imagem, que assim acompanha o mapa sem cortes ao arrastar) */
