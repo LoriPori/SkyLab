@@ -405,6 +405,10 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .ind{position:absolute;top:4px;bottom:4px;left:4px;width:70px;border-radius:999px;background:#fff;box-shadow:0 6px 18px rgba(10,40,90,.18);transition:left .5s cubic-bezier(.3,1.3,.4,1),width .5s cubic-bezier(.3,1.3,.4,1)}
 
 /* cards */
+#pane {
+  min-height: 480px;
+  contain-intrinsic-size: 100% 480px;
+}
 .pane{display:grid;gap:14px}
 .g2{grid-template-columns:1.5fr 1fr}.g2e{grid-template-columns:1fr 1fr}
 .card{position:relative;padding:20px;border-radius:26px;background:rgba(255,255,255,.72);color:var(--ink);text-shadow:none;border:1px solid rgba(255,255,255,.8);backdrop-filter:blur(18px) saturate(1.5);box-shadow:0 22px 50px -28px rgba(10,40,90,.45);
@@ -2960,16 +2964,23 @@ async function weekPaneAsync(){
   <section class="card"><h3>Next 24 hours</h3><div class="hours">${hrs}</div></section></div>`;
 }
 function weekPane(){
-  // devolve um placeholder; o conteúdo real chega via weekPaneAsync
   setTimeout(async()=>{
     const pane=$('#pane');if(!pane||tab!=='week')return;
     let html;
-    try{html=await weekPaneAsync()}catch(e){console.warn('[Week]',e);data.__noIpma=1;html=await weekPaneAsync().catch(()=>'')}
+    try{
+      html=await weekPaneAsync();
+    }catch(e){
+      console.warn('[Week]',e);
+      data.__noIpma=1;
+      html=await weekPaneAsync().catch(()=>'');
+    }
     if(tab!=='week'||!$('#pane'))return;
     $('#pane').innerHTML=html;
     moveInd();
   },0);
-  return `<div class="pane sk" style="min-height:260px"></div>`;
+
+  // Match the min-height to a typical full week layout (e.g. 500px instead of 260px)
+  return `<div class="pane sk" style="min-height:520px"></div>`;
 }
 
 /* --- Air & pollen --- */
@@ -3241,9 +3252,10 @@ function render(){
  checkAlerts();
  document.title=`${T(c.temperature_2m)}° ${place.name} — Skylab`;
   if(fresh){
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   } else {
-    scrollTo(0, y);
+    // Preserve scroll position when updating state
+    window.scrollTo(0, y);
   }
 }
 
