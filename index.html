@@ -4497,15 +4497,40 @@ function tempNeeded(z,s,n,w,e){                                    // nós da ca
   }
   return out;
 }
+
+async function gridBlock(z,bi,bj){                                 // worker primeiro; se falhar, plano B direto ao Open-Meteo
+  const st=tempStepOf(z);
+  try{
+    const r=await fetch(`${WORKER}/grid?step=${st}&bi=${bi}&bj=${bj}`);
+    if(r.ok)return await r.json();
+    if(r.status===429)throw new Error('429');
+    console.warn('[Grid] worker',r.status,await r.text().catch(()=>''));
+  }catch(e){if(e.message==='429')throw e}
+  return gridDirect(z,bi,bj);
+}
+async function gridDirect(z,bi,bj){
+  const st=tempStepOf(z),N=Math.round(360/st),lats=[],lons=[],idx=[];
+  for(let b=0;b<GRID_B;b++)for(let a=0;a<GRID_B;a++){
+    const lat=(bj*GRID_B+b)*st;if(lat>84||lat<-84)continue;
+    const x=((((bi*GRID_B+a)%N)+N)%N)*st;
+    lats.push(lat.toFixed(4));lons.push((x>=180?x-360:x).toFixed(4));idx.push(b*GRID_B+a);
+  }
+  const t=Array(GRID_B*GRID_B).fill(null),p=t.slice(),out={t,p,ts:0};
+  if(!idx.length)return out;
+  const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=temperature_2m,pressure_msl&timeformat=unixtime`);
+  if(!r.ok)throw new Error(r.status==429?'429':'HTTP '+r.status);
+  const j=await r.json(),arr=Array.isArray(j)?j:[j];
+  idx.forEach((k,n)=>{const c=arr[n]&&arr[n].current;if(!c)return;if(c.temperature_2m!=null)t[k]=c.temperature_2m;if(c.pressure_msl!=null)p[k]=c.pressure_msl;if(c.time)out.ts=Math.max(out.ts,c.time*1000)});
+  return out;
+}
+
 const GRID_B=8;                                                    // blocos 8×8 nós, iguais aos do worker (/grid)
 async function gridLoad(z,nodes){                                  // pede blocos ao worker e preenche as caches de temperatura e pressão
   const st=tempStepOf(z),N=Math.round(360/st),blocks=new Map();
   nodes.forEach(n=>{const bi=Math.floor(n[0]/GRID_B),bj=Math.floor(n[1]/GRID_B);blocks.set(bi+','+bj,[bi,bj])});
   const tm=tempCache[z]||(tempCache[z]=new Map()),pm=isoCache[z]||(isoCache[z]=new Map());
   await Promise.all([...blocks.values()].slice(0,16).map(async([bi,bj])=>{
-    const r=await fetch(`${WORKER}/grid?step=${st}&bi=${bi}&bj=${bj}`);
-    if(!r.ok)throw new Error(r.status==429?'429':'HTTP '+r.status);
-    const g=await r.json(),now=Date.now();
+    const g=await gridBlock(z,bi,bj),now=Date.now();
     for(let b=0;b<GRID_B;b++)for(let a=0;a<GRID_B;a++){
       const t=g.t[b*GRID_B+a],p=g.p[b*GRID_B+a];if(t==null&&p==null)continue;
       const key=tempKey(bj*GRID_B+b,(bi*GRID_B+a)%N);
