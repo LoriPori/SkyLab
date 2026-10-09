@@ -4534,6 +4534,12 @@ async function gridLoad(z,nodes){                                  // pede bloco
   for(const m of [tm,pm,wm])if(m.size>6000){let k=0;for(const key of m.keys()){m.delete(key);if(++k>1500)break}}
 }
 
+async function tempFetch(z,nodes){
+  nodes.forEach(n=>tempBusy.add(z+':'+n[2]));
+  try{await gridLoad(z,nodes)}
+  finally{nodes.forEach(n=>tempBusy.delete(z+':'+n[2]))}
+}
+
 /* caixa visível + margem (25 % para a imagem, que assim acompanha o mapa sem cortes ao arrastar) */
 function tempBox(f=.15){
   const sz=radarMap.getSize(),px=sz.x*f,py=sz.y*f;
