@@ -1844,16 +1844,15 @@ const PT_RX=[
 
 /* nomes de pólen (Atmospore) → PT; comparação sem distinguir maiúsculas */
 const PT_POLLEN={
- 'Alder':'Amieiro','Birch':'Bétula','Hazel':'Aveleira','Hazelnut':'Aveleira','Oak':'Carvalho','Olive':'Oliveira','Cypress':'Cipreste','Pine':'Pinheiro',
- 'Plane':'Plátano','Plane tree':'Plátano','Sycamore':'Plátano','Poplar':'Choupo','Cottonwood':'Choupo','Ash':'Freixo','Elm':'Ulmeiro','Maple':'Bordo','Willow':'Salgueiro',
- 'Beech':'Faia','Chestnut':'Castanheiro','Hornbeam':'Carpino','Linden':'Tília','Lime':'Tília','Walnut':'Nogueira','Pecan':'Nogueira-pecã','Cedar':'Cedro','Juniper':'Zimbro',
- 'Mulberry':'Amoreira','Acacia':'Acácia','Eucalyptus':'Eucalipto','Palm':'Palmeira','Fir':'Abeto','Spruce':'Espruce','Larch':'Lariço','Box elder':'Bordo-negundo','Tree':'Árvores','Trees':'Árvores',
- 'Grass':'Gramíneas','Grasses':'Gramíneas','Johnson grass':'Sorgo-de-alepo','Timothy grass':'Rabo-de-gato','Timothy':'Rabo-de-gato','Ryegrass':'Azevém','Rye grass':'Azevém',
- 'Orchard grass':'Panasco','Kentucky bluegrass':'Poa-dos-prados','Bluegrass':'Poa-dos-prados','Sweet vernal grass':'Feno-de-cheiro',
- 'Mugwort':'Artemísia','Ragweed':'Ambrósia','Plantain':'Tanchagem','Nettle':'Urtiga','Goldenrod':'Vara-de-ouro','Sagebrush':'Artemísia','Pigweed':'Amaranto',
- 'Lamb’s quarters':'Quenopódio',"Lamb's quarters":'Quenopódio','Chenopod':'Quenopódio','Goosefoot':'Quenopódio','Dock':'Labaça','Sorrel':'Azeda',
- 'Wall pellitory':'Parietária','Pellitory':'Parietária','Weed':'Ervas','Weeds':'Ervas',
- 'Mold':'Bolor','Mould':'Bolor','Spores':'Esporos','Fungi':'Fungos','Very low':'Muito baixo'
+ 'Birch':'Bétula','Birch family':'Família da bétula','Hazel':'Aveleira','Alder':'Amieiro',
+ 'Pine':'Pinheiro','Spruce':'Abeto','Pine family':'Família do pinheiro',
+ 'Elm':'Ulmeiro','Willow':'Salgueiro','Oak':'Carvalho','Maple':'Bordo','Poplar':'Choupo',
+ 'Cypress':'Cipreste','Plane tree':'Plátano','Ash':'Freixo',
+ 'Timothy Grass':'Rabo-de-gato','Ryegrass':'Azevém',
+ 'Cock\'s-foot':'Panasco','Cock’s-foot':'Panasco',
+ 'False Oat-grass':'Aveia-falsa','Bluegrass':'Poa',
+ 'Nettle':'Urtiga','Mugwort':'Artemísia','Ragweed':'Ambrósia',
+ 'Very low':'Muito baixo'
 };
 const PTL=Object.fromEntries(Object.entries(PT_POLLEN).map(([k,v])=>[k.toLowerCase(),v]));
 
