@@ -4512,7 +4512,7 @@ async function gridDirect(z,bi,bj){
   idx.forEach((k,n)=>{const c=arr[n]&&arr[n].current;if(!c)return;if(c.temperature_2m!=null)t[k]=c.temperature_2m;if(c.pressure_msl!=null)p[k]=c.pressure_msl;if(c.time)out.ts=Math.max(out.ts,c.time*1000)});
   return out;
 }
-
+const GRID_B=8;                                                    // blocos 8×8 nós, iguais aos do worker (/grid)
 let windCache={};
 const WIND_TTL=18e5;
 async function gridLoad(z,nodes){                                  // pede blocos ao worker e preenche as caches (temperatura, pressão, vento)
