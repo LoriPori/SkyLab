@@ -7758,7 +7758,7 @@ new MutationObserver(()=>{progUI();favUI()}).observe(document.documentElement,{a
 progUI();favUI();
 
 /* ============ Notificações push do sistema (só com sessão iniciada) ============ */
-const VAPID_PUBLIC='COLA_AQUI_A_VAPID_PUBLIC';                       // a mesma chave pública guardada no worker
+const VAPID_PUBLIC='BEi3m1XgxB1Euxl0vZvvr2qBs2-YC9aOIAGY6hbzcE87F7t7wbbfI92nzogYBV5NUleOfPqATyfiG3JKoW0hEyg';                       // a mesma chave pública guardada no worker
 const PUSH_API=AUTH_CONFIG.apiUrl.replace('/auth','/push');
 const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 const b64uBytes=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
