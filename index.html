@@ -1063,6 +1063,51 @@ html.hlock{overflow:hidden}
 .station-info small{font-size:11.5px;color:var(--mut)}
 .station-src{font-size:11px;color:var(--mut);white-space:nowrap}
 
+/* ==== Céu Explicado × isóbaras ==== */
+.expSynP{margin-top:10px;font-size:13.5px;line-height:1.55;color:var(--mut);max-width:62ch;position:relative}
+.expProg{margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(20,49,79,.07);font:11.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);overflow-x:auto;white-space:pre;position:relative}
+
+/* ==== modo programador (perfil) ==== */
+.auth-prog{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;background:rgba(20,49,79,.06);border:1px solid rgba(20,49,79,.1)}
+.auth-prog-btn{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(20,49,79,.08);color:var(--ink);cursor:pointer;transition:background .25s,transform .25s,box-shadow .25s}
+.auth-prog-btn img{width:22px;height:22px;object-fit:contain;transition:filter .25s}
+.auth-prog-btn:hover{transform:translateY(-1px)}
+.auth-prog-btn[aria-pressed=true]{background:linear-gradient(145deg,var(--a),var(--acc));color:#fff;box-shadow:0 8px 20px -8px var(--acc)}
+.auth-prog-btn[aria-pressed=true] img{filter:brightness(0) invert(1)}
+.auth-prog-txt{display:grid;gap:2px;min-width:0;flex:1;cursor:pointer}
+.auth-prog-txt b{font-size:14px;font-weight:600}
+.auth-prog-txt span{font-size:12px;color:var(--mut)}
+.auth-prog-state{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--mut)}
+.auth-prog-btn[aria-pressed=true]~.auth-prog-state{color:var(--acc)}
+
+/* ==== favoritos: painel estilo AccuWeather ==== */
+.fav-card{width:min(1020px,100%)}
+.fav-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.fav-c{position:relative;display:grid;gap:6px;padding:14px 16px 12px;border-radius:22px;text-align:left;color:var(--ink);cursor:pointer;
+background:linear-gradient(155deg,color-mix(in srgb,var(--fc,#33b0ea) 26%,#fff),color-mix(in srgb,var(--fc,#33b0ea) 8%,#fff));
+border:1px solid rgba(20,49,79,.1);box-shadow:0 14px 30px -22px rgba(10,40,90,.55);
+transition:transform .25s cubic-bezier(.2,.9,.3,1.2),box-shadow .25s}
+.fav-grid.in .fav-c{animation:rise .45s ease both;animation-delay:calc(var(--n,0)*45ms)}
+.fav-c:hover,.fav-c:focus-visible{transform:translateY(-3px);box-shadow:0 20px 36px -20px rgba(10,40,90,.6);outline:none}
+.fav-c.home{box-shadow:inset 0 0 0 2px var(--acc),0 14px 30px -22px rgba(10,40,90,.55)}
+.fav-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.fav-nm{font-weight:700;font-size:15px;line-height:1.2}
+.fav-sb{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums}
+.fav-acts{display:flex;gap:4px;flex:none}
+.fav-acts button{width:26px;height:26px;border-radius:50%;font-size:12px;line-height:1;background:rgba(255,255,255,.7);border:1px solid rgba(20,49,79,.12);color:var(--ink);cursor:pointer}
+.fav-acts button:hover{background:#fff}
+.fav-acts button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+.fav-mid{display:flex;align-items:center;gap:10px}
+.fav-ic .ic{width:44px;height:44px}
+.fav-t{font-size:40px;font-weight:300;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.fav-cond{font-size:12.5px;color:var(--mut)}
+.fav-row{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-variant-numeric:tabular-nums}
+.fav-rain{height:5px;border-radius:9px;background:rgba(20,49,79,.1);overflow:hidden}
+.fav-rain i{display:block;height:100%;width:var(--w,0%);background:#3b8fe0;border-radius:9px}
+.fav-empty{padding:34px 10px;text-align:center;color:var(--mut);font-size:14px}
+@media (prefers-reduced-motion:reduce){.fav-grid.in .fav-c{animation:none}}
+
 /* ==== céu explicado ==== */
 .exp{display:grid;gap:16px}
 .expHero{padding:26px 28px 24px;border-radius:28px;position:relative;overflow:hidden;
@@ -1201,7 +1246,7 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
   </div>
 
  <!-- Terminal Button (Expands on hover) -->
- <button class="pill term-btn" id="termBtn" title="Terminal" aria-label="Terminal View">
+ <button class="pill term-btn" id="termBtn" title="Terminal" aria-label="Terminal View" hidden>
   <img src="terminal.png" alt="" width="18" height="18" onerror="imgFBTerm(this)">
   <span class="term-lbl">Terminal</span>
  </button>
@@ -1304,6 +1349,16 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
      <span class="auth-prof-email" id="profEmail"></span>
     </div>
    </div>
+   <div class="auth-prog">
+    <button type="button" class="auth-prog-btn" id="progBtn" aria-pressed="false" aria-describedby="progDesc">
+     <img src="code.png" alt="" width="22" height="22" onerror="imgFBCode(this)">
+    </button>
+    <label class="auth-prog-txt" for="progBtn">
+     <b id="progLbl">Programmer mode</b>
+     <span id="progDesc">Terminal, raw data and technical detail</span>
+    </label>
+    <span class="auth-prog-state" id="progState">OFF</span>
+   </div>
    <div class="auth-profile-actions">
     <button type="button" class="pill solid big auth-logout-btn" id="authLogoutBtn">Terminar Sessão</button>
     <button type="button" class="pill solid big auth-delete-btn" id="authDeleteBtn">Apagar Conta</button>
@@ -1401,20 +1456,23 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
 
 const ATMO={ base:'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/v1' };
 let atmoDead=false;
-const SYNC_KEYS = ['favs','unitPick','lang','place'];   // declared first so lsSet can reference it safely
+const SYNC_KEYS = ['favs','unitPick','lang','place','homeCity','progMode','termHist','termTheme','tabPick','recent'];// declared first so lsSet can reference it safely
 /* ============ basics ============ */
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const main=$('#main'),q=$('#q'),sg=$('#sg');
 const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
 const lsSet=(k,v)=>{
   try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}
-  if(typeof prefsSchedulePush==='function' && typeof SYNC_KEYS!=='undefined' && SYNC_KEYS.includes(k)) prefsSchedulePush();
+  if(typeof SYNC_KEYS!=='undefined' && SYNC_KEYS.includes(k) && !window.__prefsApplying){
+    try{localStorage.setItem('prefsTs',String(Date.now()))}catch(e){}
+    if(typeof prefsSchedulePush==='function') prefsSchedulePush();
+  }
 };
 let LANG=lsGet('lang')||((navigator.language||'').toLowerCase().startsWith('pt')?'pt':'en');
 const LOC=()=>LANG=='pt'?'pt-PT':'en';
 document.documentElement.lang=LANG;
 try{localStorage.removeItem('unit');localStorage.removeItem('unitManual')}catch(e){}   // limpa o estado antigo que bloqueava a mudança automática
-let unit=lsGet('unitPick')||(LANG=='pt'?'c':'f'),data=null,place=null,tab='today',lastKey='',tickT;
+let unit=lsGet('unitPick')||(LANG=='pt'?'c':'f'),data=null,place=null,tab=(['today','week','air','sky','sci'].includes(lsGet('tabPick'))?lsGet('tabPick'):'today'),lastKey='',tickT;
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const T=c=>Math.round(unit=='c'?c:c*9/5+32);
 const W=k=>unit=='c'?Math.round(k)+' km/h':Math.round(k*.539957)+' kt';
@@ -2067,7 +2125,7 @@ function skySignals(){
   const dP=c.surface_pressure-h.surface_pressure[p3];
   const dDew=(h.dew_point_2m&&isFinite(h.dew_point_2m[p3]))?c.dew_point_2m-h.dew_point_2m[p3]:0;
   const dT=c.temperature_2m-h.temperature_2m[p3];
-  return {dP,dDew,dT,dewNow:c.dew_point_2m,rhNow:c.relative_humidity_2m,wind:c.wind_speed_10m,dir:c.wind_direction_10m,temp:c.temperature_2m,code:c.weather_code,isDay:c.is_day,p:p3,i0};
+  return {syn:synGet(),pmsl:c.pressure_msl,dP,dDew,dT,dewNow:c.dew_point_2m,rhNow:c.relative_humidity_2m,wind:c.wind_speed_10m,dir:c.wind_direction_10m,temp:c.temperature_2m,code:c.weather_code,isDay:c.is_day,p:p3,i0};
 }
 
 /* ============ Céu Explicado: Península Ibérica ============ */
@@ -2132,10 +2190,12 @@ function patternDetect(){
   if(s.dP<=-1.5&&s.dDew>0.8&&isRain)return{id:'front-cold',cat:'Meteorology',s};
   if(s.dP<=-0.5&&s.dewNow>=14&&isRain)return{id:'front-warm',cat:'Meteorology',s};
   if(s.dP>=0.5&&s.dDew<-0.5&&isClear)return{id:'post-front',cat:'Meteorology',s};
-  if(s.temp>1020||(data.current.surface_pressure>1020&&isClear&&s.dP>=0))return{id:'high',cat:'Atmosphere',s};
+  if(s.pmsl>=1020&&isClear&&s.dP>=0)return{id:'high',cat:'Atmosphere',s};
   if(s.dewNow>=18&&s.temp>=22&&isClear)return{id:'tropical',cat:'Climate',s};
   if(anomaly<-3&&s.dewNow<5&&fromN)  return{id:'polar',cat:'Climate',s};
   if(isRain&&Math.abs(s.dP)<0.8)     return{id:'showers',cat:'Meteorology',s};
+  const syn=synPick(s);                       // A/B do mapa de isóbaras perto do local
+  if(syn)return{id:syn,cat:'Atmosphere',s};
   return{id:'transition',cat:'Atmosphere',s};
 }
 
@@ -2179,11 +2239,11 @@ const PATTERNS={
  'high':s=>({
   title:T2('An anticyclone sits over the region','Um anticiclone está sobre a região'),
   body:T2(
-   `Pressure is ${Math.round(data.current.surface_pressure)} hPa, the sky is clear and there is little wind. In a high-pressure system, <i>air descends from aloft</i>, warming and drying as it sinks. That sinking is what clears the sky — clouds cannot survive the descent. It also explains why nights are colder than expected under a high: with no clouds to trap heat, the ground radiates it straight to space.`,
-   `A pressão está a ${Math.round(data.current.surface_pressure)} hPa, o céu está limpo e há pouco vento. Num anticiclone, o <i>ar desce de níveis altos</i>, aquecendo e secando à medida que afunda. Essa descida é o que limpa o céu — as nuvens não sobrevivem ao movimento descendente. Também explica porque é que as noites são mais frias do que se esperaria sob um anticiclone: sem nuvens para reter calor, o solo irradia-o direto para o espaço.`
+   `Pressure is ${Math.round(pMSL())} hPa, the sky is clear and there is little wind. In a high-pressure system, <i>air descends from aloft</i>, warming and drying as it sinks. That sinking is what clears the sky — clouds cannot survive the descent. It also explains why nights are colder than expected under a high: with no clouds to trap heat, the ground radiates it straight to space.`,
+   `A pressão está a ${Math.round(pMSL())} hPa, o céu está limpo e há pouco vento. Num anticiclone, o <i>ar desce de níveis altos</i>, aquecendo e secando à medida que afunda. Essa descida é o que limpa o céu — as nuvens não sobrevivem ao movimento descendente. Também explica porque é que as noites são mais frias do que se esperaria sob um anticiclone: sem nuvens para reter calor, o solo irradia-o direto para o espaço.`
   ),
   signals:[
-   T2(`Pressure ${Math.round(data.current.surface_pressure)} hPa`,`Pressão ${Math.round(data.current.surface_pressure)} hPa`),
+   T2(`Pressure ${Math.round(pMSL())} hPa`,`Pressão ${Math.round(pMSL())} hPa`),
    T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`),
    T2(`Code ${s.code} — clear`,`Código ${s.code} — limpo`)
   ]
@@ -2344,6 +2404,160 @@ Object.assign(PT,{
   'Here are the closest cities we could find.':'Estas são as cidades mais parecidas que encontrámos.',
   'Back':'Voltar'
 });
+
+/* ============ Céu Explicado × isóbaras ============ */
+/* Usa o MESMO campo de pressão do mapa (isoCache + gridLoad + isoBuild), por isso o A/B que vês no radar é o A/B que o Céu Explicado conhece. */
+const pMSL=()=>{const c=data.current;return isFinite(c.pressure_msl)?c.pressure_msl:c.surface_pressure};   // pressão ao nível do mar (a de superfície engana em locais altos)
+const SYN_Z=6;                                                     // passo de 5°: escala regional
+let synMemo={k:'',t:0,a:null},synBusy=false;
+const synKey=()=>place.lat.toFixed(2)+','+place.lon.toFixed(2);
+function synBox(){                                                 // caixa de ±24° à volta do local (≈ ±2 600 km)
+  const st=tempStepOf(SYN_Z),jm=Math.floor(84/st),R=24;
+  const kx=Math.min(1.6,1/Math.max(.3,Math.cos(Math.min(75,Math.abs(place.lat))*Math.PI/180)));
+  return{z:SYN_Z,st,i0:Math.floor((place.lon-R*kx)/st),i1:Math.ceil((place.lon+R*kx)/st),
+         j0:Math.max(-jm,Math.floor((place.lat-R)/st)),j1:Math.min(jm,Math.ceil((place.lat+R)/st))};
+}
+function synAnalyse(){
+  const g=synBox(),M=isoBuild(g);
+  if(!M)return null;
+  const p0=pMSL(),la=place.lat,lo=place.lon,rad=Math.PI/180;
+  const brg=(la2,lo2)=>{const f1=la*rad,f2=la2*rad,dl=(lo2-lo)*rad;
+    return(Math.atan2(Math.sin(dl)*Math.cos(f2),Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dl))/rad+360)%360};
+  const list=M.ext.map(e=>({hi:e.hi,p:e.p,lat:e.lat,lng:e.lng,d:hav(la,lo,e.lat,e.lng),b:brg(e.lat,e.lng)})).sort((a,b)=>a.d-b.d);
+  /* anel de 600–1 200 km: diz se o local está acima ou abaixo da pressão que o rodeia (dorsal / cavado) */
+  const N=Math.round(360/g.st);let sum=0,cnt=0;
+  for(let j=g.j0;j<=g.j1;j++)for(let i=g.i0;i<=g.i1;i++){
+    const v=isoNode(g.z,((i%N)+N)%N,j);if(v!==v)continue;
+    const d=hav(la,lo,j*g.st,i*g.st);if(d>=600&&d<=1200){sum+=v;cnt++}
+  }
+  return{p0,rel:cnt>=4?p0-sum/cnt:null,hi:list.find(e=>e.hi)||null,lo:list.find(e=>!e.hi)||null};
+}
+function synGet(){                                                 // análise em cache (1 min); null se o campo ainda não chegou
+  if(!place||!data)return null;
+  const k=synKey();
+  if(synMemo.k===k&&Date.now()-synMemo.t<6e4)return synMemo.a;
+  let a=null;try{a=synAnalyse()}catch(e){console.warn('[Synoptic]',e.message)}
+  synMemo={k,t:Date.now(),a};
+  return a;
+}
+async function synEnsure(){                                        // pede os nós em falta (worker /grid, com cache) e repinta o herói quando chegarem
+  if(!place||synBusy)return;
+  const g=synBox(),need=isoMissing(g),k=synKey();
+  if(!need.length||Date.now()<Math.max(isoBlock,tempBlock))return;
+  synBusy=true;
+  try{await gridLoad(g.z,need)}
+  catch(err){
+    console.warn('[Synoptic]',err.message);
+    isoBlock=Date.now()+(err.message==='429'?3e5:3e4);
+    if(err.message==='429')tempBlock=Math.max(tempBlock,isoBlock);
+    return;
+  }finally{synBusy=false}
+  synMemo.t=0;
+  if(tab==='sky'&&place&&synKey()===k)skyRepaint();
+}
+const SYN_DIR_EN=['N','NE','E','SE','S','SW','W','NW'],SYN_DIR_PT=['N','NE','E','SE','S','SO','O','NO'];
+const synDir=b=>(LANG==='pt'?SYN_DIR_PT:SYN_DIR_EN)[Math.round(b/45)%8];
+const synDist=d=>unit=='c'?(Math.round(d/10)*10)+' km':(Math.round(d*.621371/10)*10)+' mi';
+const synWhere=e=>e.d<150?T2('right over this area','mesmo sobre esta zona'):T2(`about ${synDist(e.d)} ${synDir(e.b)} of here`,`a cerca de ${synDist(e.d)} a ${synDir(e.b)} daqui`);
+const synStr=e=>e.hi
+  ?(e.p>=1030?T2('strong','forte'):e.p>=1020?T2('well-marked','bem marcado'):T2('weak','fraco'))
+  :(e.p<=990?T2('deep','cavada'):e.p<=1004?T2('moderate','moderada'):T2('shallow','pouco cavada'));
+function synNearest(s){                                            // A ou B mais próximo (≤ 1 800 km)
+  const y=s&&s.syn;if(!y)return null;
+  const A=y.hi&&y.hi.d<=1800?y.hi:null,B=y.lo&&y.lo.d<=1800?y.lo:null;
+  return A&&B?(A.d<=B.d?A:B):(A||B);
+}
+function synPick(s){                                               // usado pelo patternDetect antes do "nenhum padrão domina"
+  const e=synNearest(s);
+  if(e)return e.hi?'high-near':'low-near';
+  const r=s.syn&&s.syn.rel;
+  if(r!=null&&r>=2)return'ridge';
+  if(r!=null&&r<=-2)return'trough';
+  return null;
+}
+function synLine(s){                                               // frase + chip para os padrões que NÃO são regionais
+  const e=synNearest(s);if(!e)return null;
+  const kind=e.hi?T2('high (A)','alta (A)'):T2('low (B)','baixa (B)');
+  return{
+    text:T2(`On the pressure map a ${kind} of ${Math.round(e.p)} hPa sits ${synWhere(e)}.`,`No mapa de pressão há uma ${kind} de ${Math.round(e.p)} hPa ${synWhere(e)}.`),
+    chip:`${e.hi?'A':'B'} ${Math.round(e.p)} hPa · ${e.d<150?T2('overhead','por cima'):synDist(e.d)+' '+synDir(e.b)}`
+  };
+}
+const SKY_ALIAS={'high-near':'high','ridge':'high','low-near':'showers','trough':'showers'};   // ícones reutilizados
+Object.assign(PATTERNS,{
+ 'high-near':s=>{
+  const e=synNearest(s),rel=s.syn&&s.syn.rel,north=place.lat>=0;
+  const relTxt=rel!=null&&rel>.5?T2(`, about ${dec1(rel)} hPa above the surrounding area`,`, cerca de ${dec1(rel)} hPa acima da zona envolvente`):'';
+  const drift=Math.abs(s.dP)>=1.5?T2(` Pressure has moved ${dec1(s.dP)} hPa in three hours, so the high is building or drifting rather than sitting still — expect conditions to keep changing.`,` A pressão variou ${dec1(s.dP)} hPa em três horas, por isso a alta está a formar-se ou a deslocar-se em vez de estar parada — as condições devem continuar a mudar.`):'';
+  const cloud=s.code===3?T2(` The sky is overcast here anyway: under a weak high, moisture trapped below the sinking air can form low cloud.`,` Aqui o céu está encoberto na mesma: sob uma alta fraca, a humidade presa por baixo do ar que desce pode formar nuvens baixas.`):'';
+  return{
+   title:T2('A high-pressure centre nearby','Um centro de alta pressão nas proximidades'),
+   body:T2(
+    `The pressure map shows a closed high, the <i>A of ${Math.round(e.p)} hPa</i>, ${synWhere(e)}. It is a ${synStr(e)} anticyclone, but it does not need to be strong to matter: what counts is that pressure is higher here than around it${relTxt}. Air sinks inside a high and spirals ${north?'clockwise':'anticlockwise'} around it, which thins out cloud and keeps the wind light.${drift}${cloud}`,
+    `O mapa de pressão mostra uma alta fechada, o <i>A de ${Math.round(e.p)} hPa</i>, ${synWhere(e)}. É um anticiclone ${synStr(e)}, mas não precisa de ser forte para contar: o que interessa é que a pressão aqui é superior à do ar à volta${relTxt}. O ar desce dentro de uma alta e gira ${north?'no sentido dos ponteiros do relógio':'no sentido contrário ao dos ponteiros do relógio'} à volta dela, o que dissipa a nebulosidade e mantém o vento fraco.${drift}${cloud}`),
+   signals:[synLine(s).chip,T2(`Pressure ${Math.round(pMSL())} hPa (sea level)`,`Pressão ${Math.round(pMSL())} hPa (nível do mar)`),T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`)]
+  };
+ },
+ 'low-near':s=>{
+  const e=synNearest(s),north=place.lat>=0;
+  const calm=s.code<=2?T2(` The sky is clear here for now — the low is not directly affecting this spot, but it can bring cloud and wind as it moves.`,` Aqui o céu está limpo por agora — a baixa ainda não afeta este ponto, mas pode trazer nuvens e vento ao deslocar-se.`):'';
+  return{
+   title:T2('A low-pressure centre nearby','Um centro de baixa pressão nas proximidades'),
+   body:T2(
+    `The pressure map shows a closed low, the <i>B of ${Math.round(e.p)} hPa</i>, ${synWhere(e)}: a ${synStr(e)} depression. Air converges and rises into a low and spirals ${north?'anticlockwise':'clockwise'} around its centre, which is why cloud, rain and wind tend to gather around it.${calm}`,
+    `O mapa de pressão mostra uma baixa fechada, o <i>B de ${Math.round(e.p)} hPa</i>, ${synWhere(e)}: uma depressão ${synStr(e)}. O ar converge e sobe numa baixa e gira ${north?'no sentido contrário ao dos ponteiros do relógio':'no sentido dos ponteiros do relógio'} à volta do centro, e é por isso que nuvens, chuva e vento tendem a juntar-se à volta dela.${calm}`),
+   signals:[synLine(s).chip,T2(`Pressure ${Math.round(pMSL())} hPa (sea level)`,`Pressão ${Math.round(pMSL())} hPa (nível do mar)`),T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`)]
+  };
+ },
+ 'ridge':s=>({
+  title:T2('On a ridge of high pressure','Numa dorsal de pressão alta'),
+  body:T2(
+   `Pressure here (${Math.round(pMSL())} hPa at sea level) is <i>${dec1(s.syn.rel)} hPa above</i> the surrounding area, but there is no closed high close by. That is a ridge: a tongue of higher pressure where air gently sinks, so the weather tends to be calmer than around it even though no single feature dominates.`,
+   `A pressão aqui (${Math.round(pMSL())} hPa ao nível do mar) está <i>${dec1(s.syn.rel)} hPa acima</i> da zona envolvente, mas não há nenhuma alta fechada por perto. É uma dorsal: uma língua de pressão mais alta onde o ar desce suavemente, por isso o tempo tende a ser mais calmo do que à volta, mesmo sem um único sistema a dominar.`),
+  signals:[T2(`+${dec1(s.syn.rel)} hPa vs surroundings`,`+${dec1(s.syn.rel)} hPa face à envolvente`),T2(`Pressure ${Math.round(pMSL())} hPa`,`Pressão ${Math.round(pMSL())} hPa`),T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`)]
+ }),
+ 'trough':s=>({
+  title:T2('In a trough of low pressure','Num cavado de baixa pressão'),
+  body:T2(
+   `Pressure here (${Math.round(pMSL())} hPa at sea level) is <i>${dec1(-s.syn.rel)} hPa below</i> the surrounding area, but no closed low is nearby. That is a trough: a stretched-out zone of lower pressure where air tends to rise, so cloud and showers can develop even without a clear front.`,
+   `A pressão aqui (${Math.round(pMSL())} hPa ao nível do mar) está <i>${dec1(-s.syn.rel)} hPa abaixo</i> da zona envolvente, mas não há nenhuma baixa fechada por perto. É um cavado: uma zona alongada de pressão mais baixa onde o ar tende a subir, por isso podem surgir nuvens e aguaceiros mesmo sem uma frente clara.`),
+  signals:[T2(`${dec1(s.syn.rel)} hPa vs surroundings`,`${dec1(s.syn.rel)} hPa face à envolvente`),T2(`Pressure ${Math.round(pMSL())} hPa`,`Pressão ${Math.round(pMSL())} hPa`),T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`)]
+ })
+});
+
+function synDebug(p){                                              // só com o modo programador ligado
+  const y=p.s.syn,f=e=>e?`${e.hi?'A':'B'} ${e.p.toFixed(1)} hPa @ ${e.lat.toFixed(1)},${e.lng.toFixed(1)} · ${Math.round(e.d)} km · ${Math.round(e.b)}°`:'—';
+  return`<pre class="expProg">${escH([
+    'pattern    '+p.id,
+    'grid       z='+SYN_Z+'  step='+tempStepOf(SYN_Z)+'°  cache='+(isoCache[SYN_Z]?isoCache[SYN_Z].size:0)+' nós',
+    'p0 (MSL)   '+(+pMSL()).toFixed(1)+' hPa',
+    'rel        '+(y&&y.rel!=null?y.rel.toFixed(2)+' hPa vs anel 600–1200 km':'—'),
+    'nearest A  '+f(y&&y.hi),
+    'nearest B  '+f(y&&y.lo)
+  ].join('\n'))}</pre>`;
+}
+function skyHero(p){
+  const det=(PATTERNS[p.id]||PATTERNS.transition)(p.s);
+  const icon=PD_ICONS[p.id]||PD_ICONS[SKY_ALIAS[p.id]]||PD_ICONS.transition;
+  const isIb=p.cat==='Iberia',sl=SKY_ALIAS[p.id]?null:synLine(p.s);
+  const sig=sl?[...det.signals,sl.chip]:det.signals;
+  return`<section class="card expHero">
+ <div class="expTxt">
+ <span class="expCat${isIb?' ib':''}">${tr(p.cat)}</span>
+ <h2 class="expH">${det.title}</h2>
+ <p class="expP">${det.body}</p>
+ ${sl?`<p class="expSynP">${sl.text}</p>`:''}
+ <div class="expSig">${sig.map(x=>`<span class="sg"><i></i>${x}</span>`).join('')}</div>
+ ${typeof progOn==='function'&&progOn()?synDebug(p):''}
+ </div>
+ <div class="expDiagram">${icon}</div>
+ </section>`;
+}
+function skyRepaint(){
+  const el=$('#pane .expHero');if(!el||tab!=='sky'||!data)return;
+  const t=document.createElement('div');t.innerHTML=skyHero(patternDetect());
+  el.replaceWith(t.firstElementChild);
+}
 
 /* ============ Céu Explicado: diagramas + sparkline ============ */
 const SVG_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
@@ -2545,20 +2759,10 @@ function contextWeekText(){
 }
 
 function skyPane(){
+ synEnsure();                                   // pede o campo de pressão regional; o herói repinta-se quando chegar
  const p=patternDetect();
- const det=(PATTERNS[p.id]||PATTERNS.transition)(p.s);
- const icon=PD_ICONS[p.id]||PD_ICONS.transition;
- const isIb=p.cat==='Iberia';
  return`<div class="pane exp">
- <section class="card expHero">
- <div class="expTxt">
- <span class="expCat${isIb?' ib':''}">${tr(p.cat)}</span>
- <h2 class="expH">${det.title}</h2>
- <p class="expP">${det.body}</p>
- <div class="expSig">${det.signals.map(s=>`<span class="sg"><i></i>${s}</span>`).join('')}</div>
- </div>
- <div class="expDiagram">${icon}</div>
- </section>
+ ${skyHero(p)}
  <div class="expGrid three">
  <section class="card expCard"><h4>${SVG_CLOCK}${tr('Next 6 hours')}</h4><p>${next6hText()}</p>
  <div class="expSpark"><h5>${T2('Pressure trend','Tendência da pressão')}</h5>${pressureSparkSVG()}</div></section>
@@ -2769,7 +2973,7 @@ const PANES={today:todayPane,week:weekPane,radar:radarPane,air:airPane,sky:skyPa
 const INIT={today:scrub,radar:radarInit};
 function setTab(k){
  radarStop();
- tab=k;$$('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t==k));moveInd();
+ tab=k;if(lsGet('tabPick')!==k)lsSet('tabPick',k);$$('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t==k));moveInd();
  const pane=$('#pane');pane.innerHTML=PANES[k]();
  if(INIT[k])INIT[k]();
  if(k==='sky')initSparkTooltip();   // <-- adicionar esta linha
@@ -3679,7 +3883,7 @@ main.addEventListener('click',e=>{
  if(e.target.closest('#tk')&&data){factI=+$('#tk').dataset.i;sciMode='fact';setTab('sci');$('#tabs').scrollIntoView({behavior:'smooth',block:'start'});return}
  if(e.target.closest('#fav')){
   const same=x=>x.name==place.name&&x.sub==place.sub;
-  lsSet('favs',favs().some(same)?favs().filter(x=>!same(x)):[place,...favs()].slice(0,8));paintFav();
+  lsSet('favs',favs().some(same)?favs().filter(x=>!same(x)):[place,...favs()].slice(0,20));paintFav();
  }
 });
 $('#loc').onclick=locate;$('#sur').onclick=surprise;
@@ -5166,13 +5370,14 @@ const AUTH_CONFIG = {
     : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
   googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com'
 };
-/* ==== sync de preferências ==== */
+/* ==== sync de preferências (v2: um documento, "a escrita mais recente ganha") ==== */
 let syncT = null;
 async function prefsPush(){
   if(!currentToken) return;
   const payload = {};
   for(const k of SYNC_KEYS){ const v = lsGet(k); if(v!=null) payload[k]=v; }
   if(!Object.keys(payload).length) return;
+  payload._ts = +localStorage.getItem('prefsTs') || Date.now();     // carimbo da última alteração local
   try{
     await fetch(`${AUTH_CONFIG.apiUrl.replace('/auth','')}/prefs`,{
       method:'PUT',
@@ -5196,29 +5401,56 @@ async function prefsPull(){
     return j.prefs || null;
   }catch(e){ return null; }
 }
-function prefsMerge(server){
+/* first=true → acabou de iniciar sessão neste dispositivo: junta listas locais + nuvem.
+   first=false → arranque normal: o documento mais recente (local ou nuvem) ganha, por isso apagar um favorito num dispositivo também o apaga nos outros. */
+function prefsMerge(server, first){
   if(!server) return false;
-  let changed = false;
-  for(const k of SYNC_KEYS){
-    if(!(k in server)) continue;
-    if(k==='favs'){
-      const local = lsGet('favs')||[];
-      const remote = Array.isArray(server.favs)?server.favs:[];
-      const seen = new Set(), merged = [];
-      for(const f of [...remote,...local]){
-        const id = f.name+'|'+(f.sub||'');
-        if(seen.has(id)) continue;
-        seen.add(id); merged.push(f);
+  const sTs = +server._ts || 0, lTs = +localStorage.getItem('prefsTs') || 0, LIM = {favs:20, recent:5, termHist:200};
+  let changed = false, push = false;
+  const put = (k,v) => { if(JSON.stringify(lsGet(k)) !== JSON.stringify(v)){ lsSet(k,v); changed = true; } };
+  window.__prefsApplying = true;
+  try{
+    if(first){
+      for(const k of SYNC_KEYS){
+        if(k in LIM){
+          const seen = new Set(), out = [];
+          for(const f of [...(Array.isArray(server[k])?server[k]:[]), ...(lsGet(k)||[])]){
+            const id = typeof f==='string' ? f : f.name+'|'+(f.sub||'');
+            if(!seen.has(id)){ seen.add(id); out.push(f); }
+          }
+          put(k, out.slice(0, LIM[k]));
+        }else if(k in server) put(k, server[k]);
       }
-      if(merged.length !== local.length){ lsSet('favs', merged.slice(0,20)); changed = true; }
-    }else{
-      const local = lsGet(k);
-      if(JSON.stringify(local) !== JSON.stringify(server[k])){
-        lsSet(k, server[k]); changed = true;
-      }
-    }
-  }
+      localStorage.setItem('prefsTs', String(Date.now())); push = true;
+    }else if(sTs > lTs || !lTs){
+      for(const k of SYNC_KEYS) if(k in server) put(k, server[k]);
+      localStorage.setItem('prefsTs', String(sTs || Date.now()));
+    }else if(lTs > sTs) push = true;
+  }finally{ window.__prefsApplying = false; }
+  if(push) prefsSchedulePush();
   return changed;
+}
+/* aplica ao ecrã o que veio da nuvem (o antigo só gravava no localStorage: LANG e unit só mudavam no reload seguinte) */
+function prefsApplied(){
+  const l = lsGet('lang'), u = lsGet('unitPick');                    // ler ANTES: o setLang reescreve a unidade
+  window.__prefsApplying = true;
+  try{
+    if((l==='pt'||l==='en') && l!==LANG) setLang(l);
+    if(u==='c'||u==='f'){ lsSet('unitPick',u); if(u!==unit) setUnit(u,false,true); }
+    if(termInst){
+      const h = lsGet('termHist'); termInst.history = Array.isArray(h) ? h.slice(-SkyTerm.CFG.histMax) : []; termInst.hIdx = termInst.history.length;
+      const th = lsGet('termTheme'); if(th) SkyTerm.setTheme(th);
+    }
+  }finally{ window.__prefsApplying = false; }
+  if(typeof progUI==='function') progUI();
+  if(typeof favUI==='function') favUI();
+  if(typeof favOpen!=='undefined' && favOpen) favPaint(false);
+  if(data) render();
+}
+async function prefsAfterLogin(){                                    // chamar depois de guardar currentToken (email, registo e Google)
+  const sp = await prefsPull();
+  if(sp){ if(prefsMerge(sp,true)) prefsApplied(); }
+  else{ localStorage.setItem('prefsTs', String(Date.now())); prefsSchedulePush(); }   // conta nova: sobe o que já existe localmente
 }
 
 function imgFBAuth(el){
@@ -5496,6 +5728,7 @@ function initAuthInputs(){
   // Terminar Sessão
   $('#authLogoutBtn').onclick=async()=>{
     termClose();
+    if(termInst){termInst.history=[];termInst.hIdx=0}     // o histórico de comandos não fica para o próximo utilizador
     stopUserWeatherLoop();
     const tok=currentToken;
     currentUser=null;
@@ -5641,8 +5874,7 @@ function initAuthInputs(){
       lsSet('skylab_auth_token',currentToken);
       updateAuthUI();
       startUserWeatherLoop();
-      const serverPrefs = await prefsPull();
-      if(prefsMerge(serverPrefs) && data) render();
+      await prefsAfterLogin();
 
       toast(authMode==='signup' 
         ?(LANG==='pt'?`Bem-vindo ao Skylab, ${currentUser.username}!`:`Welcome to Skylab, ${currentUser.username}!`)
@@ -5705,6 +5937,7 @@ function authTriggerGoogle(){
           lsSet('skylab_auth_token', currentToken);
           updateAuthUI();
           startUserWeatherLoop();
+          await prefsAfterLogin();
           toast(LANG==='pt'?`Autenticado como ${currentUser.username}!`:`Signed in as ${currentUser.username}!`);
           authClose();
         } catch(e) {
@@ -6329,7 +6562,8 @@ class Out{
    ===================================================================== */
 class Terminal{
  constructor({ outEl, inEl, psEl, scrollEl }){
-  Object.assign(this, { outEl, inEl, psEl, scrollEl, history:[], hIdx:0, draft:'', ctx:null, busy:false, lastText:'', theme:'modern' });
+  const HIST0 = (Array.isArray(lsGet('termHist')) ? lsGet('termHist') : []).filter(x => typeof x === 'string').slice(-CFG.histMax);
+  Object.assign(this, { outEl, inEl, psEl, scrollEl, history:HIST0, hIdx:HIST0.length, draft:'', ctx:null, busy:false, lastText:'', theme:'modern' });
   this.inEl.addEventListener('keydown', e => this.onKey(e));
  }
  ps1(){ const slug = this.ctx ? this.ctx.place.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') : 'void'; return `skylab@${slug}:~$`; }
@@ -6351,7 +6585,7 @@ class Terminal{
   if(bang){ const i = bang[1] === '!' ? this.history.length : +bang[1]; line = this.history[i-1] || ''; if(!line){ this.block(raw).err('history: event not found'); return; } }
   const out = this.block(line);
   if(!line) return;
-  if(this.history[this.history.length-1] !== line){ this.history.push(line); if(this.history.length > CFG.histMax) this.history.shift(); }
+if(this.history[this.history.length-1] !== line){ this.history.push(line); if(this.history.length > CFG.histMax) this.history.shift(); lsSet('termHist', this.history); }
   this.hIdx = this.history.length; this.draft = '';
   let tokens;
   try{ tokens = tokenize(line); }catch(e){ out.err(`parse error: ${e.message}`); return; }
@@ -6999,7 +7233,7 @@ exporters
    ===================================================================== */
 return { commands, metrics, exporters, CFG, Terminal, tokenize, parseArgs, fetchWeather, math:{ dewPoint, airDensity, wetBulb, thetaE, lclTemp, sparkline },
  setTheme(t){ const dr = document.getElementById('termDrawer'); if(!dr) return; dr.classList.remove('retro','amber'); if(t !== 'modern') dr.classList.add(t);
-  if(termInst) termInst.theme = t; try{ localStorage.setItem('skylabTermTheme', t); }catch(e){}
+  if(termInst) termInst.theme = t; lsSet('termTheme', t);
   const b = document.getElementById('cliThemeBtn'); if(b) b.textContent = 'Theme: ' + t; } };
 })();
 /* ============ CLI: Hurricane Tracker storm reports ============ */
@@ -7325,7 +7559,7 @@ function termOpen(){
  if(!termInst){
   termInst = new SkyTerm.Terminal({ outEl:$('#cliOut'), inEl:$('#cliIn'), psEl:$('#cliPs1'), scrollEl:$('#termBody') });
  }
- let th = 'modern'; try{ th = localStorage.getItem('skylabTermTheme') || 'modern'; }catch(e){}
+ let th = lsGet('termTheme') || 'modern';
  SkyTerm.setTheme(th);
  termInst.boot();
  setTimeout(() => { const i = $('#cliIn'); if(i && termIsOpen) i.focus(); }, 380);
@@ -7365,6 +7599,164 @@ document.addEventListener('keydown', e => {
  termClose();
 });
 
+/* ============ Modo programador + Favoritos (só com sessão iniciada) ============ */
+const progOn=()=>isUserAuth()&&lsGet('progMode')===true;
+function imgFBCode(el){
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');
+  svg.setAttribute('stroke-width','2');svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');
+  svg.style.width='22px';svg.style.height='22px';
+  svg.innerHTML='<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>';
+  el.replaceWith(svg);
+}
+function progUI(){
+  const on=progOn(),tb=$('#termBtn');
+  if(tb)tb.hidden=!on;                                              // o botão Terminal só existe com o modo programador ligado
+  if(!on&&termIsOpen)termClose();
+  const b=$('#progBtn');
+  if(b){
+    b.setAttribute('aria-pressed',on);
+    $('#progLbl').textContent=T2('Programmer mode','Modo programador');
+    $('#progDesc').textContent=T2('Terminal, raw data and technical detail','Terminal, dados em bruto e detalhe técnico');
+    $('#progState').textContent=on?'ON':'OFF';
+  }
+  document.documentElement.classList.toggle('prog',on);
+}
+function progToggle(){
+  if(!isUserAuth())return;
+  const on=!progOn();
+  lsSet('progMode',on);
+  progUI();
+  if(tab==='sky'&&data)skyRepaint();                                // mostra / esconde os números da análise sinóptica
+  toast(on?T2('Programmer mode on — Terminal unlocked in the top bar.','Modo programador ativo — Terminal desbloqueado na barra superior.')
+          :T2('Programmer mode off.','Modo programador desligado.'));
+}
+{const pb=$('#progBtn');if(pb)pb.onclick=progToggle}
+
+/* ---- painel de cidades favoritas (estilo AccuWeather) ---- */
+let favOpen=false,favRows=null,favT=0,favKey='',favBusy=false;
+const homeCity=()=>lsGet('homeCity')||null;
+const sameP=(a,b)=>!!a&&!!b&&a.name==b.name&&a.sub==b.sub;
+const favSorted=()=>{const f=favs(),h=homeCity();return h?[...f.filter(x=>sameP(x,h)),...f.filter(x=>!sameP(x,h))]:f};
+async function favLoad(force){
+  const list=favSorted(),key=list.map(p=>p.lat+','+p.lon).join('|');
+  if(!list.length){favRows={};return}
+  if(!force&&favRows&&key===favKey&&Date.now()-favT<6e5)return;     // 10 min de cache
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${list.map(p=>(+p.lat).toFixed(3)).join(',')}&longitude=${list.map(p=>(+p.lon).toFixed(3)).join(',')}&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=1&timezone=auto`;
+  const r=await fetch(u);if(!r.ok)throw new Error(r.status==429?'429':'HTTP '+r.status);   // 1 pedido para todas as cidades
+  const j=await r.json(),arr=Array.isArray(j)?j:[j];
+  favRows={};list.forEach((p,i)=>favRows[p.lat+','+p.lon]=arr[i]||null);favT=Date.now();favKey=key;
+}
+function favCard(p,i){
+  const d=favRows&&favRows[p.lat+','+p.lon],c=d&&d.current,dy=d&&d.daily,home=sameP(p,homeCity());
+  const lt=d&&isFinite(d.utc_offset_seconds)?new Date(Date.now()+d.utc_offset_seconds*1e3).toISOString().slice(11,16):'';
+  const rain=dy&&dy.precipitation_probability_max?dy.precipitation_probability_max[0]:null;
+  const body=c?`<div class="fav-mid"><span class="fav-ic">${emoji(c.weather_code,c.is_day)}</span><span class="fav-t">${T(c.temperature_2m)}°</span></div>
+ <div class="fav-cond">${tr(LABEL[c.weather_code]||'')} · ${T2('Feels','Sensação')} ${T(c.apparent_temperature)}°</div>
+ <div class="fav-row"><span>${T2('H','Máx')} ${T(dy.temperature_2m_max[0])}° / ${T2('L','Mín')} ${T(dy.temperature_2m_min[0])}°</span><span>${W(c.wind_speed_10m)}</span></div>
+ ${rain!=null?`<div class="fav-row"><span>${T2('Rain','Chuva')} ${rain}%</span></div><div class="fav-rain"><i style="--w:${rain}%"></i></div>`:''}`
+   :`<div class="fav-cond">${T2('Loading…','A carregar…')}</div>`;
+  return`<div class="fav-c${home?' home':''}" role="link" tabindex="0" data-i="${i}" style="--n:${i};--fc:${c?tempColor(c.temperature_2m):'#33b0ea'}">
+ <div class="fav-top"><div><div class="fav-nm">${escH(p.name)}</div><div class="fav-sb">${escH(p.sub||'')}${lt?' · '+lt:''}</div></div>
+ <div class="fav-acts"><button type="button" data-act="home" aria-pressed="${home}" title="${T2('Set as home city','Definir como cidade principal')}">⌂</button><button type="button" data-act="rm" title="${T2('Remove','Remover')}">✕</button></div></div>
+ ${body}</div>`;
+}
+function favPaint(anim){
+  if(!$('#favOv'))return;
+  const list=favSorted(),n=list.length,on=!!place&&list.some(x=>sameP(x,place));
+  $('#favTitle').textContent=T2('Favourite cities','Cidades favoritas');
+  $('#favSub').textContent=n?T2(`${n} saved · synced to your account`,`${n} guardadas · sincronizadas com a tua conta`):T2('Synced to your account','Sincronizadas com a tua conta');
+  $('#favBar').innerHTML=(place?`<button class="pill dk" id="favAdd" type="button">${on?'★ '+T2('Remove current city','Remover cidade atual'):'☆ '+T2('Add current city','Adicionar cidade atual')}</button>`:'')
+    +(n?`<button class="pill dk" id="favRef" type="button">↻ ${T2('Refresh','Atualizar')}</button>`:'');
+  $('#favBody').innerHTML=n?`<div class="fav-grid${anim?' in':''}">${list.map(favCard).join('')}</div>`
+    :`<div class="fav-empty">${T2('No favourites yet. Open a city and tap its ★, or add it from here.','Ainda não tens favoritos. Abre uma cidade e carrega na ★, ou adiciona-a aqui.')}</div>`;
+}
+async function favRefresh(force){
+  if(favBusy)return;favBusy=true;
+  try{await favLoad(force)}
+  catch(e){console.warn('[Favs]',e.message);toast(e.message==='429'?T2('Weather service is busy — showing the last data.','Serviço ocupado — a mostrar os últimos dados.'):T2('Could not refresh favourites.','Não foi possível atualizar os favoritos.'))}
+  finally{favBusy=false}
+  if(favOpen)favPaint(false);
+}
+function favToggleCurrent(){
+  if(!place)return;
+  const on=favs().some(x=>sameP(x,place));
+  lsSet('favs',on?favs().filter(x=>!sameP(x,place)):[place,...favs()].slice(0,20));
+  if(typeof paintFav==='function'&&place)paintFav();
+  favPaint(false);favRefresh(false);
+}
+function favShell(){
+  let o=$('#favOv');if(o)return o;
+  o=document.createElement('div');o.className='hov';o.id='favOv';o.hidden=true;
+  o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-labelledby','favTitle');
+  o.innerHTML=`<div class="hcard fav-card"><div class="hh"><div class="hht"><div><h2 id="favTitle"></h2><p id="favSub"></p></div></div><button class="hx" id="favClose" type="button" aria-label="Close">✕</button></div><div class="fav-bar" id="favBar"></div><div id="favBody"></div></div>`;
+  document.body.appendChild(o);
+  o.addEventListener('click',e=>{
+    if(e.target===o||e.target.closest('#favClose'))return favClose();
+    if(e.target.closest('#favAdd'))return favToggleCurrent();
+    if(e.target.closest('#favRef'))return favRefresh(true);
+    const c=e.target.closest('.fav-c');if(!c)return;
+    const p=favSorted()[+c.dataset.i];if(!p)return;
+    const act=e.target.closest('[data-act]');
+    if(act&&act.dataset.act==='rm'){
+      lsSet('favs',favs().filter(x=>!sameP(x,p)));
+      if(sameP(p,homeCity()))lsSet('homeCity',false);
+      if(typeof paintFav==='function'&&place)paintFav();
+      return favPaint(false);
+    }
+    if(act&&act.dataset.act==='home'){
+      lsSet('homeCity',sameP(p,homeCity())?false:{lat:p.lat,lon:p.lon,name:p.name,sub:p.sub});
+      return favPaint(false);
+    }
+    favClose();window.scrollTo({top:0,behavior:'smooth'});show(p.lat,p.lon,p.name,p.sub);
+  });
+  o.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('fav-c')){e.preventDefault();e.target.click()}});
+  return o;
+}
+function favOpenDash(){
+  if(!isUserAuth()){
+    authOpen();
+    toast(T2('The favourites dashboard is for registered users. Please sign in.','O painel de favoritos é para utilizadores registados. Inicia sessão.'));
+    return;
+  }
+  const o=favShell();
+  favOpen=true;closeSg();if(typeof ipmaClose==='function')ipmaClose();
+  favPaint(true);
+  o.hidden=false;document.documentElement.classList.add('hlock');
+  void o.offsetWidth;o.classList.add('on');
+  $('#favBtn').setAttribute('aria-expanded','true');
+  favRefresh(false);
+  setTimeout(()=>{const x=$('#favClose');if(x&&favOpen)x.focus()},60);
+}
+function favClose(){
+  const o=$('#favOv');if(!o||o.hidden)return;
+  favOpen=false;o.classList.remove('on');document.documentElement.classList.remove('hlock');
+  $('#favBtn').setAttribute('aria-expanded','false');
+  setTimeout(()=>{if(!favOpen)o.hidden=true},360);
+}
+document.addEventListener('keydown',e=>{if(favOpen&&e.key==='Escape'){e.stopPropagation();favClose()}},true);
+function favUI(){
+  const b=$('#favBtn');if(!b)return;
+  b.title=b.ariaLabel=T2('Favourite cities','Cidades favoritas');
+  if(favOpen)favPaint(false);
+}
+(function(){
+  const b=document.createElement('button');
+  b.className='pill hbtn';b.id='favBtn';b.type='button';
+  b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');
+  b.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  b.onclick=favOpenDash;
+  $('#termBtn').before(b);                                          // botão ★ na topbar, antes do Terminal
+})();
+
+/* ---- ligar tudo ao ciclo de vida da conta ---- */
+const _updateAuthUI=updateAuthUI;
+updateAuthUI=function(){_updateAuthUI();progUI();favUI()};
+const _authOpen=authOpen;
+authOpen=function(){_authOpen();progUI()};
+new MutationObserver(()=>{progUI();favUI()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+progUI();favUI();
+
 /* ============ PWA install ============ */
 let installEv=null;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e;$('#inst').hidden=false});
@@ -7397,9 +7789,10 @@ setInterval(() => { hurrGet(true).then(() => hurrBadge()).catch(() => {}); }, 10
 (async()=>{
   if(currentToken){
     const serverPrefs = await prefsPull();
-    prefsMerge(serverPrefs);
+    if(prefsMerge(serverPrefs)) prefsApplied();
   }
-  const saved=lsGet('place');
+  progUI(); favUI();
+  const saved=lsGet('place')||(isUserAuth()&&lsGet('homeCity'))||null;   // sem local guardado → cidade principal
   if(saved)show(saved.lat,saved.lon,saved.name,saved.sub);else landing();
 })();
 </script>
