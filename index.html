@@ -1359,6 +1359,16 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
     </label>
     <span class="auth-prog-state" id="progState">OFF</span>
    </div>
+      <div class="auth-prog" id="pushRow">
+    <button type="button" class="auth-prog-btn" id="pushBtn" aria-pressed="false" aria-describedby="pushDesc">
+     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    </button>
+    <label class="auth-prog-txt" for="pushBtn">
+     <b id="pushLbl">Weather notifications</b>
+     <span id="pushDesc">Now and what’s coming</span>
+    </label>
+    <span class="auth-prog-state" id="pushState">OFF</span>
+   </div>
    <div class="auth-profile-actions">
     <button type="button" class="pill solid big auth-logout-btn" id="authLogoutBtn">Terminar Sessão</button>
     <button type="button" class="pill solid big auth-delete-btn" id="authDeleteBtn">Apagar Conta</button>
@@ -1912,7 +1922,7 @@ const PT_POLLEN={
  'Cypress':'Cipreste','Plane tree':'Plátano','Ash':'Freixo',
  'Timothy Grass':'Rabo-de-gato','Ryegrass':'Azevém',
  'Cock\'s-foot':'Panasco','Cock’s-foot':'Panasco',
- 'False Oat-grass':'Aveia-falsa','Bluegrass':'Poa',
+ 'False Oat-grass':'Aveia-Perene','Bluegrass':'Capim-Azul',
  'Nettle':'Urtiga','Mugwort':'Artemísia','Ragweed':'Ambrósia',
  'Very low':'Muito baixo',
  'Bermuda Grass':'Relva Bermuda'
@@ -2001,7 +2011,7 @@ async function show(lat,lon,name,sub){
  document.body.classList.add('busy');
  try{
   const[d,rev]=await Promise.all([getWeather(lat,lon),name?{name,sub}:reverse(lat,lon)]);
-  data=d;place={lat,lon,name:rev.name,sub:rev.sub};lsSet('place',place);render();ipmaUpdate(place);
+  data=d;place={lat,lon,name:rev.name,sub:rev.sub};lsSet('place',place);visitBump(place);render();ipmaUpdate(place);
  }catch(e){error('Could not load the forecast',(navigator.onLine?e.message:'You appear to be offline.')+' Check your connection and try again.')}
  document.body.classList.remove('busy');
 }
@@ -5385,6 +5395,7 @@ async function prefsPush(){
       body:JSON.stringify(payload)
     });
   }catch(e){}
+  if(typeof pushSyncLoc==='function')pushSyncLoc();
 }
 function prefsSchedulePush(){
   clearTimeout(syncT);
@@ -5573,21 +5584,9 @@ async function sendUserWeatherStatus() {
   }
 }
 
-function startUserWeatherLoop() {
-  if (userWeatherTimer) clearInterval(userWeatherTimer);
-  if (currentUser && currentUser.username) {
-    // Solicita permissão se ainda não foi concedida
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(perm => {
-        if (perm === 'granted') sendUserWeatherStatus();
-      });
-    } else if ('Notification' in window && Notification.permission === 'granted') {
-      sendUserWeatherStatus();
-    }
-    // Repete a cada 10 minutos (600.000 ms)
-    userWeatherTimer = setInterval(sendUserWeatherStatus, 10 * 60 * 1000);
-  }
-}
+function startUserWeatherLoop() {} //Antiga, já não é usada, mas mantida para referência //
+
+
 
 function stopUserWeatherLoop() {
   if (userWeatherTimer) {
@@ -5728,7 +5727,8 @@ function initAuthInputs(){
   // Terminar Sessão
   $('#authLogoutBtn').onclick=async()=>{
     termClose();
-    if(termInst){termInst.history=[];termInst.hIdx=0}     // o histórico de comandos não fica para o próximo utilizador
+    pushDisable(currentToken);                       // desliga as notificações push deste dispositivo
+    if(termInst){termInst.history=[];termInst.hIdx=0}// o histórico de comandos não fica para o próximo utilizador
     stopUserWeatherLoop();
     const tok=currentToken;
     currentUser=null;
@@ -7756,6 +7756,96 @@ const _authOpen=authOpen;
 authOpen=function(){_authOpen();progUI()};
 new MutationObserver(()=>{progUI();favUI()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 progUI();favUI();
+
+/* ============ Notificações push do sistema (só com sessão iniciada) ============ */
+const VAPID_PUBLIC='COLA_AQUI_A_VAPID_PUBLIC';                       // a mesma chave pública guardada no worker
+const PUSH_API=AUTH_CONFIG.apiUrl.replace('/auth','/push');
+const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const b64uBytes=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
+
+/* local de destino: cidade principal; se não houver, a mais visitada */
+const visitSeen=new Set();
+function visitBump(p){                                                // conta 1 visita por local e por sessão
+  if(!isUserAuth()||!p)return;
+  const k=p.name+'|'+(p.sub||'');
+  if(visitSeen.has(k))return;visitSeen.add(k);
+  const v=lsGet('visits')||{},e=v[k]||{name:p.name,sub:p.sub,lat:p.lat,lon:p.lon,n:0};
+  e.n++;e.lat=p.lat;e.lon=p.lon;v[k]=e;
+  const ks=Object.keys(v);
+  if(ks.length>30)ks.sort((a,b)=>v[a].n-v[b].n).slice(0,ks.length-30).forEach(x=>delete v[x]);
+  lsSet('visits',v);
+}
+function pushTarget(){
+  const h=homeCity();
+  if(h)return{lat:h.lat,lon:h.lon,name:h.name,sub:h.sub,src:'home'};
+  const v=Object.values(lsGet('visits')||{}).sort((a,b)=>b.n-a.n)[0];
+  return v?{lat:v.lat,lon:v.lon,name:v.name,sub:v.sub,src:'visited'}:null;
+}
+async function pushSend(path,sub,tok){
+  const t=pushTarget();
+  const r=await fetch(`${PUSH_API}/${path}`,{method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${tok||currentToken}`},
+    body:JSON.stringify({subscription:sub,loc:t,lang:LANG,unit:unit=='f'?'f':'c'})});
+  return r.ok;
+}
+const pushIsOn=()=>isUserAuth()&&pushOk()&&Notification.permission==='granted'&&localStorage.getItem('pushOn')==='1';
+async function pushEnable(){
+  if(!isUserAuth())return false;
+  if(!pushOk()){toast(T2('Push notifications are not supported here. On iPhone, add Skylab to the Home Screen first.','Notificações push não são suportadas aqui. No iPhone, adiciona primeiro o Skylab ao Ecrã principal.'));return false}
+  if(!pushTarget()){toast(T2('Pick a home city (★ → ⌂) or visit a place first.','Escolhe uma cidade principal (★ → ⌂) ou visita um local primeiro.'));return false}
+  if(await Notification.requestPermission()!=='granted'){toast(T2('Notifications are blocked for this site in your browser settings.','As notificações estão bloqueadas para este site nas definições do navegador.'));return false}
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uBytes(VAPID_PUBLIC)});
+    if(!await pushSend('subscribe',sub.toJSON()))throw new Error('server');
+    localStorage.setItem('pushOn','1');
+    toast(T2('Weather notifications on for this device.','Notificações do tempo ativas neste dispositivo.'));
+    return true;
+  }catch(e){console.warn('[Push]',e.message);toast(T2('Could not turn on notifications.','Não foi possível ativar as notificações.'));return false}
+}
+async function pushDisable(tok){                                      // tok: usado no logout, antes de o token ser apagado
+  localStorage.removeItem('pushOn');
+  if(!pushOk())return;
+  try{
+    const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
+    if(sub){
+      await fetch(`${PUSH_API}/unsubscribe`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${tok||currentToken}`},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});
+      await sub.unsubscribe();
+    }
+  }catch(e){}
+}
+let pushLocT=0;
+function pushSyncLoc(){                                               // reenvia local / idioma / unidade quando mudam (chamado pelo prefsPush)
+  clearTimeout(pushLocT);
+  pushLocT=setTimeout(async()=>{
+    pushUI();
+    if(!pushIsOn())return;
+    try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub&&pushTarget())await pushSend('subscribe',sub.toJSON())}catch(e){}
+  },1500);
+}
+function pushUI(){
+  const b=$('#pushBtn');if(!b)return;
+  const on=pushIsOn(),t=pushTarget();
+  b.setAttribute('aria-pressed',on);
+  $('#pushLbl').textContent=T2('Weather notifications','Notificações do tempo');
+  $('#pushState').textContent=on?'ON':'OFF';
+  $('#pushDesc').textContent=!pushOk()?T2('Not supported on this device or browser','Não suportado neste dispositivo ou navegador')
+    :!t?T2('Pick a home city or visit a place first','Escolhe uma cidade principal ou visita um local primeiro')
+    :t.src==='home'?T2(`Now and what’s coming · ${t.name} (home city)`,`Agora e o que aí vem · ${t.name} (cidade principal)`)
+    :T2(`Now and what’s coming · ${t.name} (most visited)`,`Agora e o que aí vem · ${t.name} (mais visitada)`);
+}
+async function pushToggle(){
+  if(!isUserAuth())return;
+  if(pushIsOn()){await pushDisable();toast(T2('Weather notifications off for this device.','Notificações do tempo desligadas neste dispositivo.'))}
+  else await pushEnable();
+  pushUI();
+}
+{const pb=$('#pushBtn');if(pb)pb.onclick=pushToggle}
+const _uai2=updateAuthUI;updateAuthUI=function(){_uai2();pushUI()};
+const _ao2=authOpen;authOpen=function(){_ao2();pushUI()};
+new MutationObserver(()=>pushUI()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+pushUI();
+if(pushIsOn())pushSyncLoc();                                          // ao abrir o site, garante que o servidor tem o local atual
 
 /* ============ PWA install ============ */
 let installEv=null;
