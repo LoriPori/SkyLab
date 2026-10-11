@@ -4932,7 +4932,7 @@ async function gridLoad(z,nodes){                                  // pede bloco
     for(let b=0;b<GRID_B;b++)for(let a=0;a<GRID_B;a++){
       const k=b*GRID_B+a,t=g.t[k],p=g.p[k],s=g.ws&&g.ws[k],d=g.wd&&g.wd[k];
       if(t==null&&p==null&&s==null)continue;
-      const key=tempKey(bj*GRID_B+b,(bi*GRID_B+a)%N);
+      const key=tempKey(bj*GRID_B+b,(((bi*GRID_B+a)%N)+N)%N);
       if(t!=null)tm.set(key,[+t,now]);
       if(p!=null)pm.set(key,[+p,now]);
       if(s!=null&&d!=null)wm.set(key,[+s,+d,now]);
@@ -5123,10 +5123,37 @@ const mkPane=(n,z)=>{const p=radarMap.getPane(n)||radarMap.createPane(n);p.style
 const BORDERS_URL='https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json';   // Natural Earth 50m (TopoJSON)
 const BORDERS_KEY='cb1_4644_2_e1ddc0590e0bf3595329dba5';                                  // a mesma MAP_KEY do radarInit
 let bordersP=null,tempBd=null,tempLab=null;
-function bordersLoad(){                                                                   // descodifica os arcos → [[lat,lng],…]
+function bordersLoad(){                                                                   // descodifica os arcos → [[lat,lng],…] sem artefactos de recorte
   return bordersP||(bordersP=fetch(BORDERS_URL).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(t=>{
     const[sx,sy]=t.transform.scale,[tx,ty]=t.transform.translate;
-    return t.arcs.map(a=>{let x=0,y=0;return a.map(p=>{x+=p[0];y+=p[1];return[y*sy+ty,x*sx+tx]})});
+    const lines=[];
+    const isArtifact=pts=>{
+      let minLng=1e9,maxLng=-1e9,minLat=1e9,maxLat=-1e9;
+      for(const p of pts){
+        if(p[1]<minLng)minLng=p[1];if(p[1]>maxLng)maxLng=p[1];
+        if(p[0]<minLat)minLat=p[0];if(p[0]>maxLat)maxLat=p[0];
+      }
+      return (maxLng - minLng > 60 && maxLat - minLat < 0.6);
+    };
+    for(const a of t.arcs){
+      let x=0,y=0,seg=[];
+      for(const p of a){
+        x+=p[0];y+=p[1];
+        const lat=y*sy+ty,lng=x*sx+tx;
+        if(seg.length){
+          const prev=seg[seg.length-1];
+          // Evita unir pontos através do antimeridiano (salto > 180° cria linha horizontal pelo mapa todo)
+          if(Math.abs(lng-prev[1])>180){
+            if(seg.length>=2&&!isArtifact(seg))lines.push(seg);
+            seg=[[lat,lng]];
+            continue;
+          }
+        }
+        seg.push([lat,lng]);
+      }
+      if(seg.length>=2&&!isArtifact(seg))lines.push(seg);
+    }
+    return lines;
   }).catch(e=>{bordersP=null;throw e}));
 }
 async function tempBordersOn(){
