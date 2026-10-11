@@ -5000,9 +5000,10 @@ const ISO_TTL=18e5;                                                // dados vál
 const isoStepOf=z=>tempStepOf(z);                                  // mesmo reticulado da temperatura → um único pedido serve os dois               // independente da temperatura
 let isoCache={},isoGrp=null,isoOld=new Set(),isoGen=0,isoT=0,isoBlock=0,isoRun=false,isoAgain=false,isoOn=false;
 
-const isoNode=(z,i,j)=>{const m=isoCache[z],e=m&&m.get(tempKey(j,i));return e?e[0]:NaN};
+const isoZ=()=>Math.max(5,tempZ());                                // isóbaras: nunca com passo > 10° (a 40°/20° só há 5–9 filas de latitude e as linhas ficam em faixas horizontais)
+const isoNode=(z,i,j)=>{const m=isoCache[z],e=m&&m.get(tempKey(j,i)),v=e?e[0]:NaN;return v>850&&v<1090?v:NaN};   // valores absurdos contam como "sem dados"
 function isoGridBox(){
-  const b=radarMap.getBounds(),z=tempZ(),st=isoStepOf(z),jm=Math.floor(84/st);      // nunca pedir latitudes > 84°
+  const b=radarMap.getBounds(),z=isoZ(),st=isoStepOf(z),jm=Math.floor(84/st);      // nunca pedir latitudes > 84°
   const mLa=Math.max((b.getNorth()-b.getSouth())*.12,2*st),mLo=Math.max((b.getEast()-b.getWest())*.12,2*st);
   const s=b.getSouth()-mLa,n=b.getNorth()+mLa,w=b.getWest()-mLo,e=b.getEast()+mLo;
   return{z,st,i0:Math.floor(w/st),i1:Math.ceil(e/st),j0:Math.max(-jm,Math.floor(s/st)),j1:Math.min(jm,Math.ceil(n/st))};
@@ -5101,22 +5102,28 @@ function isoDraw(M){
   isoOld.add(old);
   setTimeout(()=>{isoOld.delete(old);try{radarMap&&radarMap.removeLayer(old)}catch(e){}},900);
 }
+let isoRetry=0;
 async function isoUpdate(){
   if(!radarMap||!isoOn)return;
   if(isoRun){isoAgain=true;return}
   isoRun=true;const gen=isoGen;
   try{
-    const g=isoGridBox(),need=isoMissing(g);
-    if(need.length&&Date.now()>Math.max(isoBlock,tempBlock)){        // respeita também o bloqueio do radar de temperatura
+    const g=isoGridBox();
+    for(let pass=0;pass<3;pass++){                                   // cada ronda só traz 16 blocos: até 3 rondas
+      const need=isoMissing(g);
+      if(!need.length||Date.now()<=Math.max(isoBlock,tempBlock))break;   // respeita também o bloqueio do radar de temperatura
       try{await isoFetch(g.z,need)}
       catch(err){
         console.warn('[Isobars]',err.message);
         isoBlock=Date.now()+(err.message==='429'?3e5:3e4);
         if(err.message==='429')tempBlock=Math.max(tempBlock,isoBlock);   // 429: ambos param de pedir
+        break;
       }
     }
     if(gen!==isoGen||!radarMap||!isoOn)return;
-    isoDraw(isoBuild(g));
+    const M=isoBuild(g);
+    if(M){isoRetry=0;isoDraw(M)}                                     // só substitui as linhas se houver dados; antes apagava tudo
+    else if(isoRetry<3){isoRetry++;clearTimeout(isoT);isoT=setTimeout(isoUpdate,6000)}   // volta a tentar em 6 s
   }finally{isoRun=false;if(isoAgain){isoAgain=false;isoUpdate()}}
 }
 const isoMoved=()=>{clearTimeout(isoT);isoT=setTimeout(isoUpdate,900)};
