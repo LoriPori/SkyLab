@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Skylab — Weather & Science</title>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
-<meta property="og:image" content="https://loripori.github.io/SkyLab/icon-512.png">
+<link rel="icon" type="image/png" href="icon-web.png">
+<link rel="apple-touch-icon" href="icon-web.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#33b0ea">
 
@@ -1387,65 +1386,71 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
 @media (max-width:420px){.fav-grid{grid-template-columns:1fr}.logo{font-size:22px}}
 
 /* =====================================================================
-   TELEMÓVEL — redesenho da landing, globo, botão de conta (≤ 720px)
+   TELEMÓVEL — redesenho (≤ 720px)
    ===================================================================== */
 .m-live,.m-tiles{display:none}
-.auth-av{display:none;width:26px;height:26px;border-radius:50%;place-items:center;font-size:13px;font-weight:700;line-height:1;color:var(--acc);background:#fff center/cover no-repeat;box-shadow:0 1px 4px rgba(10,30,60,.25)}
+.auth-av{display:none;width:28px;height:28px;border-radius:50%;place-items:center;font-size:13px;font-weight:700;line-height:1;color:var(--acc);background:#fff center/cover no-repeat;box-shadow:0 1px 4px rgba(10,30,60,.25)}
+/* o drawer do terminal fechado não pode alargar a página */
+.term-overlay:not(.active){visibility:hidden;transition:opacity .35s ease,visibility 0s .4s}
 @media (max-width:720px){
- /* ---------- Cabeçalho: o botão de conta tem de caber sempre ---------- */
- header{align-items:center}
- .logo{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- .header-actions{flex:none;gap:6px}
+ html,body{max-width:100%;overflow-x:clip;-webkit-text-size-adjust:100%}
+ .aurora{inset:0;clip-path:inset(0)}
+ .wrap{padding:6px max(14px,env(safe-area-inset-right)) calc(26px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+
+ /* ---------- Cabeçalho: logótipo + 4 ícones, pesquisa por baixo (a ÚNICA) ---------- */
+ header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 8px;margin:0 -14px;padding:8px 14px 6px}
+ .logo{flex:1 1 0;min-width:0;font-size:24px;white-space:nowrap}
+ .header-actions{flex:none;gap:7px;margin:0}
+ .pill.hbtn,.pill.dots-btn,.pill.term-btn,.pill.auth-btn{width:40px;height:40px;padding:0;flex:none;border-radius:50%}
  .pill.warn{max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- .pill.auth-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;order:99;
-   width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.34);border-color:rgba(255,255,255,.9)}
+ .search{order:3;flex:1 1 100%;max-width:none;min-width:0}
+ .search input{padding:14px 16px 14px 44px;font-size:16px;border-radius:18px;background:rgba(255,255,255,.9);color:var(--acc);border:0;box-shadow:0 10px 26px rgba(10,30,60,.2)}
+ .search input::placeholder{color:rgba(20,49,79,.55)}
+ .search>svg{left:16px;color:var(--acc)}
+ .search kbd{display:none}
+ .pill.auth-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;gap:0;justify-content:center;overflow:hidden;
+   background:rgba(255,255,255,.34);border-color:rgba(255,255,255,.9)}
+ .pill.auth-btn #authTxt,.pill.auth-btn .auth-u-id{display:none}
  .pill.auth-btn>svg.auth-ico{display:block;width:20px;height:20px;color:#fff;flex:none}
  .pill.auth-btn.is-in>svg.auth-ico{display:none!important}
  .pill.auth-btn.is-in .auth-av{display:grid}
- .pill.auth-btn.is-in{background:transparent;border-color:rgba(255,255,255,.95)}
+ .pill.auth-btn.is-in{background:transparent;border-color:#fff}
+ .tools-pop{position:fixed;left:12px;right:12px;top:64px;width:auto}
+ .wpop{right:8px;left:8px;width:auto}
 
- /* ---------- GLOBO: sempre redondo (antes max-height:45vw esmagava o canvas) ---------- */
- .gwrap,.land .gwrap{width:min(86vw,400px)!important;max-height:none!important;height:auto!important;aspect-ratio:1/1!important;margin:0 auto}
+ /* ---------- Globo: sempre redondo ---------- */
+ .gwrap,.land .gwrap{width:min(80vw,360px)!important;max-height:none!important;height:auto!important;aspect-ratio:1/1!important;margin:0 auto}
  #globe{width:100%!important;height:100%!important}
 
- /* ---------- LANDING: pilha vertical pensada para o polegar ---------- */
- .hero.land{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-top:2px}
+ /* ---------- Landing ---------- */
+ .hero.land{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-top:6px}
  .hero.land .now{display:contents}
  .hero.land .m-live{order:1;display:inline-flex;align-self:flex-start;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;
-   background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
- .m-live i{width:7px;height:7px;border-radius:50%;background:#5dffa4;box-shadow:0 0 0 0 rgba(93,255,164,.7);animation:mLive 1.8s infinite}
- @keyframes mLive{70%{box-shadow:0 0 0 8px rgba(93,255,164,0)}100%{box-shadow:0 0 0 0 rgba(93,255,164,0)}}
- .hero.land h1{order:2;font-size:clamp(34px,10.5vw,46px);line-height:1.02;letter-spacing:-.015em;margin-top:2px}
- .hero.land .lp{order:3;font-size:14.5px;line-height:1.45;margin:0;max-width:none;opacity:.95}
- /* a pesquisa passa a ser uma barra grande, sempre visível */
- .hero.land .card-search-trigger{order:4;opacity:1!important;transform:none!important;pointer-events:auto!important;margin:2px 0 0;width:100%;
-   justify-content:flex-start;gap:10px;padding:14px 18px;font-size:15px;border-radius:18px;background:rgba(255,255,255,.92);color:var(--acc);
-   border:0;box-shadow:0 10px 26px rgba(10,30,60,.22)}
- .hero.land .card-search-trigger svg{width:18px;height:18px;color:var(--acc)}
- .hero.land .card-search-trigger span{opacity:.75;font-weight:500}
- /* botões grandes do PC escondem-se; entram 3 atalhos em mosaico */
+   background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+ .m-live i{width:7px;height:7px;border-radius:50%;background:#5dffa4;animation:mLive 1.8s infinite}
+ @keyframes mLive{0%{box-shadow:0 0 0 0 rgba(93,255,164,.7)}70%,100%{box-shadow:0 0 0 8px rgba(93,255,164,0)}}
+ .hero.land h1{order:2;font-size:clamp(34px,10.5vw,44px);line-height:1.02;letter-spacing:-.015em}
+ .hero.land .lp{order:3;font-size:14.5px;line-height:1.45;margin:0;max-width:none}
+ .hero.land .card-search-trigger{display:none!important}     /* a pesquisa é só a do topo */
  .hero.land .cta{display:none}
- .hero.land .m-tiles{order:5;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
- .m-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px 6px;border-radius:18px;min-height:78px;
+ .hero.land .scene{order:4;width:100%;display:flex;justify-content:center;margin:2px 0}
+ .hero.land .m-tiles{order:5;display:grid;grid-template-columns:1.25fr 1fr;gap:10px}
+ .m-tile{display:flex;align-items:center;justify-content:center;gap:9px;padding:15px 10px;border-radius:18px;font-size:14px;font-weight:700;
    background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
    box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 16px rgba(10,30,60,.12);transition:transform .15s}
- .m-tile:active{transform:scale(.95)}
- .m-tile b{font-size:24px;line-height:1;font-weight:400}
- .m-tile span{font-size:11.5px;font-weight:600;text-align:center;line-height:1.15}
- .hero.land .scene{order:6;width:100%;display:flex;justify-content:center;margin:2px 0 -2px}
- .hero.land .dayf{order:7;margin:0;padding:12px 14px 12px 18px;border-radius:18px}
+ .m-tile.main{background:#fff;color:var(--acc);border-color:#fff;box-shadow:0 10px 24px rgba(10,30,60,.22)}
+ .m-tile svg{width:19px;height:19px;flex:none}
+ .m-tile:active{transform:scale(.96)}
+ .hero.land .dayf{order:6;margin:0;padding:12px 14px 12px 18px;border-radius:18px}
  .hero.land .dayf h3{font-size:19px;margin:4px 0 2px}
  .hero.land .dayf p{font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
- .hero.land .ticker{order:8;margin:0;font-size:13px;height:auto;min-height:0}
- /* cidades: carrossel com deslize do dedo em vez de faixa a correr sozinha */
- .marq{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x proximity;margin:6px -14px 0;padding:0 14px 4px;
-   -webkit-mask-image:none;mask-image:none}
+ .hero.land .ticker{order:7;margin:0;font-size:13px;height:auto;min-height:0}
+ .marq{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x proximity;margin:6px -14px 0;padding:0 14px 4px;-webkit-mask-image:none;mask-image:none}
  .marq::-webkit-scrollbar{display:none}
  .marq .track{animation:none;width:max-content}
  .cityc{padding:9px 14px;gap:8px;scroll-snap-align:start}
  .cityc .ic{font-size:20px}.cityc b{font-size:20px}.cityc small{display:none}
 }
-@media (max-width:360px){.hero.land .m-tiles{gap:7px}.m-tile span{font-size:10.5px}}
 </style>
 </head>
 <body>
@@ -3760,9 +3765,8 @@ function landing(){
  <button class="pill big" id="ls">Surprise me</button>
 </div>
 <div class="m-tiles" id="mTiles">
- <button class="m-tile" id="mtLoc"><b>📍</b><span>${LANG==='pt'?'A minha localização':'My location'}</span></button>
- <button class="m-tile" id="mtSur"><b>🎲</b><span>${LANG==='pt'?'Surpreende-me':'Surprise me'}</span></button>
- <button class="m-tile" id="mtHur"><b>🌀</b><span>${LANG==='pt'?'Furacões':'Hurricanes'}</span></button>
+ <button class="m-tile main" id="mtLoc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><span>${LANG==='pt'?'A minha localização':'My location'}</span></button>
+ <button class="m-tile" id="mtSur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg><span>${LANG==='pt'?'Surpreende-me':'Surprise me'}</span></button>
 </div>
 <button class="card-search-trigger" id="cardSearchTrigger" aria-label="Pesquisar cidade">
  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -3781,9 +3785,7 @@ function landing(){
 </section>
 <section class="marq" id="marq"><div class="track">${CITIES.map(c=>`<div class="cityc sk">${c[0]}</div>`).join('')}</div></section>`;
  $('#lc').onclick=locate;$('#ls').onclick=surprise;startTicker();
- {const a=$('#mtLoc'),b=$('#mtSur'),c=$('#mtHur');
-  if(a)a.onclick=locate;if(b)b.onclick=surprise;
-  if(c)c.onclick=()=>{const h=$('#hbtn');if(h)h.click()}}
+ {const a=$('#mtLoc'),b=$('#mtSur');if(a)a.onclick=locate;if(b)b.onclick=surprise}
  const cst = $('#cardSearchTrigger');
  if (cst) cst.onclick = () => { window.scrollTo({top:0, behavior:'smooth'}); setTimeout(()=>{const q=$('#q');if(q)q.focus()},250); };
  globeStart();
@@ -4262,7 +4264,7 @@ function checkAlerts(){
 
 /* Mostra uma notificação local. No Android o construtor new Notification() é proibido — tem de ser via service worker. */
 async function skyNotify(title,opts){
-  opts=Object.assign({icon:'icon-web.png',badge:'icon-web.png'},opts||{});
+  opts=Object.assign({icon:'manifest-icon-192.png',badge:'manifest-icon-192.png'},opts||{});
   try{
     if('serviceWorker' in navigator){
       const reg=await navigator.serviceWorker.ready;
@@ -8123,7 +8125,6 @@ async function pushEnable(){
     if(!await pushSend('subscribe',sub.toJSON()))throw new Error('server');
     localStorage.setItem('pushOn','1');
     toast(T2('Weather notifications on for this device.','Notificações do tempo ativas neste dispositivo.'));
-    pushTest();                                   // notificação de teste imediata
     return true;
   }catch(e){console.warn('[Push]',e);toast(T2('Could not turn on notifications.','Não foi possível ativar as notificações.')+' ('+(e.name||'erro')+': '+String(e.message||e).slice(0,90)+')');return false}
 }
