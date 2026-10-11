@@ -4197,11 +4197,11 @@ const WGR = { rows: 8, cols: 12 }, WSTEP = 6, WK = .045, WFADE = .045;WBK=[[0,12
 
 function windStopLoop(){cancelAnimationFrame(windRaf);windRaf=0}
 function windClear(){if(windCx&&windCv)windCx.clearRect(0,0,windCv.width,windCv.height)}
-function windPause(){windStopLoop();windClear()}                    // durante o arrasto/zoom o canvas fica limpo
-function windMoved(){clearTimeout(windT);windT=setTimeout(updateWindVectors,700)}
+function windPause(){windStopLoop();windClear()}                    // apenas durante zoom/mudança de camada
+function windMoved(){clearTimeout(windT);windT=setTimeout(updateWindVectors,250)}
 function windStop(){
   windTok++;windStopLoop();clearTimeout(windT);
-  if(radarMap){try{radarMap.off('movestart zoomstart',windPause);radarMap.off('moveend resize',windMoved)}catch(e){}}
+  if(radarMap){try{radarMap.off('zoomstart',windPause);radarMap.off('moveend resize',windMoved)}catch(e){}}
   if(windCv)windCv.remove();
   windCv=windCx=windFld=null;windP=[];
 }
@@ -4212,7 +4212,7 @@ function windEnsure(){
   if(!windCv||windCv.parentNode!==cont){
     windCv=document.createElement('canvas');windCv.className='windfx';windCv.setAttribute('aria-hidden','true');
     cont.appendChild(windCv);windCx=windCv.getContext('2d');
-    radarMap.on('movestart zoomstart',windPause);radarMap.on('moveend resize',windMoved);
+    radarMap.on('zoomstart',windPause);radarMap.on('moveend resize',windMoved);
   }
   const dpr=Math.min(2,window.devicePixelRatio||1),W=cont.clientWidth,H=cont.clientHeight;
   if(windCv.width!==Math.round(W*dpr)||windCv.height!==Math.round(H*dpr)){windCv.width=Math.round(W*dpr);windCv.height=Math.round(H*dpr)}
@@ -4272,7 +4272,7 @@ function windSample(g, lat, lng, o){
 }
 
 /* campo em pixéis: um vetor por cada 6 px do ecrã, recalculado só quando a vista muda */
-function windBuild(W,H){
+function windBuild(W,H,keepExisting=false){
   const fw=Math.ceil(W/WSTEP)+2,fh=Math.ceil(H/WSTEP)+2,fu=new Float32Array(fw*fh),fv=new Float32Array(fw*fh),o=[0,0];
   for(let j=0;j<fh;j++)for(let i=0;i<fw;i++){
     const ll=radarMap.containerPointToLatLng([i*WSTEP,j*WSTEP]);
@@ -4280,7 +4280,13 @@ function windBuild(W,H){
   }
   windFld={fw,fh,fu,fv,W,H};
   const n=Math.max(300,Math.min(3500,Math.round(W*H/380)));
-  windP=Array.from({length:n},()=>{const p=windSpawn({});p.a=Math.random()*p.m;return p});
+  if(!keepExisting||!windP.length){
+    windP=Array.from({length:n},()=>{const p=windSpawn({});p.a=Math.random()*p.m;return p});
+  }else if(windP.length<n){
+    while(windP.length<n){const p=windSpawn({});p.a=Math.random()*p.m;windP.push(p)}
+  }else if(windP.length>n){
+    windP.length=n;
+  }
 }
 function windSpawn(p){
   const f=windFld;p.x=Math.random()*(f?f.W:300);p.y=Math.random()*(f?f.H:200);
@@ -4330,10 +4336,10 @@ async function updateWindVectors(){
     }catch(err){console.warn('[Wind]',err.message);if(tok!==windTok)return;if(!windGrid){const n=$('#rnote');if(n)n.textContent='Wind particles unavailable right now.';return}}
   }
   const{W,H}=windEnsure();
-  windStopLoop();windClear();windBuild(W,H);
-    console.info('[Wind] built', windP.length, 'particles, canvas', W+'x'+H, 'grid?', !!windGrid);
-  if(still){for(let i=0;i<70;i++)windStep(1,false)}                // movimento reduzido: linhas de corrente estáticas
-  else{windLast=0;windRaf=requestAnimationFrame(windFrame)}
+  const hadParticles=windP.length>0;
+  windBuild(W,H,hadParticles);
+  if(still){windClear();for(let i=0;i<70;i++)windStep(1,false)}
+  else if(!windRaf){windLast=0;windRaf=requestAnimationFrame(windFrame)}
 }
 
 /* ---- tile cache: every tile is downloaded once per session ---- */
