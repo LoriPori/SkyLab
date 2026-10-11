@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#33b0ea">
 <title>Skylab — Weather & Science</title>
@@ -1188,6 +1188,27 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
 @keyframes pdSpin{to{transform:rotate(360deg)}}
 @keyframes pdPulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
 @keyframes pdDash{to{stroke-dashoffset:-28}}
+
+/* ==== telemóvel (≤ 720px): mesma página, disposição própria ==== */
+@media (max-width:720px){
+ .wrap{padding:8px 14px calc(26px + env(safe-area-inset-bottom))}
+ header{flex-wrap:wrap;gap:8px;padding:8px 14px;margin:0 -14px}
+ .logo{font-size:24px;margin-right:0;flex:1 1 0;min-width:0}
+ .header-actions{margin-left:0;gap:6px}
+ .pill.hbtn,.pill.dots-btn,.pill.term-btn{width:38px;height:38px;padding:0;flex:none}
+ .pill.term-btn .term-lbl{display:none}
+ .search{order:3;flex:1 1 100%;min-width:0;max-width:none}   /* a pesquisa passa para uma segunda linha */
+ .search kbd{display:none}
+ .tabs{width:100%;border-radius:18px;margin-bottom:12px}
+ .tab{padding:9px 14px}
+ .tools-pop{position:fixed;left:12px;right:12px;top:64px;width:auto}
+ .hov{place-items:end center;padding:0}                       /* janelas viram "folhas" que sobem de baixo */
+ .hcard,.fav-card{width:100%;max-height:92vh;border-radius:24px 24px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
+ .fav-grid{grid-template-columns:1fr 1fr;gap:10px}
+ .fav-t{font-size:32px}
+ .bigwrap{font-size:92px}
+}
+@media (max-width:420px){.fav-grid{grid-template-columns:1fr}.logo{font-size:22px}}
 </style>
 </head>
 <body>
@@ -7786,7 +7807,8 @@ async function pushSend(path,sub,tok){
   const r=await fetch(`${PUSH_API}/${path}`,{method:'POST',
     headers:{'Content-Type':'application/json','Authorization':`Bearer ${tok||currentToken}`},
     body:JSON.stringify({subscription:sub,loc:t,lang:LANG,unit:unit=='f'?'f':'c'})});
-  return r.ok;
+  if(!r.ok){let m='';try{m=(await r.text()).slice(0,120)}catch(e){}throw new Error('servidor '+r.status+' '+m)}
+  return true;
 }
 const pushIsOn=()=>isUserAuth()&&pushOk()&&Notification.permission==='granted'&&localStorage.getItem('pushOn')==='1';
 async function pushEnable(){
@@ -7801,7 +7823,7 @@ async function pushEnable(){
     localStorage.setItem('pushOn','1');
     toast(T2('Weather notifications on for this device.','Notificações do tempo ativas neste dispositivo.'));
     return true;
-  }catch(e){console.warn('[Push]',e.message);toast(T2('Could not turn on notifications.','Não foi possível ativar as notificações.'));return false}
+  }catch(e){console.warn('[Push]',e);toast(T2('Could not turn on notifications.','Não foi possível ativar as notificações.')+' ('+(e.name||'erro')+': '+String(e.message||e).slice(0,90)+')');return false}
 }
 async function pushDisable(tok){                                      // tok: usado no logout, antes de o token ser apagado
   localStorage.removeItem('pushOn');
