@@ -3,9 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skylab — Weather & Science</title>
+<link rel="icon" type="image/png" href="icon-web.png">
+<link rel="apple-touch-icon" href="icon-web.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#33b0ea">
-<title>Skylab — Weather & Science</title>
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Skylab is an advanced, privacy-first weather forecasting and atmospheric science platform featuring live global radar, synoptic pattern analysis, and interactive telemetry.">
+<meta name="keywords" content="weather, forecast, radar, meteorology, atmospheric science, open-meteo, hurricane tracker, rain radar, wind particles, synoptic analysis">
+<meta name="author" content="Skylab">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://loripori.github.io/SkyLab/">
+<meta property="og:title" content="Skylab — Weather & Science">
+<meta property="og:description" content="Explore live global weather radars, synoptic analysis, atmospheric physics simulations, and hyper-local telemetry.">
+<meta property="og:image" content="icon-web.png">
+<meta property="og:site_name" content="Skylab">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://loripori.github.io/SkyLab/">
+<meta name="twitter:title" content="Skylab — Weather & Science">
+<meta name="twitter:description" content="Explore live global weather radars, synoptic analysis, atmospheric physics simulations, and hyper-local telemetry.">
+<meta name="twitter:image" content="icon-web.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Instrument+Serif&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
 <style>
@@ -1360,6 +1384,67 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
  .hempty h3{font-size:20px}
 }
 @media (max-width:420px){.fav-grid{grid-template-columns:1fr}.logo{font-size:22px}}
+
+/* =====================================================================
+   TELEMÓVEL — redesenho da landing, globo, botão de conta (≤ 720px)
+   ===================================================================== */
+.m-live,.m-tiles{display:none}
+.auth-av{display:none;width:26px;height:26px;border-radius:50%;place-items:center;font-size:13px;font-weight:700;line-height:1;color:var(--acc);background:#fff center/cover no-repeat;box-shadow:0 1px 4px rgba(10,30,60,.25)}
+@media (max-width:720px){
+ /* ---------- Cabeçalho: o botão de conta tem de caber sempre ---------- */
+ header{align-items:center}
+ .logo{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .header-actions{flex:none;gap:6px}
+ .pill.warn{max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .pill.auth-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;order:99;
+   width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.34);border-color:rgba(255,255,255,.9)}
+ .pill.auth-btn>svg.auth-ico{display:block;width:20px;height:20px;color:#fff;flex:none}
+ .pill.auth-btn.is-in>svg.auth-ico{display:none!important}
+ .pill.auth-btn.is-in .auth-av{display:grid}
+ .pill.auth-btn.is-in{background:transparent;border-color:rgba(255,255,255,.95)}
+
+ /* ---------- GLOBO: sempre redondo (antes max-height:45vw esmagava o canvas) ---------- */
+ .gwrap,.land .gwrap{width:min(86vw,400px)!important;max-height:none!important;height:auto!important;aspect-ratio:1/1!important;margin:0 auto}
+ #globe{width:100%!important;height:100%!important}
+
+ /* ---------- LANDING: pilha vertical pensada para o polegar ---------- */
+ .hero.land{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-top:2px}
+ .hero.land .now{display:contents}
+ .hero.land .m-live{order:1;display:inline-flex;align-self:flex-start;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;
+   background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+ .m-live i{width:7px;height:7px;border-radius:50%;background:#5dffa4;box-shadow:0 0 0 0 rgba(93,255,164,.7);animation:mLive 1.8s infinite}
+ @keyframes mLive{70%{box-shadow:0 0 0 8px rgba(93,255,164,0)}100%{box-shadow:0 0 0 0 rgba(93,255,164,0)}}
+ .hero.land h1{order:2;font-size:clamp(34px,10.5vw,46px);line-height:1.02;letter-spacing:-.015em;margin-top:2px}
+ .hero.land .lp{order:3;font-size:14.5px;line-height:1.45;margin:0;max-width:none;opacity:.95}
+ /* a pesquisa passa a ser uma barra grande, sempre visível */
+ .hero.land .card-search-trigger{order:4;opacity:1!important;transform:none!important;pointer-events:auto!important;margin:2px 0 0;width:100%;
+   justify-content:flex-start;gap:10px;padding:14px 18px;font-size:15px;border-radius:18px;background:rgba(255,255,255,.92);color:var(--acc);
+   border:0;box-shadow:0 10px 26px rgba(10,30,60,.22)}
+ .hero.land .card-search-trigger svg{width:18px;height:18px;color:var(--acc)}
+ .hero.land .card-search-trigger span{opacity:.75;font-weight:500}
+ /* botões grandes do PC escondem-se; entram 3 atalhos em mosaico */
+ .hero.land .cta{display:none}
+ .hero.land .m-tiles{order:5;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+ .m-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px 6px;border-radius:18px;min-height:78px;
+   background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+   box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 16px rgba(10,30,60,.12);transition:transform .15s}
+ .m-tile:active{transform:scale(.95)}
+ .m-tile b{font-size:24px;line-height:1;font-weight:400}
+ .m-tile span{font-size:11.5px;font-weight:600;text-align:center;line-height:1.15}
+ .hero.land .scene{order:6;width:100%;display:flex;justify-content:center;margin:2px 0 -2px}
+ .hero.land .dayf{order:7;margin:0;padding:12px 14px 12px 18px;border-radius:18px}
+ .hero.land .dayf h3{font-size:19px;margin:4px 0 2px}
+ .hero.land .dayf p{font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+ .hero.land .ticker{order:8;margin:0;font-size:13px;height:auto;min-height:0}
+ /* cidades: carrossel com deslize do dedo em vez de faixa a correr sozinha */
+ .marq{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x proximity;margin:6px -14px 0;padding:0 14px 4px;
+   -webkit-mask-image:none;mask-image:none}
+ .marq::-webkit-scrollbar{display:none}
+ .marq .track{animation:none;width:max-content}
+ .cityc{padding:9px 14px;gap:8px;scroll-snap-align:start}
+ .cityc .ic{font-size:20px}.cityc b{font-size:20px}.cityc small{display:none}
+}
+@media (max-width:360px){.hero.land .m-tiles{gap:7px}.m-tile span{font-size:10.5px}}
 </style>
 </head>
 <body>
@@ -1433,7 +1518,8 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
 
   <!-- Account / Sign In -->
   <button class="pill auth-btn" id="authBtn" aria-haspopup="dialog" aria-expanded="false" title="Account / Sign In">
-   <img id="authIco" class="auth-ico" src="imgs/icons/person.png" alt="" width="18" height="18" onerror="imgFBAuth(this)">
+   <svg id="authIco" class="auth-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+   <span class="auth-av" id="authAv" aria-hidden="true"></span>
    <span id="authTxt">Sign In</span>
   </button>
  </div>
@@ -3665,11 +3751,17 @@ function landing(){
  main.className='enter';
  main.innerHTML=`<section class="hero land" id="hero">
 <div class="now">
+ <div class="m-live"><i></i>${tr('Live')} · ${new Date().toLocaleDateString(LOC(),{weekday:'long',day:'numeric',month:'short'})}</div>
  <h1>The sky, explained.</h1>
  <p class="lp">Live weather for anywhere on Earth, with the science behind what you’re looking at.</p>
 <div class="cta">
  <button class="pill big solid" id="lc">Use my location</button>
  <button class="pill big" id="ls">Surprise me</button>
+</div>
+<div class="m-tiles" id="mTiles">
+ <button class="m-tile" id="mtLoc"><b>📍</b><span>${LANG==='pt'?'A minha localização':'My location'}</span></button>
+ <button class="m-tile" id="mtSur"><b>🎲</b><span>${LANG==='pt'?'Surpreende-me':'Surprise me'}</span></button>
+ <button class="m-tile" id="mtHur"><b>🌀</b><span>${LANG==='pt'?'Furacões':'Hurricanes'}</span></button>
 </div>
 <button class="card-search-trigger" id="cardSearchTrigger" aria-label="Pesquisar cidade">
  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -3688,8 +3780,11 @@ function landing(){
 </section>
 <section class="marq" id="marq"><div class="track">${CITIES.map(c=>`<div class="cityc sk">${c[0]}</div>`).join('')}</div></section>`;
  $('#lc').onclick=locate;$('#ls').onclick=surprise;startTicker();
+ {const a=$('#mtLoc'),b=$('#mtSur'),c=$('#mtHur');
+  if(a)a.onclick=locate;if(b)b.onclick=surprise;
+  if(c)c.onclick=()=>{const h=$('#hbtn');if(h)h.click()}}
  const cst = $('#cardSearchTrigger');
- if (cst) cst.onclick = () => { window.scrollTo({top:0, behavior:'smooth'}); $('#q').focus(); };
+ if (cst) cst.onclick = () => { window.scrollTo({top:0, behavior:'smooth'}); setTimeout(()=>{const q=$('#q');if(q)q.focus()},250); };
  globeStart();
  const u=`https://api.open-meteo.com/v1/forecast?latitude=${CITIES.map(c=>c[2]).join(',')}
 &longitude=${CITIES.map(c=>c[3]).join(',')}
@@ -4156,14 +4251,26 @@ function checkAlerts(){
    log[k]=1;
    const[title,body]=msg(data);
    try{
-       const n=new Notification('Skylab · '+tr(title),{body:tr(body),tag:k});
-    n.onclick=()=>{focus();n.close()};
+       skyNotify('Skylab · '+tr(title),{body:tr(body),tag:k});
    }catch(e){}
   }
  }
  lsSet('alertLog',log);
 }
 /* ask for permission once, on the first click or keypress (browsers require a gesture) */
+
+/* Mostra uma notificação local. No Android o construtor new Notification() é proibido — tem de ser via service worker. */
+async function skyNotify(title,opts){
+  opts=Object.assign({icon:'icon-web.png',badge:'icon-web.png'},opts||{});
+  try{
+    if('serviceWorker' in navigator){
+      const reg=await navigator.serviceWorker.ready;
+      if(reg&&reg.showNotification){await reg.showNotification(title,opts);return true}
+    }
+  }catch(e){console.warn('[skyNotify:sw]',e)}
+  try{const n=new Notification(title,opts);n.onclick=()=>{window.focus();n.close()};return true}catch(e){console.warn('[skyNotify:ctor]',e)}
+  return false;
+}
 function askNotif(){
  if(!('Notification' in window)||Notification.permission!=='default')return;
  try{Promise.resolve(Notification.requestPermission()).then(()=>checkAlerts())}catch(e){}
@@ -5752,15 +5859,21 @@ function updateAuthUI(){
  const btn=$('#authBtn');const txt=$('#authTxt');const ico=$('#authIco');
  if(!btn||!txt)return;
  if(currentUser&&currentUser.username){
-  btn.classList.remove('pulse-btn');
+  btn.classList.remove('pulse-btn');btn.classList.add('is-in');
   if(ico)ico.style.display='none';
   const rawName=currentUser.username.trim();
+  const av=$('#authAv');
+  if(av){
+   if(currentUser.avatar_url){av.textContent='';av.style.backgroundImage=`url("${String(currentUser.avatar_url).replace(/"/g,'%22')}")`}
+   else{av.style.backgroundImage='';av.textContent=(rawName[0]||'?').toUpperCase()}
+  }
   const displayName=rawName.length>15?rawName.slice(0,15):rawName;
   txt.innerHTML=`<span class="auth-u-id" title="${escH(rawName)}">${escH(displayName)}</span>`;
   btn.setAttribute('title',`Conta: ${rawName}`);
  }else{
-  btn.classList.add('pulse-btn');
-  if(ico)ico.style.display='inline-block';
+  btn.classList.add('pulse-btn');btn.classList.remove('is-in');
+  if(ico)ico.style.display='';
+  const av0=$('#authAv');if(av0){av0.textContent='';av0.style.backgroundImage=''}
   // Destaque limpo de Sign Up / Criar Conta
   txt.textContent=LANG==='pt'?'Criar Conta':'Sign Up';
   btn.setAttribute('title',LANG==='pt'?'Criar Conta / Iniciar Sessão':'Sign Up / Sign In');
@@ -5783,14 +5896,7 @@ async function sendUserWeatherStatus() {
     const title = `Skylab · ${place.name}: ${tStr}`;
     const body = `${condStr} · Vento: ${wStr} · Humidade: ${c.relative_humidity_2m}%`;
 
-    try {
-      const n = new Notification(title, {
-        body,
-        icon: 'manifest-icon-192.png',
-        tag: 'skylab-user-live-weather' // Substitui a anterior para não acumular spam
-      });
-      n.onclick = () => { window.focus(); n.close(); };
-    } catch(e) {}
+    skyNotify(title,{body,tag:'skylab-user-live-weather'});
   } else if (navigator.geolocation) {
     // Caso ainda não tenha dados, obtém a localização atual
     navigator.geolocation.getCurrentPosition(p => {
@@ -8016,9 +8122,27 @@ async function pushEnable(){
     if(!await pushSend('subscribe',sub.toJSON()))throw new Error('server');
     localStorage.setItem('pushOn','1');
     toast(T2('Weather notifications on for this device.','Notificações do tempo ativas neste dispositivo.'));
+    pushTest();                                   // notificação de teste imediata
     return true;
   }catch(e){console.warn('[Push]',e);toast(T2('Could not turn on notifications.','Não foi possível ativar as notificações.')+' ('+(e.name||'erro')+': '+String(e.message||e).slice(0,90)+')');return false}
 }
+/* Notificação de teste: pede ao servidor um push real e, se falhar, mostra uma local para isolar o problema */
+async function pushTest(){
+  let msg='';
+  try{
+    const r=await fetch(`${PUSH_API}/test`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentToken}`},body:'{}'});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok&&j.success){
+      msg=T2('Test push sent — it should arrive in a few seconds.','Push de teste enviado — deve chegar dentro de alguns segundos.')+(j.status?` (push ${j.status})`:'');
+    }else{
+      msg=T2('Server could not send the push: ','O servidor não conseguiu enviar o push: ')+(j.error||('HTTP '+r.status));
+      await skyNotify('Skylab · '+T2('Local test','Teste local'),{body:T2('Local notifications work; the problem is on the push server side.','As notificações locais funcionam; o problema está no envio push do servidor.'),tag:'skylab-test-local'});
+    }
+  }catch(e){msg=T2('Test failed: ','Teste falhou: ')+String(e.message||e).slice(0,100)}
+  console.info('[Push test]',msg);toast(msg);
+  return msg;
+}
+window.pushTest=pushTest;
 async function pushDisable(tok){                                      // tok: usado no logout, antes de o token ser apagado
   localStorage.removeItem('pushOn');
   if(!pushOk())return;
