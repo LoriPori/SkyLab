@@ -1201,9 +1201,20 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
  /* shrink all pill buttons in header */
  .pill.hbtn,.pill.dots-btn,.pill.term-btn{width:36px;height:36px;padding:0;flex:none}
  .pill.term-btn .term-lbl{display:none}
- /* auth button: icon only on mobile */
- .pill.auth-btn #authTxt{display:none}
- .pill.auth-btn{padding:0;width:36px;height:36px;justify-content:center}
+ /* auth button: icon-only on mobile — override flex:0 0 auto, gap, white-space */
+ .pill.auth-btn{
+   flex:none;          /* stop it from growing */
+   width:36px;height:36px;
+   padding:0;gap:0;
+   justify-content:center;
+   overflow:hidden;    /* clip any text that sneaks through */
+   white-space:nowrap;
+ }
+ /* hide the text label in both logged-out ("Sign In") and logged-in (username) states */
+ .pill.auth-btn #authTxt,
+ .pill.auth-btn .auth-u-id{
+   display:none;
+ }
  /* warn pill: keep compact */
  .pill.warn{padding:5px 10px;font-size:12px}
  /* search moves to full-width second row */
