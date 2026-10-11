@@ -1557,7 +1557,7 @@ const IPMA_TO_WMO={
 const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 const toHex=a=>'#'+a.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
 const mix=(a,b,t)=>{const x=hex(a),y=hex(b);return toHex(x.map((v,i)=>v+(y[i]-v)*t))};
-const STOPS=[[-8,'#4d8dff'],[6,'#33b0ea'],[14,'#36c5b4'],[21,'#f3c24a'],[28,'#f59a3a'],[36,'#ee7a2c']];
+const STOPS=[[-8,'#4d8dff'],[6,'#33b0ea'],[14,'#36c5b4'],[21,'#c4952c'],[28,'#c97a34'],[36,'#bf5a3a']];
 function tempBase(t){
  if(t<=STOPS[0][0])return STOPS[0][1];
  for(let i=1;i<STOPS.length;i++){
@@ -1568,8 +1568,18 @@ function tempBase(t){
 const COND_MIX={clear:null,cloud:['#8a9bb0',.36],rain:['#6f84a3',.42],snow:['#86a6c4',.38],fog:['#93a0ad',.48],storm:['#5d6391',.52],night:['#3d4394',.52]};
 function theme(tC,k){
  let base=tempBase(tC);const m=COND_MIX[k];if(m)base=mix(base,m[0],m[1]);
+ const w=m?0:Math.max(0,Math.min(1,(tC-16)/8));            // 0 = fresco/nublado, 1 = dia quente de céu limpo
  const s=document.documentElement.style;
- s.setProperty('--a',base);s.setProperty('--b',mix(base,'#ffffff',.42));s.setProperty('--acc',mix(base,'#0c2a52',.52));
+ s.setProperty('--a',base);
+ s.setProperty('--b',mix(mix(base,'#ffffff',.42),mix(base,'#4a2410',.34),w));   // quente: o fim do degradê escurece em vez de clarear
+ s.setProperty('--acc',mix(base,'#0c2a52',.52));
+}
+function landTheme(night,k){                       // página inicial: cor própria, não depende da temperatura
+ if(night){theme(10,k);return}                     // noite: igual ao que já tinhas
+ const base='#2b8fd6',s=document.documentElement.style;
+ s.setProperty('--a',base);
+ s.setProperty('--b',mix(base,'#0c2a52',.30));     // o fim do degradê escurece em vez de clarear
+ s.setProperty('--acc',mix(base,'#0c2a52',.52));
 }
 function tempColor(c){const t=Math.max(-10,Math.min(38,c)),hue=208-((t+10)/48)*182;return`hsl(${hue.toFixed(0)},72%,58%)`}
 
@@ -3499,7 +3509,7 @@ const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-
 function landing(){
  clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);
  const hr=new Date().getHours(),night=hr<6||hr>=20,k=night?'night':'clear';
- theme(night?10:24,k);if(mode!==k)fxSet(k);
+ landTheme(night,k);if(mode!==k)fxSet(k);
  document.title=tr('Skylab — Weather & Science');
  main.className='enter';
  main.innerHTML=`<section class="hero land" id="hero">
