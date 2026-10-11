@@ -69,6 +69,14 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .header-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
 .search input{width:100%;padding:11px 40px 11px 40px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.26);backdrop-filter:blur(14px);color:#fff;font:inherit;font-size:15px}
 .search input::placeholder{color:rgba(255,255,255,.85)}
+.search input::-webkit-search-cancel-button,.search input::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  color:rgba(255,255,255,.85);background:rgba(255,255,255,.18);border:0;padding:0;transition:background .2s,transform .15s}
+.search-clear[hidden]{display:none}
+.search-clear:hover{background:rgba(255,255,255,.34)}
+.search-clear:active{transform:translateY(-50%) scale(.92)}
+.search-clear svg{width:15px;height:15px;stroke:currentColor}
+.search:has(.search-clear:not([hidden])) kbd{display:none}
 .search>svg{
   position: absolute;
   left: 14px;
@@ -1408,6 +1416,7 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
  .search input{padding:14px 16px 14px 44px;font-size:16px;border-radius:18px;background:rgba(255,255,255,.9);color:var(--acc);border:0;box-shadow:0 10px 26px rgba(10,30,60,.2)}
  .search input::placeholder{color:rgba(20,49,79,.55)}
  .search>svg{left:16px;color:var(--acc)}
+ .search-clear{color:var(--acc);background:rgba(20,49,79,.1);right:12px}
  .search kbd{display:none}
  .pill.auth-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;gap:0;justify-content:center;overflow:hidden;
    background:rgba(255,255,255,.34);border-color:rgba(255,255,255,.9)}
@@ -1476,6 +1485,7 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
     <path d="m20 20-3.5-3.5"/>
   </svg>
   <input id="q" type="search" placeholder="Search a city" autocomplete="off" aria-label="Search a city" aria-controls="sg">
+  <button type="button" class="search-clear" id="qClear" aria-label="Clear" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   <kbd>/</kbd>
   <div class="sugg" id="sg" role="listbox"></div>
 </div>
@@ -3812,6 +3822,10 @@ const EXTREMES=[['Oymyakon','Sakha, Russia',63.46,142.79],['Cherrapunji','Meghal
 function surprise(){const p=EXTREMES[Math.floor(Math.random()*EXTREMES.length)];show(p[2],p[3],p[0],p[1])}
 
 /* ============ fuzzy city search (fallback results page) ============ */
+{const q=$('#q'),c=$('#qClear');
+ if(q&&c){const sync=()=>{c.hidden=!q.value};
+  q.addEventListener('input',sync);q.addEventListener('change',sync);
+  c.addEventListener('click',()=>{q.value='';sync();q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()});sync()}}
 function levenshtein(a,b){
   a=a.toLowerCase();b=b.toLowerCase();
   const m=a.length,n=b.length;
@@ -4253,6 +4267,8 @@ const ALERTS=[
 ];
 function checkAlerts(){
  if(!data||!place||!('Notification' in window)||Notification.permission!=='granted')return;
+ const hc=lsGet('homeCity');                     // só avisa sobre a cidade principal, nunca sobre locais que estás só a ver
+ if(!hc||!(Math.abs(hc.lat-place.lat)<.06&&Math.abs(hc.lon-place.lon)<.06))return;
  const day=new Date().toISOString().slice(0,10);
  let log=lsGet('alertLog')||{};if(log._d!==day)log={_d:day};   // one alert per place, type and day
  for(const[id,test,msg]of ALERTS){
@@ -5326,23 +5342,59 @@ function isoMarch(F,nx,ny,lv,emit){
     for(let s=0;s<S.length;s+=2)emit(S[s][0],S[s][1],S[s+1][0],S[s+1][1]);
   }
 }
+/* junta os segmentos do marching squares em linhas contínuas e arredonda os cantos (Chaikin) */
+function isoChain(segs){
+  const key=(x,y)=>Math.round(x*1e4)+','+Math.round(y*1e4),m=new Map();
+  segs.forEach((q,i)=>{for(const k of[key(q[0],q[1]),key(q[2],q[3])]){let a=m.get(k);if(!a)m.set(k,a=[]);a.push(i)}});
+  const used=new Uint8Array(segs.length),out=[];
+  for(let i=0;i<segs.length;i++){
+    if(used[i])continue;used[i]=1;
+    const pts=[[segs[i][0],segs[i][1]],[segs[i][2],segs[i][3]]];
+    for(let dir=0;dir<2;dir++){
+      for(;;){
+        const e=pts[pts.length-1],k=key(e[0],e[1]),a=m.get(k);let j=-1;
+        if(a)for(const t of a)if(!used[t]){j=t;break}
+        if(j<0)break;used[j]=1;const q=segs[j];
+        pts.push(key(q[0],q[1])===k?[q[2],q[3]]:[q[0],q[1]]);
+      }
+      pts.reverse();
+    }
+    out.push(pts);
+  }
+  return out;
+}
+const isoThin=c=>{if(c.length<9)return c;const o=[];for(let i=0;i<c.length;i+=2)o.push(c[i]);if((c.length-1)%2)o.push(c[c.length-1]);return o};
+function isoSmooth(p,it){
+  const same=(a,b)=>Math.abs(a[0]-b[0])<1e-6&&Math.abs(a[1]-b[1])<1e-6,closed=p.length>3&&same(p[0],p[p.length-1]);
+  for(;it>0;it--){
+    const q=[];if(!closed)q.push(p[0]);
+    for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];
+      q.push([.75*a[0]+.25*b[0],.75*a[1]+.25*b[1]],[.25*a[0]+.75*b[0],.25*a[1]+.75*b[1]])}
+    if(closed)q.push(q[0]);else q.push(p[p.length-1]);
+    p=q;
+  }
+  return p;
+}
 const isoCR=(a,b,c,d,t)=>b+.5*t*(c-a+t*(2*a-5*b+4*c-d+t*(3*(b-c)+d-a)));   // Catmull-Rom (suaviza o campo)
 function isoBuild(g){
   const nx=g.i1-g.i0+1,ny=g.j1-g.j0+1,N=Math.round(360/g.st),P=new Float64Array(nx*ny);let ok=0;
   for(let y=0;y<ny;y++)for(let x=0;x<nx;x++){const v=isoNode(g.z,((g.i0+x)%N+N)%N,g.j0+y);P[y*nx+x]=v;if(v===v)ok++}
   if(nx<5||ny<5||ok<nx*ny*.5)return null;
-  const K=Math.max(3,Math.min(8,Math.round(60/nx))),fx=(nx-1)*K+1,fy=(ny-1)*K+1,F=new Float32Array(fx*fy);
+  const K=g.z<=5?8:6,fx=(nx-1)*K+1,fy=(ny-1)*K+1,F=new Float32Array(fx*fy);
   const at=(x,y)=>P[Math.max(0,Math.min(ny-1,y))*nx+Math.max(0,Math.min(nx-1,x))];
   for(let Y=0;Y<fy;Y++){const y=Math.floor(Y/K),ty=Y/K-y;
     for(let X=0;X<fx;X++){const x=Math.floor(X/K),tx=X/K-x,c=[-1,0,1,2].map(dy=>isoCR(at(x-1,y+dy),at(x,y+dy),at(x+1,y+dy),at(x+2,y+dy),tx));
       F[Y*fx+X]=isoCR(c[0],c[1],c[2],c[3],ty)}}
   let lo=1e9,hi=-1e9;for(const v of F)if(v===v){if(v<lo)lo=v;if(v>hi)hi=v}
   if(!(hi>lo))return null;
-  let iv=1;for(const c of [1,2,4,8]){iv=c;if(Math.floor(hi/c)-Math.ceil(lo/c)+1<=12)break}   // 4–12 linhas
+  const iv=g.z<=5?8:g.z<=8?4:2;                                    // intervalo fixo por zoom: arrastar o mapa já não subdivide as linhas
   const X2=x=>(g.i0+x/K)*g.st,Y2=y=>(g.j0+y/K)*g.st,lines=[];
   for(let lv=Math.ceil(lo/iv)*iv;lv<=hi;lv+=iv){
-    const segs=[];isoMarch(F,fx,fy,lv,(x1,y1,x2,y2)=>segs.push([Y2(y1),X2(x1),Y2(y2),X2(x2)]));
-    if(segs.length)lines.push({lv,segs});
+    const segs=[];isoMarch(F,fx,fy,lv,(x1,y1,x2,y2)=>segs.push([x1,y1,x2,y2]));
+    if(!segs.length)continue;
+    const chains=isoChain(segs).map(c=>isoSmooth(isoThin(c),2).map(q=>[Y2(q[1]),X2(q[0])]));
+    const sg=[];chains.forEach(c=>{for(let i=0;i<c.length-1;i++)sg.push([c[i][0],c[i][1],c[i+1][0],c[i+1][1]])});
+    lines.push({lv,segs:sg,chains});
   }
   /* máximos (A) e mínimos (B): extremos locais com raio de 2 nós e proeminência mínima */
   const ext=[],R=g.st>=20?1:2,prom=g.z<=5?2:1;                     // passos grandes → vizinhança mais curta
@@ -5368,7 +5420,7 @@ function isoDraw(M){
   if(!radarMap||!isoGrp)return;
   const nu=L.layerGroup(),old=isoGrp;
   if(M){
-    const multi=M.lines.flatMap(l=>l.segs.map(s=>[[s[0],s[1]],[s[2],s[3]]])),o={pane:'isobars',className:'isoln',interactive:false,lineCap:'round',lineJoin:'round',smoothFactor:.4};
+    const multi=M.lines.flatMap(l=>l.chains),o={pane:'isobars',className:'isoln',interactive:false,lineCap:'round',lineJoin:'round',smoothFactor:.6};
     if(multi.length){
       L.polyline(multi,{...o,color:'#ffffff',weight:3.6,opacity:.65}).addTo(nu);     // halo
       L.polyline(multi,{...o,color:'#14314f',weight:1.4,opacity:.9}).addTo(nu);
