@@ -673,7 +673,7 @@ background:linear-gradient(100deg,#fff 30%,#fff3c4 50%,#fff 70%);background-size
 @keyframes shine{to{background-position:-250% 0}}
 .lp{font-size:19px;line-height:1.5;max-width:40ch;margin:18px 0 24px}
 .cta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:26px}
-.marq{overflow:hidden;margin-top:14px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.marq{overflow:hidden;margin-top:4px;padding:14px 0 12px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 .track{display:flex;gap:12px;width:max-content;animation:marq 50s linear infinite}
 .track:hover{animation-play-state:paused}
 @keyframes marq{to{transform:translateX(-50%)}}
@@ -1393,13 +1393,14 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
 /* o drawer do terminal fechado não pode alargar a página */
 .term-overlay:not(.active){visibility:hidden;transition:opacity .35s ease,visibility 0s .4s}
 @media (max-width:720px){
- html,body{max-width:100%;overflow-x:clip;-webkit-text-size-adjust:100%}
- .aurora{inset:0;clip-path:inset(0)}
- .wrap{padding:6px max(14px,env(safe-area-inset-right)) calc(26px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+ html,body{max-width:100%;overflow-x:hidden;overscroll-behavior-x:none;-webkit-text-size-adjust:100%}
+ @supports (overflow:clip){html,body{overflow-x:clip}}
+ .wrap{max-width:100%;padding:8px max(18px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+ main,.hero,.hero>*,.card,.g2>*,.g2e>*{min-width:0}
 
  /* ---------- Cabeçalho: logótipo + 4 ícones, pesquisa por baixo (a ÚNICA) ---------- */
- header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 8px;margin:0 -14px;padding:8px 14px 6px}
- .logo{flex:1 1 0;min-width:0;font-size:24px;white-space:nowrap}
+ header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 8px;margin:0 -18px;padding:10px 18px 8px}
+ .logo{flex:1 1 0;min-width:0;font-size:24px;white-space:nowrap;padding-left:4px}
  .header-actions{flex:none;gap:7px;margin:0}
  .pill.hbtn,.pill.dots-btn,.pill.term-btn,.pill.auth-btn{width:40px;height:40px;padding:0;flex:none;border-radius:50%}
  .pill.warn{max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1417,13 +1418,18 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
  .pill.auth-btn.is-in{background:transparent;border-color:#fff}
  .tools-pop{position:fixed;left:12px;right:12px;top:64px;width:auto}
  .wpop{right:8px;left:8px;width:auto}
+ .card{padding:18px}
+ .g2,.g2e{gap:16px}
+ .tabs{margin-bottom:16px}
+ .strip{gap:10px}
+ .hero{gap:12px}
 
  /* ---------- Globo: sempre redondo ---------- */
  .gwrap,.land .gwrap{width:min(80vw,360px)!important;max-height:none!important;height:auto!important;aspect-ratio:1/1!important;margin:0 auto}
  #globe{width:100%!important;height:100%!important}
 
  /* ---------- Landing ---------- */
- .hero.land{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-top:6px}
+ .hero.land{display:flex;flex-direction:column;align-items:stretch;gap:16px;margin-top:10px}
  .hero.land .now{display:contents}
  .hero.land .m-live{order:1;display:inline-flex;align-self:flex-start;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;
    background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
@@ -1434,18 +1440,20 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
  .hero.land .card-search-trigger{display:none!important}     /* a pesquisa é só a do topo */
  .hero.land .cta{display:none}
  .hero.land .scene{order:4;width:100%;display:flex;justify-content:center;margin:2px 0}
- .hero.land .m-tiles{order:5;display:grid;grid-template-columns:1.25fr 1fr;gap:10px}
- .m-tile{display:flex;align-items:center;justify-content:center;gap:9px;padding:15px 10px;border-radius:18px;font-size:14px;font-weight:700;
+ .hero.land .m-tiles{order:5;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ .m-tile{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 8px;min-height:0;border-radius:16px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;
    background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
    box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 16px rgba(10,30,60,.12);transition:transform .15s}
  .m-tile.main{background:#fff;color:var(--acc);border-color:#fff;box-shadow:0 10px 24px rgba(10,30,60,.22)}
- .m-tile svg{width:19px;height:19px;flex:none}
+ .m-tile svg{width:16px;height:16px;flex:none}
+ .m-tile span{overflow:hidden;text-overflow:ellipsis}
  .m-tile:active{transform:scale(.96)}
- .hero.land .dayf{order:6;margin:0;padding:12px 14px 12px 18px;border-radius:18px}
+ .hero.land .dayf{order:6;margin:0;padding:14px 16px 14px 20px;border-radius:18px}
  .hero.land .dayf h3{font-size:19px;margin:4px 0 2px}
  .hero.land .dayf p{font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
  .hero.land .ticker{order:7;margin:0;font-size:13px;height:auto;min-height:0}
- .marq{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x proximity;margin:6px -14px 0;padding:0 14px 4px;-webkit-mask-image:none;mask-image:none}
+ .marq{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x proximity;margin:4px -18px 0;padding:8px 18px 10px;-webkit-mask-image:none;mask-image:none}
+ .cityc:hover{transform:none}
  .marq::-webkit-scrollbar{display:none}
  .marq .track{animation:none;width:max-content}
  .cityc{padding:9px 14px;gap:8px;scroll-snap-align:start}
@@ -3765,8 +3773,8 @@ function landing(){
  <button class="pill big" id="ls">Surprise me</button>
 </div>
 <div class="m-tiles" id="mTiles">
- <button class="m-tile main" id="mtLoc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><span>${LANG==='pt'?'A minha localização':'My location'}</span></button>
- <button class="m-tile" id="mtSur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg><span>${LANG==='pt'?'Surpreende-me':'Surprise me'}</span></button>
+ <button class="m-tile main" id="mtLoc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><span>${LANG==='pt'?'Localizar':'Locate me'}</span></button>
+ <button class="m-tile" id="mtSur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg><span>${LANG==='pt'?'Surpresa':'Surprise me'}</span></button>
 </div>
 <button class="card-search-trigger" id="cardSearchTrigger" aria-label="Pesquisar cidade">
  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -8132,7 +8140,10 @@ async function pushEnable(){
 async function pushTest(){
   let msg='';
   try{
-    const r=await fetch(`${PUSH_API}/test`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentToken}`},body:'{}'});
+    let ep=null;
+    try{const reg=await navigator.serviceWorker.ready,sb=await reg.pushManager.getSubscription();ep=sb&&sb.endpoint}catch(e){}
+    if(!ep){msg=T2('This device is not subscribed — turn notifications on here first.','Este dispositivo não está subscrito — ativa aqui primeiro as notificações.');console.info('[Push test]',msg);toast(msg);return msg}
+    const r=await fetch(`${PUSH_API}/test`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentToken}`},body:JSON.stringify({endpoint:ep})});
     const j=await r.json().catch(()=>({}));
     if(r.ok&&j.success){
       msg=T2('Test push sent — it should arrive in a few seconds.','Push de teste enviado — deve chegar dentro de alguns segundos.')+(j.status?` (push ${j.status})`:'');
