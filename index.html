@@ -1191,22 +1191,162 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
 
 /* ==== telemóvel (≤ 720px): mesma página, disposição própria ==== */
 @media (max-width:720px){
+ /* ---------- Wrap & base ---------- */
  .wrap{padding:8px 14px calc(26px + env(safe-area-inset-bottom))}
- header{flex-wrap:wrap;gap:8px;padding:8px 14px;margin:0 -14px}
- .logo{font-size:24px;margin-right:0;flex:1 1 0;min-width:0}
- .header-actions{margin-left:0;gap:6px}
- .pill.hbtn,.pill.dots-btn,.pill.term-btn{width:38px;height:38px;padding:0;flex:none}
+
+ /* ---------- Header: compact, two-row layout on phone ---------- */
+ header{flex-wrap:wrap;gap:6px;padding:8px 14px;margin:0 -14px}
+ .logo{font-size:22px;margin-right:0;flex:1 1 0;min-width:0}
+ .header-actions{margin-left:0;gap:5px;flex-wrap:nowrap}
+ /* shrink all pill buttons in header */
+ .pill.hbtn,.pill.dots-btn,.pill.term-btn{width:36px;height:36px;padding:0;flex:none}
  .pill.term-btn .term-lbl{display:none}
- .search{order:3;flex:1 1 100%;min-width:0;max-width:none}   /* a pesquisa passa para uma segunda linha */
+ /* auth button: icon only on mobile */
+ .pill.auth-btn #authTxt{display:none}
+ .pill.auth-btn{padding:0;width:36px;height:36px;justify-content:center}
+ /* warn pill: keep compact */
+ .pill.warn{padding:5px 10px;font-size:12px}
+ /* search moves to full-width second row */
+ .search{order:3;flex:1 1 100%;min-width:0;max-width:none}
  .search kbd{display:none}
- .tabs{width:100%;border-radius:18px;margin-bottom:12px}
- .tab{padding:9px 14px}
- .tools-pop{position:fixed;left:12px;right:12px;top:64px;width:auto}
- .hov{place-items:end center;padding:0}                       /* janelas viram "folhas" que sobem de baixo */
- .hcard,.fav-card{width:100%;max-height:92vh;border-radius:24px 24px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
+ /* dropdown fixes so it doesn't go off-screen */
+ .tools-pop{position:fixed;left:12px;right:12px;top:60px;width:auto}
+ .wpop{right:8px;left:8px;width:auto}
+
+ /* ---------- Hero (weather page) ---------- */
+ .hero{
+   grid-template-columns:1fr;
+   min-height:unset;
+   gap:6px;
+   margin-top:8px;
+ }
+ /* Temperature: smaller on phone */
+ .temp{font-size:clamp(72px,22vw,108px)}
+ /* Big weather icon: side-by-side with stats */
+ .scene{
+   flex-direction:row;
+   justify-content:space-between;
+   align-items:center;
+   width:100%;
+   gap:12px;
+   margin-top:4px;
+ }
+ .bigwrap{font-size:80px;flex:none}
+ .ncbox{font-size:13px;padding:8px 12px;flex:1;min-width:0}
+ /* lede text shorter */
+ .lede{font-size:18px;margin-top:6px}
+ /* time-travel slider narrower */
+ .tt{max-width:100%}
+
+ /* ---------- Landing hero (globe page) ---------- */
+ /* Stack text above globe, globe is compact */
+ .hero.land{
+   display:flex;
+   flex-direction:column;
+   gap:14px;
+ }
+ .hero.land .now{order:1}
+ .hero.land .scene{order:2;justify-content:center}
+ /* Globe: cap height so it doesn't dominate the screen */
+ .gwrap{
+   width:min(100%,72vw);
+   max-height:45vw;
+   aspect-ratio:1;
+ }
+ .land h1{font-size:clamp(40px,10vw,72px);line-height:1}
+ .lp{font-size:16px;margin:10px 0 14px}
+ .cta{gap:10px}
+ .pill.big{padding:12px 22px;font-size:14.5px}
+ /* Fact of the day card: tighter */
+ .dayf{padding:10px 12px 10px 16px}
+ .dayf h3{font-size:18px}
+ /* Ticker: no clipping */
+ .land .ticker{height:auto;min-height:unset}
+
+ /* ---------- Tabs ---------- */
+ .tabs{width:100%;border-radius:18px;margin-bottom:12px;overflow-x:auto}
+ .tab{padding:8px 12px;font-size:13px}
+
+ /* ---------- Content cards ---------- */
+ .g2,.g2e{grid-template-columns:1fr}
+ .card{padding:16px}
+ /* Today strip: 3 items per row max */
+ .strip{grid-template-columns:repeat(3,1fr);gap:8px}
+ .mini b{font-size:20px}
+ /* Week grid: scrollable horizontally */
+ .wk{grid-template-columns:repeat(7,minmax(48px,1fr));overflow-x:auto;padding-bottom:4px}
+ .dcol{padding:10px 2px;font-size:13px}
+ .dcol .dic{font-size:22px}
+ /* Hours horizontal scroll */
+ .hours{gap:4px}
+ .hr{flex:0 0 54px}
+ /* Pollen row: label + bar + value */
+ .pr{grid-template-columns:90px 1fr 72px;gap:8px;font-size:13px}
+ /* Air gauge max width */
+ .gauge svg{max-width:220px}
+ /* Radar map: sensible height */
+ #rmap{height:clamp(240px,48vw,360px)}
+ .rctl{flex-wrap:wrap;gap:8px}
+ .rtime{min-width:0;font-size:12px}
+
+ /* ---------- Modals ---------- */
+ .hov{place-items:end center;padding:0}
+ .hcard,.fav-card{
+   width:100%;max-height:92vh;
+   border-radius:24px 24px 0 0;
+   padding:16px 16px calc(20px + env(safe-area-inset-bottom))
+ }
  .fav-grid{grid-template-columns:1fr 1fr;gap:10px}
  .fav-t{font-size:32px}
- .bigwrap{font-size:92px}
+
+ /* ---------- Science & misc ---------- */
+ .expHero{grid-template-columns:1fr;text-align:left;padding:18px}
+ .expDiagram{width:80px;height:80px;margin:0 0 4px}
+ .expGrid,.expGrid.three{grid-template-columns:1fr}
+ .expH{font-size:22px}.expP{font-size:14.5px}
+ .labgrid{grid-template-columns:1fr 1fr}
+ .qb{flex-direction:column}
+ .qb .pill{width:100%;justify-content:center}
+
+ /* ---------- Hurricane tracker modal ---------- */
+ /* Card: bottom-sheet style, compact padding */
+ .hcard{
+   padding:14px 14px calc(16px + env(safe-area-inset-bottom));
+   border-radius:22px 22px 0 0;
+ }
+ /* Header: smaller title, tighter gap */
+ .hh{gap:8px;margin-bottom:10px}
+ .hh h2{font-size:20px;line-height:1.1}
+ .hh p{font-size:12px}
+ .hico{width:38px;height:38px}
+ .hico img{width:24px;height:24px}
+ .hx{width:32px;height:32px;font-size:13px}
+ /* Map: shorter */
+ #hmap{height:clamp(180px,40vw,260px);border-radius:14px}
+ /* Detail strip */
+ .hdet{font-size:11.5px;gap:4px 10px;padding:8px 10px}
+ /* Each storm row: 2-col layout, stats wrap to own line */
+ .hrow{
+   grid-template-columns:auto 1fr;
+   gap:8px;padding:10px;border-radius:14px;
+ }
+ .hsp svg{width:34px;height:34px}
+ .hmain b{font-size:18px}
+ .hmain em{font-size:11px}
+ .hmain small{font-size:11.5px}
+ /* Stats span full row width on their own line */
+ .hstat{
+   grid-column:1/-1;
+   grid-template-columns:repeat(3,1fr);
+   gap:2px 10px;font-size:12px;text-align:left;
+ }
+ .hstat i{font-size:10px}
+ .hfoot{font-size:11px;gap:3px 10px}
+ /* Empty state: smaller */
+ .hempty{padding:14px 10px 8px}
+ .hempty .hico{width:54px;height:54px}
+ .hempty .hico img{width:34px;height:34px}
+ .hempty h3{font-size:20px}
 }
 @media (max-width:420px){.fav-grid{grid-template-columns:1fr}.logo{font-size:22px}}
 </style>
