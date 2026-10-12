@@ -3,6 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* Deteção de telemóvel: não depende só da largura. Combina Client Hints, tipo de ponteiro, lado curto do ecrã físico e user-agent.
+   Forçar: ?ui=mobile | ?ui=desktop | ?ui=auto  (fica guardado). Tablets e janelas estreitas de PC usam o layout de PC. */
+(function(){
+  var d=document.documentElement,mode='auto';
+  try{var q=new URLSearchParams(location.search).get('ui');if(q){localStorage.setItem('uiMode',q)}mode=localStorage.getItem('uiMode')||'auto'}catch(e){}
+  var mob;
+  if(mode==='mobile')mob=true;else if(mode==='desktop')mob=false;
+  else{
+    var ua=navigator.userAgent||'',uad=navigator.userAgentData,mm=function(x){try{return matchMedia(x).matches}catch(e){return false}};
+    var uaMob=uad&&typeof uad.mobile==='boolean'?uad.mobile:/Android.+Mobile|iPhone|iPod|Windows Phone|webOS|BlackBerry|Opera Mini|IEMobile/i.test(ua);
+    var touchOnly=mm('(pointer:coarse)')&&mm('(hover:none)');
+    var shortSide=Math.min(screen.width||9999,screen.height||9999);
+    mob=!!(uaMob&&shortSide<=600)||!!(touchOnly&&shortSide<=480);
+  }
+  d.classList.add(mob?'is-mobile':'is-desktop');
+  d.dataset.ui=mob?'mobile':'desktop';
+})();
+</script>
 <title>Skylab — Weather & Science</title>
 <link rel="icon" href="favicon.ico" sizes="32x32">
 <link rel="icon" type="image/png" href="icon-web.png" sizes="512x512">
@@ -1015,68 +1034,7 @@ html.hlock{overflow:hidden}
 [hidden], #authLoggedInView[hidden], #authLoggedOutView[hidden]{display:none!important}
 /* (removido: botão Sign Up do hero; a topbar já faz o mesmo) */
 
-/* Lupa no cartão: oculta por defeito, surge com scroll */
-.card-search-trigger{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:7px 14px;
-  border-radius:999px;
-  background:rgba(255,255,255,.26);
-  border:1px solid rgba(255,255,255,.55);
-  backdrop-filter:blur(14px);
-  color:#fff;
-  font-size:13px;
-  cursor:pointer;
-  opacity:0;
-  transform:translateY(-6px);
-  pointer-events:none;
-  transition:opacity .35s ease, transform .35s ease, background .25s;
-  margin-top:10px;
-}
-.card-search-trigger.scrolled{
-  opacity:1;
-  transform:none;
-  pointer-events:auto;
-}
-.card-search-trigger:hover{
-  background:rgba(255,255,255,.42);
-}
-.card-search-trigger svg{width:15px;height:15px;flex:none}
 /* Lupa flutuante no cartão que surge apenas no scroll */
-.hero-scroll-search{
-  position:absolute;
-  top:16px;
-  right:16px;
-  width:38px;
-  height:38px;
-  border-radius:50%;
-  display:grid;
-  place-items:center;
-  background:rgba(255,255,255,.32);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,.65);
-  color:#fff;
-  cursor:pointer;
-  box-shadow:0 4px 14px rgba(10,30,60,.16);
-  opacity:0;
-  transform:scale(.8);
-  pointer-events:none;
-  transition:opacity .35s ease, transform .35s cubic-bezier(.2,.8,.2,1), background .25s ease;
-  z-index:8;
-}
-.hero-scroll-search.visible{
-  opacity:1;
-  transform:scale(1);
-  pointer-events:auto;
-}
-.hero-scroll-search:hover{
-  background:rgba(255,255,255,.5);
-  transform:scale(1.1);
-  box-shadow:0 6px 20px rgba(10,30,60,.22);
-}
-.hero-scroll-search svg{width:18px;height:18px}
 
 /* ==== fontes & atribuições ==== */
 .src-line{display:flex;gap:6px;align-items:center;margin-top:10px;font-size:12px;color:rgba(255,255,255,.8);text-shadow:0 1px 6px rgba(10,30,60,.3)}
@@ -1394,81 +1352,158 @@ background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animati
 }
 @media (max-width:420px){.fav-grid{grid-template-columns:1fr}.logo{font-size:22px}}
 
+
 /* =====================================================================
-   TELEMÓVEL — redesenho (≤ 720px)
+   BASE (válido em todos) + MOBILE (html.is-mobile) — redesenho inspirado em apps de meteorologia
    ===================================================================== */
-.m-live,.m-tiles{display:none}
-.auth-av{display:none;width:28px;height:28px;border-radius:50%;place-items:center;font-size:13px;font-weight:700;line-height:1;color:var(--acc);background:#fff center/cover no-repeat;box-shadow:0 1px 4px rgba(10,30,60,.25)}
-/* o drawer do terminal fechado não pode alargar a página */
 .term-overlay:not(.active){visibility:hidden;transition:opacity .35s ease,visibility 0s .4s}
-@media (max-width:720px){
- html,body{max-width:100%;overflow-x:hidden;overscroll-behavior-x:none;-webkit-text-size-adjust:100%}
- @supports (overflow:clip){html,body{overflow-x:clip}}
- .wrap{max-width:100%;padding:8px max(18px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
- main,.hero,.hero>*,.card,.g2>*,.g2e>*{min-width:0}
+.auth-av{display:none;width:28px;height:28px;border-radius:50%;place-items:center;font-size:13px;font-weight:700;line-height:1;color:var(--acc);background:#fff center/cover no-repeat;box-shadow:0 1px 4px rgba(10,30,60,.25)}
+.sheet{display:contents}
+.m-tiles,.m-cities,.m-stats,.m-pill,.m-nav{display:none}
+@media (max-width:720px){ .gwrap,.land .gwrap{max-height:none!important;aspect-ratio:1/1!important} }
 
- /* ---------- Cabeçalho: logótipo + 4 ícones, pesquisa por baixo (a ÚNICA) ---------- */
- header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 8px;margin:0 -18px;padding:10px 18px 8px}
- .logo{flex:1 1 0;min-width:0;font-size:24px;white-space:nowrap;padding-left:4px}
- .header-actions{flex:none;gap:7px;margin:0}
- .pill.hbtn,.pill.dots-btn,.pill.term-btn,.pill.auth-btn{width:40px;height:40px;padding:0;flex:none;border-radius:50%}
- .pill.warn{max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- .search{order:3;flex:1 1 100%;max-width:none;min-width:0}
- .search input{padding:14px 16px 14px 44px;font-size:16px;border-radius:18px;background:rgba(255,255,255,.9);color:var(--acc);border:0;box-shadow:0 10px 26px rgba(10,30,60,.2)}
- .search input::placeholder{color:rgba(20,49,79,.55)}
- .search>svg{left:16px;color:var(--acc)}
- .search-clear{color:var(--acc);background:rgba(20,49,79,.1);right:12px}
- .search kbd{display:none}
- .pill.auth-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;gap:0;justify-content:center;overflow:hidden;
-   background:rgba(255,255,255,.34);border-color:rgba(255,255,255,.9)}
- .pill.auth-btn #authTxt,.pill.auth-btn .auth-u-id{display:none}
- .pill.auth-btn>svg.auth-ico{display:block;width:20px;height:20px;color:#fff;flex:none}
- .pill.auth-btn.is-in>svg.auth-ico{display:none!important}
- .pill.auth-btn.is-in .auth-av{display:grid}
- .pill.auth-btn.is-in{background:transparent;border-color:#fff}
- .tools-pop{position:fixed;left:12px;right:12px;top:64px;width:auto}
- .wpop{right:8px;left:8px;width:auto}
- .card{padding:18px}
- .g2,.g2e{gap:16px}
- .tabs{margin-bottom:16px}
- .strip{gap:10px}
- .hero{gap:12px}
+html.is-mobile,html.is-mobile body{max-width:100%;overflow-x:hidden;overscroll-behavior-x:none;-webkit-text-size-adjust:100%}
+@supports (overflow:clip){html.is-mobile,html.is-mobile body{overflow-x:clip}}
+html.is-mobile .wrap{max-width:100%;padding:0 max(18px,env(safe-area-inset-right)) 0 max(18px,env(safe-area-inset-left))}
+html.is-mobile main,html.is-mobile .hero,html.is-mobile .card,html.is-mobile .g2>*,html.is-mobile .g2e>*{min-width:0}
 
- /* ---------- Globo: sempre redondo ---------- */
- .gwrap,.land .gwrap{width:min(80vw,360px)!important;max-height:none!important;height:auto!important;aspect-ratio:1/1!important;margin:0 auto}
- #globe{width:100%!important;height:100%!important}
+/* ---------- cabeçalho ---------- */
+html.is-mobile header,html.is-mobile header.stuck{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:12px 8px;margin:0 -18px;
+  padding:calc(14px + env(safe-area-inset-top)) 18px 4px;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;border-radius:0}
+html.is-mobile .header-actions{display:contents}
+html.is-mobile .logo{order:0;flex:1 1 auto;min-width:max-content;font-size:26px;white-space:nowrap;overflow:visible;padding-left:4px}
+html.is-mobile .header-actions>.pill:not(.warn),html.is-mobile .header-actions>div{order:1}
+html.is-mobile .pill.hbtn,html.is-mobile .pill.dots-btn{width:42px;height:42px;padding:0;flex:none;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.55)}
+html.is-mobile #favBtn,html.is-mobile #authBtn,html.is-mobile #termBtn,html.is-mobile #inst{display:none!important}
+html.is-mobile .pill.warn{order:8;flex:1 1 100%;width:100%;height:auto;min-height:0;padding:11px 14px;border-radius:16px;justify-content:center;white-space:normal;text-align:center;line-height:1.25;
+  background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.55);overflow:visible}
+html.is-mobile .search{display:block;order:7;flex:1 1 100%;max-width:none;min-width:0}
+html.is-mobile .search input{width:100%;padding:15px 52px 15px 18px;font-size:16px;border-radius:16px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.85);color:#fff;box-shadow:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+html.is-mobile .search input::placeholder{color:rgba(255,255,255,.88)}
+html.is-mobile .search>svg{left:auto;right:18px;color:#fff;width:20px;height:20px}
+html.is-mobile .search kbd{display:none}
+html.is-mobile .search-clear{right:48px;color:#fff;background:rgba(255,255,255,.22)}
+html.is-mobile .tools-pop{position:fixed;left:12px;right:12px;top:calc(66px + env(safe-area-inset-top));width:auto}
+html.is-mobile .wpop{left:8px;right:8px;width:auto}
+html.is-mobile #toast{bottom:calc(98px + env(safe-area-inset-bottom));z-index:60;max-width:calc(100vw - 32px);text-align:center}
+html.is-mobile.hlock .m-nav{display:none}
 
- /* ---------- Landing ---------- */
- .hero.land{display:flex;flex-direction:column;align-items:stretch;gap:16px;margin-top:10px}
- .hero.land .now{display:contents}
- .hero.land .m-live{order:1;display:inline-flex;align-self:flex-start;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;
-   background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
- .m-live i{width:7px;height:7px;border-radius:50%;background:#5dffa4;animation:mLive 1.8s infinite}
- @keyframes mLive{0%{box-shadow:0 0 0 0 rgba(93,255,164,.7)}70%,100%{box-shadow:0 0 0 8px rgba(93,255,164,0)}}
- .hero.land h1{order:2;font-size:clamp(34px,10.5vw,44px);line-height:1.02;letter-spacing:-.015em}
- .hero.land .lp{order:3;font-size:14.5px;line-height:1.45;margin:0;max-width:none}
- .hero.land .card-search-trigger{display:none!important}     /* a pesquisa é só a do topo */
- .hero.land .cta{display:none}
- .hero.land .scene{order:4;width:100%;display:flex;justify-content:center;margin:2px 0}
- .hero.land .m-tiles{order:5;display:grid;grid-template-columns:1fr 1fr;gap:10px}
- .m-tile{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 8px;min-height:0;border-radius:16px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;
-   background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-   box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 16px rgba(10,30,60,.12);transition:transform .15s}
- .m-tile.main{background:#fff;color:var(--acc);border-color:#fff;box-shadow:0 10px 24px rgba(10,30,60,.22)}
- .m-tile svg{width:16px;height:16px;flex:none}
- .m-tile span{overflow:hidden;text-overflow:ellipsis}
- .m-tile:active{transform:scale(.96)}
- .hero.land .dayf{order:6;margin:0;padding:14px 16px 14px 20px;border-radius:18px}
- .hero.land .dayf h3{font-size:19px;margin:4px 0 2px}
- .hero.land .dayf p{font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
- .hero.land .ticker{order:7;margin:0;font-size:13px;height:auto;min-height:0}
- .marq{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-snap-type:x proximity;margin:4px -18px 0;padding:8px 18px 10px;-webkit-mask-image:none;mask-image:none}
- .cityc:hover{transform:none}
- .marq::-webkit-scrollbar{display:none}
- .marq .track{animation:none;width:max-content}
- .cityc{padding:9px 14px;gap:8px;scroll-snap-align:start}
- .cityc .ic{font-size:20px}.cityc b{font-size:20px}.cityc small{display:none}
-}
+/* ---------- barra de navegação inferior ---------- */
+html.is-mobile .m-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;justify-content:space-around;gap:4px;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  border-radius:26px 26px 0 0;box-shadow:0 -10px 34px rgba(10,40,90,.2)}
+.m-nav button{flex:1;display:grid;justify-items:center;gap:4px;padding:6px 0;background:none;border:0;color:#9aa9bd;font-size:11px;font-weight:600;transition:color .2s,transform .15s}
+.m-nav button:active{transform:scale(.92)}
+.m-nav button.on{color:var(--acc)}
+.m-nav svg{width:24px;height:24px}
+.m-nav .acc-av{display:none;width:24px;height:24px;border-radius:50%;background:var(--acc) center/cover no-repeat;color:#fff;font-style:normal;font-size:12px;font-weight:700;place-items:center}
+.m-nav.in .acc-av{display:grid}.m-nav.in .acc>svg{display:none}
+
+/* ---------- landing ---------- */
+html.is-mobile main.lnd{display:flex;flex-direction:column;gap:18px;padding:18px 0 calc(110px + env(safe-area-inset-bottom))}
+html.is-mobile main.lnd .hero.land,html.is-mobile main.lnd .hero.land .now{display:contents}
+html.is-mobile .land h1{order:1;font-size:clamp(36px,11vw,46px);line-height:1.02;letter-spacing:-.015em;margin:0}
+html.is-mobile .land .lp{order:2;font-size:15px;line-height:1.45;margin:-6px 0 0;max-width:none}
+html.is-mobile .land .cta{display:none}
+html.is-mobile .land .scene{order:3;width:100%;display:flex;justify-content:center;margin:0}
+html.is-mobile .gwrap,html.is-mobile .land .gwrap{width:min(80vw,340px)!important;height:auto!important;max-height:none!important;aspect-ratio:1/1!important;margin:0 auto}
+html.is-mobile #globe{width:100%!important;height:100%!important}
+html.is-mobile .land .m-tiles{order:4;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html.is-mobile .m-tile{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 10px;border-radius:18px;font-size:14px;font-weight:700;white-space:nowrap;
+  background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.55);color:#fff;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);transition:transform .15s}
+html.is-mobile .m-tile.main{background:#fff;color:var(--acc);border-color:#fff;box-shadow:0 12px 26px rgba(10,40,90,.25)}
+html.is-mobile .m-tile svg{width:18px;height:18px;flex:none}
+html.is-mobile .m-tile:active{transform:scale(.96)}
+html.is-mobile .m-cities{order:5;display:block}
+html.is-mobile .m-h2{font-family:var(--serif);font-weight:400;font-size:24px;margin:2px 2px 12px;color:#fff}
+html.is-mobile .land .dayf{order:6;margin:0;padding:14px 16px 14px 20px}
+html.is-mobile .land .ticker{order:7;margin:0;font-size:13px}
+html.is-mobile .marq{display:none}
+.m-cl{display:grid;gap:14px}
+.m-cc{display:block;width:100%;text-align:left;padding:16px 18px 14px;border-radius:22px;background:#fff;color:#14314f;text-shadow:none;border-bottom:4px solid #2f8df0;
+  box-shadow:0 14px 30px rgba(10,40,90,.2);transition:transform .15s}
+.m-cc:active{transform:scale(.98)}
+.m-cc.mild{border-bottom-color:#27b59b}.m-cc.warm{border-bottom-color:#ff8a4c}
+.m-cc.sk{height:112px;background:linear-gradient(90deg,rgba(255,255,255,.35),rgba(255,255,255,.55),rgba(255,255,255,.35));background-size:200% 100%;animation:mSk 1.4s linear infinite;border-bottom-color:transparent}
+@keyframes mSk{to{background-position:-200% 0}}
+.m-cc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.m-cc-l{display:grid;gap:3px;min-width:0}
+.m-cc-l b{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:600;line-height:1.2}
+.m-cc-l b svg{width:15px;height:15px;color:#14314f;flex:none}
+.m-cc-l small{font-size:12px;color:#7a8ca3;padding-left:22px}
+.m-cc-l small.hm{color:#2f8df0;font-weight:600}
+.m-cc-t{font-family:var(--serif);font-size:44px;line-height:.95;color:#14314f;white-space:nowrap}
+.m-cc-t sup{font-size:.4em;vertical-align:top;position:relative;top:.15em}
+.m-cc-row{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13.5px}
+.m-cc-row strong{font-weight:600}
+.m-cc-row .ic{display:inline-flex;font-size:20px;color:#14314f}
+.m-cc-row .rn{color:#3b6fb5}
+.m-cc-row .wv{width:44px;height:14px;color:#9db3d3;margin-left:auto}
+.m-cc-row i{font-style:normal;font-weight:600}
+.u{color:#ff7a3d;font-style:normal}.d{color:#2f8df0;font-style:normal}
+.m-err{color:#fff;text-align:center;padding:12px}
+
+/* ---------- página de cidade ---------- */
+html.is-mobile main:not(.lnd){padding-top:6px}
+html.is-mobile .hero:not(.land){display:grid;grid-template-columns:1fr auto;column-gap:8px;align-items:center;min-height:0;margin-top:8px;padding:6px 0 30px;text-shadow:0 2px 14px rgba(10,30,60,.22)}
+html.is-mobile .hero:not(.land) .now,html.is-mobile .hero:not(.land) .scene{display:contents}
+html.is-mobile .hero:not(.land) .place{grid-column:1/-1;grid-row:1}
+html.is-mobile .place h1{font-size:28px;font-weight:600;letter-spacing:-.01em}
+html.is-mobile .hero:not(.land) .sub{grid-column:1/-1;grid-row:2;margin:2px 0 0;font-size:14px}
+html.is-mobile .hero:not(.land) .temp{grid-column:1;grid-row:3/6;font-family:var(--sans,system-ui,sans-serif);font-weight:300;font-size:clamp(84px,25vw,112px);letter-spacing:-.04em;margin:14px 0 0;align-self:end}
+html.is-mobile .temp sup{font-size:.36em;top:.12em;font-weight:400}
+html.is-mobile .hero:not(.land) .bigwrap{grid-column:2;grid-row:3/6;font-size:clamp(120px,36vw,160px);justify-self:end;align-self:center;margin-right:-6px}
+html.is-mobile .hero:not(.land) .cond{grid-column:1/-1;grid-row:6;font-size:19px;margin-top:6px}
+html.is-mobile .hero:not(.land) .cond .em{font-size:26px}
+html.is-mobile .hero:not(.land) .feels{grid-column:1/-1;grid-row:7;font-size:14px}
+html.is-mobile .hero:not(.land) .lede{grid-column:1/-1;grid-row:8;font-size:18px;margin-top:12px;max-width:none}
+html.is-mobile .hero:not(.land) .tt{grid-column:1/-1;grid-row:9;max-width:none;margin-top:14px}
+html.is-mobile .hero:not(.land) .scene>:not(.bigwrap){grid-column:1/-1;grid-row:10;width:100%;margin-top:14px}
+html.is-mobile .m-stats{grid-column:1/-1;grid-row:11;display:grid;grid-template-columns:1fr 1fr;margin-top:20px;font-size:14px}
+html.is-mobile .m-stats>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:13px 14px;border-bottom:1px solid rgba(255,255,255,.3)}
+html.is-mobile .m-stats>div:nth-child(odd){border-right:1px solid rgba(255,255,255,.3);padding-left:2px}
+html.is-mobile .m-stats>div:nth-last-child(-n+2){border-bottom:0}
+.m-stats .k{display:inline-flex;align-items:center;gap:8px;opacity:.95}
+.m-stats .k svg{width:17px;height:17px}
+.m-stats b{font-weight:600;white-space:nowrap}
+html.is-mobile .m-pill{grid-column:1/-1;grid-row:12;display:flex;justify-content:space-around;align-items:center;margin-top:18px;padding:14px 12px;border-radius:16px;background:#fff;color:#14314f;text-shadow:none;font-size:14px;box-shadow:0 12px 26px rgba(10,40,90,.2)}
+.m-pill .sep{width:1px;height:20px;background:#dbe5f2}
+.m-pill i{font-style:normal;font-weight:600;margin-left:4px}
+
+/* folha branca com o conteúdo */
+html.is-mobile .sheet{display:block;position:relative;margin:0 -18px;padding:26px 18px calc(118px + env(safe-area-inset-bottom));background:#fff;color:var(--ink);text-shadow:none;
+  border-radius:36px 36px 0 0;box-shadow:0 -12px 40px rgba(10,40,90,.2);min-height:62vh}
+.m-sec{display:block}
+.m-sec h2,.m-more{font-size:19px;font-weight:600;color:#14314f;margin:0 0 14px;font-family:var(--sans,system-ui,sans-serif)}
+.m-more{margin:26px 0 12px}
+.m-hrs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -18px 22px;padding:2px 18px 6px}
+.m-hrs::-webkit-scrollbar{display:none}
+.m-hr{flex:none;display:grid;justify-items:center;gap:6px;width:64px}
+.m-hr .ic{width:52px;height:52px;border-radius:50%;background:#eef4fb;display:grid;place-items:center;font-size:26px;color:#2f6fe0}
+.m-hr small{font-size:11.5px;color:#7a8ca3}
+.m-hr b{font-size:17px;font-weight:600;color:#14314f}
+.m-hr em{font-style:normal;font-size:11px;color:#3b8fe0}
+.m-day{display:grid;grid-template-columns:52px 1fr auto;gap:0 14px;align-items:center;padding:14px 16px;margin-bottom:12px;border-radius:22px;background:#fff;border:1px solid #edf2f9;box-shadow:0 10px 26px rgba(20,60,120,.09)}
+.m-day .ic{width:52px;height:52px;border-radius:50%;background:#eef4fb;display:grid;place-items:center;font-size:26px;color:#2f6fe0}
+.m-dd{display:grid;gap:3px;min-width:0}
+.m-dd b{font-size:15px;font-weight:600;color:#14314f}
+.m-dd small{font-size:12.5px;color:#7a8ca3}
+.m-dt{display:grid;grid-template-columns:auto auto;gap:2px 10px;justify-items:end;font-size:13.5px;font-weight:600}
+.m-dt button{grid-column:1/-1;font-size:12.5px;color:#7a8ca3;font-weight:500;padding:2px 0}
+html.is-mobile .sheet .ticker{margin:6px 0 4px;padding:12px 14px;border-radius:16px;background:#f3f7fc;color:#14314f;text-shadow:none;align-items:center}
+html.is-mobile .sheet .ticker .tkb{opacity:.75}
+html.is-mobile .sheet .tabs{width:auto;margin:14px 0 18px;padding:5px;background:#f1f6fc;border:0;border-radius:18px;-webkit-backdrop-filter:none;backdrop-filter:none;scrollbar-width:none}
+html.is-mobile .sheet .tabs::-webkit-scrollbar{display:none}
+html.is-mobile .sheet .tab{color:#6b7f99;padding:10px 16px}
+html.is-mobile .sheet .tab[aria-selected=true]{color:var(--acc)}
+html.is-mobile .sheet .ind{border-radius:14px;box-shadow:0 4px 14px rgba(20,60,120,.14)}
+html.is-mobile .sheet .card{background:#f6f9fe;border:1px solid #e6eef8;box-shadow:none;border-radius:24px;padding:18px;-webkit-backdrop-filter:none;backdrop-filter:none}
+html.is-mobile .g2,html.is-mobile .g2e{gap:16px}
+
+html.is-mobile footer{margin:0 -18px;padding:18px 18px calc(110px + env(safe-area-inset-bottom))}
+html.is-mobile body:has(.sheet) footer{background:#fff;color:#6b7f99;text-shadow:none;margin-top:-1px}
+html.is-mobile body:has(.sheet) footer a{color:var(--acc)}
 </style>
 </head>
 <body>
@@ -1751,6 +1786,7 @@ const ATMO={ base:'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.d
 let atmoDead=false;
 const SYNC_KEYS = ['favs','unitPick','lang','place','homeCity','progMode','termHist','termTheme','tabPick','recent'];// declared first so lsSet can reference it safely
 /* ============ basics ============ */
+const IS_MOBILE=document.documentElement.classList.contains('is-mobile');
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const main=$('#main'),q=$('#q'),sg=$('#sg');
 const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
@@ -3222,9 +3258,6 @@ function heroHTML(){
  const c=data.current,d=data.daily;
  const local=new Date(c.time).toLocaleString('en',{weekday:'long',hour:'numeric',minute:'2-digit'});
  return`<section class="hero" id="hero">
-<button class="hero-scroll-search" id="cardSearchBtn" title="${tr('Search a city')}" aria-label="${tr('Search a city')}">
- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-</button>
 <div class="now">
  <div class="place"><h1>${escH(place.name)}</h1><button class="star" id="fav" aria-label="Save place"></button></div>
  <div class="sub">${place.sub?escH(place.sub)+' · ':''}${local}</div>
@@ -3234,6 +3267,8 @@ ${LABEL[c.weather_code]||'—'}</div>
  <div class="feels" id="feels">Feels like ${T(c.apparent_temperature)}° · High ${T(d.temperature_2m_max[0])}° · Low ${T(d.temperature_2m_min[0])}°</div>
  <p class="lede">${heroLine()}</p>
  <div class="tt"><input type="range" id="tr" min="0" max="24" value="0" aria-label="Travel through the next 24 hours"><div class="tl" id="tlab" aria-live="polite">Drag to travel through the next 24 hours</div></div>
+<div class="m-stats"><div><span class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>${T2('Humidity','Humidade')}</span><b>${Math.round(c.relative_humidity_2m)}%</b></div><div><span class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>${T2('UV index','Índice UV')}</span><b>${Math.round(d.uv_index_max[0])}</b></div><div><span class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16a4 4 0 0 1-.9-7.9A6 6 0 0 1 17.6 9 3.5 3.5 0 0 1 17 16z"/><path d="M9 19l-1 2M13 19l-1 2M17 19l-1 2"/></svg>${T2('Rain','Chuva')}</span><b>${Math.round(d.precipitation_probability_max[0]||0)}%</b></div><div><span class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/></svg>${T2('Wind','Vento')}</span><b>${W(c.wind_speed_10m)}</b></div></div>
+<div class="m-pill"><span>${T2('Today','Hoje')} <i class="u">↑${T(d.temperature_2m_max[0])}°</i> <i class="d">↓${T(d.temperature_2m_min[0])}°</i></span><span class="sep"></span><span>${T2('Tomorrow','Amanhã')} <i class="u">↑${T(d.temperature_2m_max[1])}°</i> <i class="d">↓${T(d.temperature_2m_min[1])}°</i></span></div>
 </div>
 <div class="scene"><div class="bigwrap"><i class="halo"></i><div class="bigic" id="bigic">
 ${emoji(c.weather_code,c.is_day)}</div></div>${nowcastHTML()}
@@ -3751,7 +3786,7 @@ function render(){
  }
  lastKey=key;
  main.className=fresh?'enter':'';
- main.innerHTML=heroHTML()+`<div class="ticker" id="tk" title="Open in Science"></div>`+shell();
+ main.innerHTML=heroHTML()+`<div class="sheet" id="sheet">${mobileSheetHTML()}<div class="ticker" id="tk" title="Open in Science"></div>${shell()}</div>`;
  theme(c.temperature_2m,k);if(mode!==k)fxSet(k);
  paintFav();timeTravel();startTicker();
  countUp($('#tn'),T(c.temperature_2m));
@@ -3773,10 +3808,9 @@ function landing(){
  const hr=new Date().getHours(),night=hr<6||hr>=20,k=night?'night':'clear';
  landTheme(night,k);if(mode!==k)fxSet(k);
  document.title=tr('Skylab — Weather & Science');
- main.className='enter';
+ main.className='enter lnd';
  main.innerHTML=`<section class="hero land" id="hero">
 <div class="now">
- <div class="m-live"><i></i>${tr('Live')} · ${new Date().toLocaleDateString(LOC(),{weekday:'long',day:'numeric',month:'short'})}</div>
  <h1>The sky, explained.</h1>
  <p class="lp">Live weather for anywhere on Earth, with the science behind what you’re looking at.</p>
 <div class="cta">
@@ -3787,10 +3821,6 @@ function landing(){
  <button class="m-tile main" id="mtLoc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><span>${LANG==='pt'?'Localizar':'Locate me'}</span></button>
  <button class="m-tile" id="mtSur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg><span>${LANG==='pt'?'Surpresa':'Surprise me'}</span></button>
 </div>
-<button class="card-search-trigger" id="cardSearchTrigger" aria-label="Pesquisar cidade">
- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
- <span>${tr('Search a city')}</span>
-</button>
  ${dailyHTML()}
  <div class="ticker" id="tk"></div>
 </div>
@@ -3802,12 +3832,12 @@ function landing(){
  </div>
 </div>
 </section>
+<section class="m-cities" id="mCities"><h2 class="m-h2">${T2('Around the world now','Pelo mundo agora')}</h2><div class="m-cl" id="mcl">${[0,1,2,3].map(()=>'<div class="m-cc sk"></div>').join('')}</div></section>
 <section class="marq" id="marq"><div class="track">${CITIES.map(c=>`<div class="cityc sk">${c[0]}</div>`).join('')}</div></section>`;
  $('#lc').onclick=locate;$('#ls').onclick=surprise;startTicker();
  {const a=$('#mtLoc'),b=$('#mtSur');if(a)a.onclick=locate;if(b)b.onclick=surprise}
- const cst = $('#cardSearchTrigger');
- if (cst) cst.onclick = () => { window.scrollTo({top:0, behavior:'smooth'}); setTimeout(()=>{const q=$('#q');if(q)q.focus()},250); };
  globeStart();
+ if(IS_MOBILE){mobileCities();return}
  const u=`https://api.open-meteo.com/v1/forecast?latitude=${CITIES.map(c=>c[2]).join(',')}
 &longitude=${CITIES.map(c=>c[3]).join(',')}
 &current=temperature_2m,weather_code,is_day&timezone=auto`;
@@ -3827,6 +3857,7 @@ function surprise(){const p=EXTREMES[Math.floor(Math.random()*EXTREMES.length)];
  if(q&&c){const sync=()=>{c.hidden=!q.value};
   q.addEventListener('input',sync);q.addEventListener('change',sync);
   c.addEventListener('click',()=>{q.value='';sync();q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()});sync()}}
+
 function levenshtein(a,b){
   a=a.toLowerCase();b=b.toLowerCase();
   const m=a.length,n=b.length;
@@ -4139,7 +4170,7 @@ $('#snd').onclick=()=>{
 let toastT;
 function toast(m){
  let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','status');document.body.appendChild(t)}
- t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200);
+ t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),Math.min(8000,Math.max(2200,m.length*55)));
 }
 
 /* ============ search ============ */
@@ -4218,19 +4249,10 @@ $('#logo').onclick=()=>{
 function syncHeaderGlass(){
   const stuck = scrollY > 20; // same condition the glass card uses
   $('#hd').classList.toggle('stuck', stuck);
-  const btn = $('#cardSearchBtn'); if(btn) btn.classList.toggle('visible', stuck);
-  const cst = $('#cardSearchTrigger'); if(cst) cst.classList.toggle('scrolled', stuck);
 }
 addEventListener('scroll', syncHeaderGlass, {passive:true});
 syncHeaderGlass(); // run once on load too (fixes refresh mid-scroll / back-nav)
 
-// Delegação de clique da lupa para focar na pesquisa
-document.addEventListener('click', e => {
-  if (e.target.closest('#cardSearchBtn')) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => $('#q').focus(), 300);
-  }
-});
 document.addEventListener('pointermove',e=>{
  const hero=$('#hero');if(hero){hero.style.setProperty('--px',((e.clientX/innerWidth-.5)*2).toFixed(2));hero.style.setProperty('--py',((e.clientY/innerHeight-.5)*2).toFixed(2))}
  const el=e.target.closest&&e.target.closest('.card');
@@ -8182,12 +8204,31 @@ async function pushEnable(){
   if(await Notification.requestPermission()!=='granted'){toast(T2('Notifications are blocked for this site in your browser settings.','As notificações estão bloqueadas para este site nas definições do navegador.'));return false}
   try{
     const reg=await navigator.serviceWorker.ready;
-    const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uBytes(VAPID_PUBLIC)});
+    const key=b64uBytes(VAPID_PUBLIC);
+    let sub=await reg.pushManager.getSubscription();
+    if(sub&&sub.options&&sub.options.applicationServerKey){               // subscrição antiga com outra chave VAPID → recomeçar
+      const cur=new Uint8Array(sub.options.applicationServerKey);
+      if(cur.length!==key.length||cur.some((v,i)=>v!==key[i])){try{await sub.unsubscribe()}catch(_){}sub=null}
+    }
+    if(!sub){
+      for(let n=0;;n++){
+        try{sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});break}
+        catch(e){if(e.name!=='AbortError'||n>=2)throw e;await new Promise(r=>setTimeout(r,1500*(n+1)))}   // falha transitória do serviço push: tenta de novo
+      }
+    }
     if(!await pushSend('subscribe',sub.toJSON()))throw new Error('server');
     localStorage.setItem('pushOn','1');
     toast(T2('Weather notifications on for this device.','Notificações do tempo ativas neste dispositivo.'));
     return true;
-  }catch(e){console.warn('[Push]',e);toast(T2('Could not turn on notifications.','Não foi possível ativar as notificações.')+' ('+(e.name||'erro')+': '+String(e.message||e).slice(0,90)+')');return false}
+  }catch(e){
+    console.warn('[Push]',e);
+    if(e&&e.name==='AbortError'){
+      let brave=false;try{brave=!!(navigator.brave&&await navigator.brave.isBrave())}catch(_){}
+      toast(brave
+        ?T2('Brave blocks push by default: Settings → Privacy → turn on “Use Google services for push messaging”, then restart Brave.','O Brave bloqueia o push por defeito: Definições → Privacidade → ativa «Usar serviços Google para mensagens push» e reinicia o Brave.')
+        :T2('Your browser’s push service did not respond. Check VPN / private DNS / data saver and Google Play services, or try Chrome.','O serviço push do navegador não respondeu. Verifica VPN / DNS privado / poupança de dados e os serviços Google Play, ou experimenta o Chrome.'));
+    }else toast(T2('Could not turn on notifications.','Não foi possível ativar as notificações.')+' ('+(e.name||'erro')+': '+String(e.message||e).slice(0,90)+')');
+    return false}
 }
 /* Notificação de teste: pede ao servidor um push real e, se falhar, mostra uma local para isolar o problema */
 async function pushTest(){
@@ -8293,6 +8334,63 @@ setInterval(() => { hurrGet(true).then(() => hurrBadge()).catch(() => {}); }, 10
   const saved=lsGet('place')||(isUserAuth()&&lsGet('homeCity'))||null;   // sem local guardado → cidade principal
   if(saved)show(saved.lat,saved.lon,saved.name,saved.sub);else landing();
 })();
+
+/* ============ MOBILE (só corre com html.is-mobile) ============ */
+function mobileSheetHTML(){
+ if(!IS_MOBILE||!data)return'';
+ const h=data.hourly,d=data.daily,i0=idx0(),hrs=[];
+ for(let k=1;k<=10&&i0+k<h.time.length;k++){const j=i0+k;
+  hrs.push(`<div class="m-hr"><span class="ic">${emoji(h.weather_code[j],h.is_day[j])}</span><small>${new Date(h.time[j]).toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'})}</small><b>${T(h.temperature_2m[j])}°</b><em>${h.precipitation_probability[j]||0}%</em></div>`)}
+ const days=[1,2,3].filter(i=>d.time[i]).map(i=>`<div class="m-day"><span class="ic">${emoji(d.weather_code[i],1)}</span>
+  <div class="m-dd"><b>${new Date(d.time[i]+'T12:00').toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'short'})}</b><small>${LABEL[d.weather_code[i]]||''}</small></div>
+  <div class="m-dt"><i class="u">↑${T(d.temperature_2m_max[i])}°</i><i class="d">↓${T(d.temperature_2m_min[i])}°</i><button type="button" data-go="week">${T2('Details','Detalhes')}</button></div></div>`).join('');
+ return`<div class="m-sec"><h2>${T2('Hourly forecast','Previsão por hora')}</h2><div class="m-hrs">${hrs.join('')}</div></div>
+<div class="m-sec"><h2>${T2('Next days','Próximos dias')}</h2>${days}</div>
+<h2 class="m-more">${T2('More details','Mais detalhes')}</h2>`;
+}
+function mobileCities(){
+ const el=$('#mcl');if(!el)return;
+ const hc=homeCity(),home=hc&&isFinite(hc.lat)&&isFinite(hc.lon)?[{n:hc.name,s:hc.sub||'',lat:+hc.lat,lon:+hc.lon,home:1}]:[];
+ const L=home.concat(CITIES.map(c=>({n:c[0],s:c[1],lat:c[2],lon:c[3]})));
+ const pin='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12zm0-9.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/></svg>';
+ const wave='<svg class="wv" viewBox="0 0 44 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 9C8 1 12 14 20 7S33 2 43 6"/></svg>';
+ const u=`https://api.open-meteo.com/v1/forecast?latitude=${L.map(c=>c.lat.toFixed(3)).join(',')}&longitude=${L.map(c=>c.lon.toFixed(3)).join(',')}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=2&timezone=auto`;
+ fetch(u).then(r=>r.json()).then(j=>{
+  const el2=$('#mcl');if(!el2)return;
+  const arr=Array.isArray(j)?j:[j];
+  el2.innerHTML=arr.map((x,i)=>{
+   const c=L[i],cu=x.current,d=x.daily,t=cu.temperature_2m,tone=t<=12?'cold':t<=24?'mild':'warm';
+   return`<button type="button" class="m-cc ${tone}" data-ci="${i}">
+ <div class="m-cc-top"><div class="m-cc-l"><b>${pin}${escH(c.n)}${c.s?', '+escH(c.s):''}</b>${c.home?`<small class="hm">${T2('My city','A minha cidade')}</small>`:''}<small>${LABEL[cu.weather_code]||''}</small></div><div class="m-cc-t">${T(t)}<sup>°</sup></div></div>
+ <div class="m-cc-row"><strong>${T2('Tomorrow','Amanhã')}</strong><span class="ic">${emoji(d.weather_code[1],1)}</span><span class="rn">${Math.round(d.precipitation_probability_max[1]||0)}%</span><i class="d">↓${T(d.temperature_2m_min[1])}°</i>${wave}<i class="u">↑${T(d.temperature_2m_max[1])}°</i></div></button>`}).join('');
+  el2.onclick=e=>{const b=e.target.closest('[data-ci]');if(b){const c=L[+b.dataset.ci];show(c.lat,c.lon,c.n,c.s)}};
+ }).catch(()=>{const e2=$('#mcl');if(e2)e2.innerHTML=`<p class="m-err">${T2('World conditions are unavailable right now. Search for a city above.','Condições do mundo indisponíveis de momento. Pesquisa uma cidade acima.')}</p>`});
+}
+if(IS_MOBILE){
+ document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){setTab(b.dataset.go);const t=$('.tabs');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})}});
+ const ico=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+ const nav=document.createElement('nav');nav.className='m-nav';nav.id='mNav';nav.setAttribute('aria-label','Skylab');
+ nav.innerHTML=`<button type="button" data-n="home" class="on">${ico('<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>')}<span>${T2('Home','Início')}</span></button>
+<button type="button" data-n="search">${ico('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>')}<span>${T2('Search','Pesquisa')}</span></button>
+<button type="button" data-n="saved">${ico('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>')}<span>${T2('Saved','Guardadas')}</span></button>
+<button type="button" data-n="acct" class="acc">${ico('<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>')}<i class="acc-av"></i><span>${T2('Account','Conta')}</span></button>`;
+ document.body.appendChild(nav);
+ nav.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const n=b.dataset.n;
+  if(n==='home'){const l=$('#logo');if(l)l.click();scrollTo({top:0,behavior:'smooth'})}
+  else if(n==='search'){scrollTo({top:0,behavior:'smooth'});setTimeout(()=>{const q=$('#q');if(q)q.focus()},320)}
+  else if(n==='saved'){const f=$('#favBtn');if(f)f.click()}
+  else if(n==='acct'){const a=$('#authBtn');if(a)a.click()}
+ });
+ const syncNav=()=>{const land=!!$('#hero.land');$$('#mNav [data-n=home]').forEach(b=>b.classList.toggle('on',land));
+  const ab=$('#authBtn'),av=$('#authAv'),i=$('#mNav .acc-av');
+  if(ab&&i){const inn=ab.classList.contains('is-in');nav.classList.toggle('in',inn);
+   if(inn&&av){i.textContent=av.style.backgroundImage?'':av.textContent;i.style.backgroundImage=av.style.backgroundImage}}};
+ new MutationObserver(syncNav).observe($('#main'),{childList:true});
+ const ab0=$('#authBtn');if(ab0)new MutationObserver(syncNav).observe(ab0,{attributes:true,childList:true,subtree:true,characterData:true});
+ syncNav();
+}
 </script>
 </body>
 </html>
