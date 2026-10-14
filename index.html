@@ -6765,7 +6765,9 @@ function parseArgs(tokens, spec = {}){
   if(type === 'bool'){ flags[key] = inline === undefined ? true : !/^(0|false|no|off)$/i.test(inline); continue; }
   const vals = inline !== undefined ? [inline] : [];
   if(inline === undefined){
-   while(i+1 < tokens.length && !isFlag(tokens[i+1]) && tokens[i+1] !== '--'){ vals.push(tokens[++i]); if(type !== 'list') break; }
+   // A list flag accepts one comma/space-delimited value token. Multi-word
+   // strings must be quoted, so trailing words cannot be swallowed as data.
+   if(i+1 < tokens.length && !isFlag(tokens[i+1]) && tokens[i+1] !== '--') vals.push(tokens[++i]);
   }
   if(!vals.length){ errors.push(`flag '${t}' needs a value`); continue; }
   flags[key] = type === 'list' ? vals.join(' ') : vals[0];
@@ -7302,15 +7304,80 @@ if(this.history[this.history.length-1] !== line){ this.history.push(line); if(th
         out.dim(`Usage: ${def.usage}`); 
         this.scroll(); return; 
       }
-      // Strict argument count validation (prevents silent failure on commands like 'date ffff')
-      if(def.maxArgs !== undefined && args.length > def.maxArgs){
-        out.err(`Error: Invalid arguments for '${def.name}'. Expected at most ${def.maxArgs} argument(s), received ${args.length} (${args.map(a => `'${a}'`).join(', ')}).`);
-        out.dim(`Usage: ${def.usage}`);
+      // Central command contract: commands may only receive positional arguments
+      // explicitly supported by their existing syntax. This closes the old gap
+      // where commands without maxArgs silently accepted arbitrary trailing words.
+      const positionalLimits = {
+        help:1, fetch:1, filter:1, vars:1, calc:1, delta:1, plot:1, stats:1,
+        simulate:1, export:1, theme:1, mock:1, echo:Infinity, storms:1
+      };
+      const maxArgs = def.maxArgs !== undefined ? def.maxArgs : (positionalLimits[def.name] ?? 0);
+      const fallbackArgFlags = { fetch:'loc', filter:'vars', delta:'time', plot:'var', stats:'var', export:'format' };
+      const fallbackFlag = fallbackArgFlags[def.name];
+      if(fallbackFlag && flags[fallbackFlag] !== undefined && args.length){
+        out.err(`Error: '${def.name}' received both '--${fallbackFlag}' and positional argument(s). Choose one input form.`);
+        out.dim(`Usage: ${def.usage || def.name}`); this.scroll(); return;
+      }
+      if(args.length > maxArgs){
+        out.err(`Error: Unexpected argument(s) for '${def.name}': ${args.slice(maxArgs).map(a => `'${a}'`).join(', ')}.`);
+        out.dim(`Usage: ${def.usage || def.name}`);
         this.scroll(); return;
       }
       if(def.minArgs !== undefined && args.length < def.minArgs){
         out.err(`Error: Missing required arguments for '${def.name}'. Expected at least ${def.minArgs} argument(s).`);
-        out.dim(`Usage: ${def.usage}`);
+        out.dim(`Usage: ${def.usage || def.name}`);
+        this.scroll(); return;
+      }
+      // Reject invalid inline boolean values and duplicate flags instead of
+      // coercing arbitrary text into true or silently overriding earlier input.
+      const flagTokens = tokens.filter(t => /^--?[A-Za-z_][\w-]*(?:=.*)?$/.test(t));
+      const seenFlags = new Set();
+      for(const token of flagTokens){
+        const rawFlag = token.split('=',1)[0].replace(/^--?/,'').toLowerCase();
+        const specEntry = Object.entries(def.flags||{}).find(([k,v]) => k.toLowerCase()===rawFlag || (v.alias||[]).some(a=>a.toLowerCase()===rawFlag));
+        if(!specEntry) continue; // parseArgs already reports unknown flags
+        const [key, spec] = specEntry;
+        if(seenFlags.has(key)){
+          out.err(`Error: Flag '${token.split('=',1)[0]}' was supplied more than once.`);
+          out.dim(`Usage: ${def.usage || def.name}`); this.scroll(); return;
+        }
+        seenFlags.add(key);
+        const eq = token.indexOf('=');
+        if((spec.type||'bool')==='bool' && eq>=0 && !/^(1|0|true|false|yes|no|on|off)$/i.test(token.slice(eq+1))){
+          out.err(`Error: '${token}' is not a valid boolean flag value (use true/false or omit '=…').`);
+          out.dim(`Usage: ${def.usage || def.name}`); this.scroll(); return;
+        }
+      }
+      // Validate common numeric options before any command executes; otherwise
+      // strings such as '--hours banana' could silently fall back to defaults.
+      const numericFlags = new Set(['at','time','hours','back','rows','depth','alt','dtemp','wind','source']);
+      for(const [key, value] of Object.entries(flags)){
+        if(numericFlags.has(key) && (value === '' || !Number.isFinite(Number(value)))){
+          out.err(`Error: '--${key}' requires a numeric value; received '${value}'.`);
+          out.dim(`Usage: ${def.usage || def.name}`); this.scroll(); return;
+        }
+      }
+      // Validate command-specific enumerated values centrally.
+      const enumArgs = { theme:['modern','retro','amber'], mock:['on','off','1','0','true','false'] };
+      if(enumArgs[def.name] && args[0] && !enumArgs[def.name].includes(args[0].toLowerCase())){
+        out.err(`Error: Invalid value '${args[0]}' for '${def.name}'. Expected: ${enumArgs[def.name].join(' | ')}.`);
+        out.dim(`Usage: ${def.usage || def.name}`); this.scroll(); return;
+      }
+      const enumFlags = { format: exporters.names() };
+      for(const [key, allowed] of Object.entries(enumFlags)){
+        if(flags[key] !== undefined && !allowed.includes(String(flags[key]).toLowerCase())){
+          out.err(`Error: Invalid value '${flags[key]}' for '--${key}'. Expected: ${allowed.join(' | ')}.`);
+          out.dim(`Usage: ${def.usage || def.name}`); this.scroll(); return;
+        }
+      }
+      // Reject placeholder-like syntax for any positional argument (except echo,
+      // whose purpose is to print literal text), not just the fetch command.
+      const malformedValue = value => /[()[\]{}]/.test(String(value));
+      const malformedArgs = def.name !== 'echo' && args.some(malformedValue);
+      const malformedFlags = Object.values(flags).some(value => typeof value === 'string' && malformedValue(value));
+      if(malformedArgs || malformedFlags){
+        out.err(`Error: Invalid argument syntax for '${def.name}'. Remove placeholder brackets/parentheses and provide a real value.`);
+        out.dim(`Usage: ${def.usage || def.name}`);
         this.scroll(); return;
       }
   this.setBusy(true);
@@ -7393,7 +7460,7 @@ commands
   out.dim("tips: Tab = autocomplete · ↑/↓ = history · !! / !n = re-run · Ctrl+L = clear · Esc = close");
   out.dim("      'fetch -loc \"new york\"' loads a city; every other command works on that context");
  }})
-.register('fetch', { group:'data', alias:['load'], usage:'fetch [-loc <city|lat,lon>] [--refresh]', summary:'Fetch Open-Meteo data for a city and set it as the active context',
+.register('fetch', { group:'data', alias:['load'], usage:'fetch [-loc <city|lat,lon>] [--refresh]', summary:'Fetch Open-Meteo data for a city and set it as the active context', maxArgs:1,
  flags:{ loc:{type:'list',alias:['l'],help:'city name, "lat,lon", or "here"'}, refresh:{type:'bool',alias:['r'],help:'bypass the 10-min cache'} },
  examples:['fetch -loc lisbon','fetch -loc "new york"','fetch --loc 35.68,139.69','fetch   # reload the SkyLab location'],
  async run({ term, out, args, flags }){
@@ -7631,7 +7698,7 @@ commands.register('simulate', {
  group:'math', alias:['sim'],
  usage:'simulate <inversion|plume|parcel> [--alt m] [--depth m] [--dtemp °C] [--wind km/h] [--source g/s]',
  summary:'Run dynamic physics simulations (thermal inversion, Gaussian plume dispersion, parcel sounding)',
- minArgs: 1, maxArgs: 4,
+ minArgs: 1, maxArgs: 1,
  flags:{
   alt:{type:'str',alias:['a'],help:'inversion capping altitude (m AGL)'},
   depth:{type:'str',alias:['d'],help:'inversion layer thickness (m)'},
