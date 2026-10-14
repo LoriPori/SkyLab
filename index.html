@@ -1742,52 +1742,12 @@ html.is-mobile .leaflet-bar a{width:40px;height:40px;line-height:40px}
 
 html.is-mobile[data-mt=map] .m-strip{display:none!important}
 html.is-mobile .rnow:empty{display:none}
+/* Radares (telemóvel): a nota comprida do Vento já não alarga o cartão nem desloca a barra */
+html.is-mobile .card.radar,html.is-mobile .card.radar .rtop{min-width:0;max-width:100%;box-sizing:border-box}
+html.is-mobile .rtop #rsw{width:100%;box-sizing:border-box;justify-content:flex-start}
+html.is-mobile .rtop .rnow{flex:none;width:100%;white-space:normal;overflow:visible;text-overflow:clip;text-align:left;line-height:1.35}
+html.is-mobile .rleg{flex-wrap:wrap;min-width:0}
 html.is-mobile .rctl{padding-bottom:2px}
-
-/* extremos da Terra: carrossel horizontal com encaixe */
-html.is-mobile .m-xt{order:7}
-.m-xs{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 var(--m-side);margin:0 calc(var(--m-side)*-1);padding:2px var(--m-side) 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
-.m-xs::-webkit-scrollbar{display:none}
-.m-xc{flex:none;width:164px;min-height:150px;scroll-snap-align:start;align-content:start}
-.m-xc.sk{height:150px}
-.m-xc.cold{border-top-color:#2f8df0}
-.m-cc small.hm:empty{display:none}
-.m-xc small.hm{white-space:normal;line-height:1.2;min-height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-
-/* =====================================================================
-   ORBE · conselheiro de roupa (esfera 3D desenhada em canvas)
-   ===================================================================== */
-.orbcard{display:flex;align-items:center;gap:20px;padding:14px 22px 14px 18px;margin-bottom:var(--gap,16px);overflow:visible}
-.orb{position:relative;flex:none;width:112px;height:112px;padding:0;border:0;background:none;border-radius:50%;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
-  animation:orbBob 5.2s ease-in-out infinite;filter:drop-shadow(0 10px 16px var(--og,rgba(40,120,200,.45)))}
-.orb-in{display:block;width:100%;height:100%;border-radius:50%}
-.orb canvas{display:block;width:100%;height:100%;border-radius:50%}
-.orb:focus-visible{outline:3px solid var(--acc,#1d5f8c);outline-offset:5px}
-.orb::after{content:"";position:absolute;left:20%;right:20%;bottom:-12px;height:10px;border-radius:50%;background:rgba(10,30,60,.3);filter:blur(5px);animation:orbSh 5.2s ease-in-out infinite;z-index:-1}
-.orb-ring{position:absolute;inset:4px;border-radius:50%;border:3px solid var(--oc,#4aa3ff);opacity:0;pointer-events:none}
-.orb.ping .orb-ring{animation:orbPing .85s ease-out}
-.orb.squish .orb-in{animation:orbSq .5s cubic-bezier(.3,1.6,.5,1)}
-.orb.angry .orb-in{animation:orbShake .38s linear infinite}
-@keyframes orbBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
-@keyframes orbSh{0%,100%{transform:scaleX(1);opacity:.9}50%{transform:scaleX(.72);opacity:.55}}
-@keyframes orbPing{from{opacity:.75;transform:scale(.86)}to{opacity:0;transform:scale(1.55)}}
-@keyframes orbSq{0%{transform:scale(1)}30%{transform:scale(.86,1.1)}60%{transform:scale(1.1,.92)}100%{transform:scale(1)}}
-@keyframes orbShake{0%,100%{transform:translate(0,0) rotate(0)}20%{transform:translate(-4px,1px) rotate(-5deg)}40%{transform:translate(4px,-1px) rotate(4deg)}60%{transform:translate(-3px,0) rotate(-3deg)}80%{transform:translate(3px,1px) rotate(3deg)}}
-.orb-b{position:relative;flex:1;min-width:0;padding:13px 17px;border-radius:22px;background:#fff;color:#14314f;font-size:14.5px;line-height:1.5;box-shadow:0 10px 26px -12px rgba(5,25,55,.55);border:1px solid rgba(20,49,79,.08)}
-.orb-b::before{content:"";position:absolute;left:-8px;top:50%;width:16px;height:16px;margin-top:-8px;background:#fff;border-radius:3px;transform:rotate(45deg);border-left:1px solid rgba(20,49,79,.08);border-bottom:1px solid rgba(20,49,79,.08)}
-.orb-b p{margin:0;text-wrap:pretty}
-.orb-b.pop{animation:orbPop .38s cubic-bezier(.3,1.5,.5,1)}
-.orb-b.mad{background:#fff1ef;color:#8a1d12}
-.orb-b.mad::before{background:#fff1ef}
-@keyframes orbPop{from{opacity:.2;transform:scale(.9) translateX(-6px)}}
-.orb-dots{display:inline-flex;gap:5px;align-items:center;height:22px}
-.orb-dots i{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.35;animation:orbDot 1s ease-in-out infinite}
-.orb-dots i:nth-child(2){animation-delay:.15s}.orb-dots i:nth-child(3){animation-delay:.3s}
-@keyframes orbDot{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-5px);opacity:1}}
-html.is-mobile .orbcard{gap:16px;padding:14px 16px 14px 12px;margin-bottom:var(--m-gap)}
-html.is-mobile .orb{width:96px;height:96px}
-html.is-mobile .orb-b{font-size:14.5px;padding:12px 14px}
-@media (prefers-reduced-motion:reduce){.orb,.orb::after,.orb.angry .orb-in{animation:none}}
 </style>
 </head>
 <body>
@@ -2221,26 +2181,7 @@ const FACTS = [
   ['storm','Fire can make tornadoes','Big wildfires can spin up fire whirls, rotating columns of flame and hot air. They can be about 30 m tall, with winds that can reach about 240 km/h.','Meteorology',null,['O fogo também faz tornados','Grandes incêndios podem gerar remoinhos de fogo, colunas rotativas de chamas e ar quente. Podem ter cerca de 30 m de altura, com ventos que chegam a cerca de 240 km/h.']],
   ['clear','The driest place on Earth is cold','The McMurdo Dry Valleys in Antarctica get only about 2 mm of precipitation a year. It is one of the most Mars-like places on our planet.','Climate',null,['O sítio mais seco da Terra é frio','Os Vales Secos de McMurdo, na Antártida, recebem apenas cerca de 2 mm de precipitação por ano. É um dos lugares mais parecidos com Marte no nosso planeta.']],
   ['storm','The longest lightning flash','A single lightning flash in April 2020 stretched about 768 km across the southern United States, the longest ever verified. That is roughly the distance from New York to Columbus, Ohio.','Meteorology',null,['O relâmpago mais comprido','Um único relâmpago em abril de 2020 estendeu-se por cerca de 768 km no sul dos Estados Unidos, o mais longo alguma vez verificado. É mais ou menos a distância de Nova Iorque a Columbus, no Ohio.']],
-  ['rain','Diamond rain may fall on Saturn','Scientists think extreme pressure and heat deep in the atmospheres of Saturn and Jupiter could crush carbon from methane into diamonds that rain downward.','Planetary science',null,['Pode chover diamantes em Saturno','Os cientistas pensam que a pressão e o calor extremos nas profundezas das atmosferas de Saturno e Júpiter podem esmagar o carbono do metano em diamantes que caem como chuva.']],
-  // ---- Factos novos (verificados / amplamente documentados) ----
-  ['storm','Thunder is a shock wave','Lightning heats the air in its channel to around 30,000 °C within microseconds. The air expands faster than sound, and that shock wave is the thunder you hear.','Physics',null,['O trovão é uma onda de choque','O relâmpago aquece o ar do seu canal até cerca de 30 000 °C em poucos microssegundos. O ar expande-se mais depressa do que o som, e essa onda de choque é o trovão que ouves.']],
-  ['rain','Much of the rain starts as ice','In many clouds, ice crystals grow high up where it is below freezing, then fall and melt into the raindrops that reach you.','Atmosphere',null,['Muita chuva começa como gelo','Em muitas nuvens, os cristais de gelo crescem lá em cima, onde está abaixo de zero, e depois caem e derretem nas gotas de chuva que chegam até ti.']],
-  ['cloud','Clouds need dust to form','Water vapour needs a tiny particle, such as dust, sea salt or pollen, to condense on. Without these cloud condensation nuclei, the air would need to be far more humid before a cloud appeared.','Atmosphere',null,['As nuvens precisam de poeira para se formarem','O vapor de água precisa de uma partícula minúscula, como poeira, sal marinho ou pólen, onde condensar. Sem estes núcleos de condensação, o ar teria de estar muito mais húmido para surgir uma nuvem.']],
-  ['clear','The sky is paler near the horizon','Look up on a clear day: the blue is deepest overhead and paler near the horizon. Light reaching you from the horizon has crossed far more air and been scattered many times, which whitens it.','Optics',null,['O céu é mais pálido junto ao horizonte','Olha para cima num dia limpo: o azul é mais intenso por cima e mais pálido junto ao horizonte. A luz que vem do horizonte atravessou muito mais ar e foi dispersada muitas vezes, o que a esbranquiça.']],
-  ['night','The Moon looks bigger near the horizon','It is an illusion: the Moon’s angular size is the same, as photographs show. Its exact cause is still debated, but it is a trick of perception, not of optics.','Optics',null,['A Lua parece maior junto ao horizonte','É uma ilusão: o tamanho angular da Lua é o mesmo, como mostram as fotografias. A causa exata ainda é debatida, mas é um truque da perceção, não da ótica.']],
-  ['hot','Deserts get cold at night','Dry air and clear skies let heat escape to space quickly after sunset. With so little water vapour to trap it, desert air can cool by 20 °C or more within hours.','Thermodynamics',null,['Os desertos arrefecem de noite','O ar seco e o céu limpo deixam o calor escapar depressa para o espaço depois do pôr do sol. Com tão pouco vapor de água para o reter, o ar do deserto pode arrefecer 20 °C ou mais em poucas horas.']],
-  ['cold','Water can stay liquid below zero','Very pure water can be supercooled to about −40 °C before it freezes on its own. Clouds often hold supercooled droplets, which is how freezing rain and aircraft icing happen.','Thermodynamics',null,['A água pode ficar líquida abaixo de zero','A água muito pura pode ser sobrearrefecida até cerca de −40 °C antes de congelar sozinha. As nuvens guardam muitas vezes gotículas sobrearrefecidas, e é assim que surgem a chuva congelante e o gelo nas asas dos aviões.']],
-  ['snow','Snowflakes are born six-sided','Water molecules lock into a hexagonal lattice as they freeze, which is why snow crystals grow with six sides or six arms.','Physics',null,['Os flocos de neve nascem com seis lados','As moléculas de água encaixam-se numa rede hexagonal ao congelar, e é por isso que os cristais de neve crescem com seis lados ou seis braços.']],
-  ['fog','Fog has an official definition','Meteorologists call it fog when visibility drops below 1 km. Between 1 and 5 km, with plenty of moisture in the air, it is called mist.','Meteorology',null,['O nevoeiro tem uma definição oficial','Os meteorologistas chamam nevoeiro quando a visibilidade desce abaixo de 1 km. Entre 1 e 5 km, com muita humidade no ar, chama-se neblina.']],
-  ['uv','UV grows with altitude','Ultraviolet radiation increases by roughly 10% for every 1,000 m of altitude, because there is less air above you to absorb it.','Atmosphere',null,['O UV aumenta com a altitude','A radiação ultravioleta aumenta cerca de 10% por cada 1000 m de altitude, porque há menos ar por cima de ti para a absorver.']],
-  ['storm','Earth is struck all day long','The planet sees roughly 40 to 50 lightning flashes every second, most of them inside clouds and over land near the tropics.','Meteorology',null,['A Terra leva relâmpagos o dia todo','O planeta vê cerca de 40 a 50 relâmpagos por segundo, a maioria dentro das nuvens e sobre terra, perto dos trópicos.']],
-  ['clear','Seasons are not about distance','Earth is closest to the Sun in early January, in the middle of the northern winter. Seasons come from the 23.4° tilt of its axis, not from its distance.','Astronomy',null,['As estações não dependem da distância','A Terra está mais perto do Sol no início de janeiro, em pleno inverno do hemisfério norte. As estações vêm da inclinação de 23,4° do seu eixo, não da distância.']],
-  ['rain','A rainbow always sits at 42°','The main rainbow appears about 42° from the point directly opposite the Sun. That is why it moves when you move, and why you can never reach its end.','Optics',null,['O arco-íris está sempre a 42°','O arco-íris principal surge a cerca de 42° do ponto exatamente oposto ao Sol. É por isso que se mexe quando te mexes e que nunca consegues chegar ao fim dele.']],
-  ['hot','Land warms faster than the sea','Water takes far more energy to warm than land does, and it mixes heat downwards. That temperature gap drives the afternoon sea breeze on many coasts.','Thermodynamics',null,['A terra aquece mais depressa do que o mar','A água precisa de muito mais energia para aquecer do que a terra e distribui o calor em profundidade. Essa diferença de temperatura alimenta a brisa marítima da tarde em muitas costas.']],
-  ['cold','Ice floats thanks to hydrogen bonds','Ice is about 9% less dense than liquid water, which is why lakes freeze from the top down and life can survive beneath the ice.','Physics',null,['O gelo flutua graças às pontes de hidrogénio','O gelo é cerca de 9% menos denso do que a água líquida, e por isso os lagos congelam de cima para baixo e a vida sobrevive por baixo do gelo.']],
-  ['night','Why the night sky is dark','If the universe were infinite and eternal, every line of sight would end on a star. The sky is dark mostly because the universe has a finite age (Olbers’ paradox).','Astronomy',null,['Porque é que o céu noturno é escuro','Se o universo fosse infinito e eterno, todas as linhas de visão acabariam numa estrela. O céu é escuro sobretudo porque o universo tem uma idade finita (paradoxo de Olbers).']],
-  ['storm','Tall towers get struck again and again','A tall, pointed structure such as the Empire State Building is hit by lightning roughly 20 to 25 times a year.','Meteorology',null,['As torres altas levam vezes sem conta','Uma estrutura alta e pontiaguda, como o Empire State Building, é atingida por relâmpagos cerca de 20 a 25 vezes por ano.']],
-  ['cloud','Contrails read the sky','A jet’s exhaust trail lingers only when the air at that height is cold and humid enough. A long-lasting contrail is a hint of moisture aloft.','Atmosphere',null,['Os rastos dos aviões leem o céu','O rasto de um avião só persiste quando o ar àquela altura está frio e húmido o suficiente. Um rasto duradouro é sinal de humidade em altitude.']],
+  ['rain','Diamond rain may fall on Saturn','Scientists think extreme pressure and heat deep in the atmospheres of Saturn and Jupiter could crush carbon from methane into diamonds that rain downward.','Planetary science',null,['Pode chover diamantes em Saturno','Os cientistas pensam que a pressão e o calor extremos nas profundezas das atmosferas de Saturno e Júpiter podem esmagar o carbono do metano em diamantes que caem como chuva.']]
 ];
 
 
@@ -2285,7 +2226,37 @@ const QZ = [
   ['Most lightning on Earth happens over land, not over the oceans.',1,'Fact. Roughly 90% of flashes occur over land, where thunderstorms are more favourable to lightning.',['A maior parte dos relâmpagos da Terra acontece em terra, não nos oceanos.','Facto. Cerca de 90% dos clarões ocorrem em terra, onde as trovoadas são mais favoráveis aos relâmpagos.']],
   ['Dust from the Sahara helps fertilise the Amazon rainforest.',1,'Fact. NASA’s CALIPSO satellite tracked about 27.7 million tonnes of dust a year reaching the Amazon, carrying roughly 22,000 tonnes of phosphorus.',['A poeira do Sara ajuda a fertilizar a floresta amazónica.','Facto. O satélite CALIPSO da NASA seguiu cerca de 27,7 milhões de toneladas de poeira por ano a chegar à Amazónia, com cerca de 22 000 toneladas de fósforo.']],
   ['On Saturn’s moon Titan, it rains liquid methane.',1,'Fact. Titan has clouds, rain and lakes of methane and ethane, in a cycle like Earth’s water cycle.',['Em Titã, a lua de Saturno, chove metano líquido.','Facto. Titã tem nuvens, chuva e lagos de metano e etano, num ciclo parecido com o ciclo da água da Terra.']],
-  ['Mercury, the planet closest to the Sun, is also the hottest planet.',0,'Myth. Venus is hotter, around 465 °C, because its thick carbon dioxide atmosphere traps heat.',['Mercúrio, o planeta mais próximo do Sol, é também o mais quente.','Mito. Vénus é mais quente, cerca de 465 °C, porque a sua atmosfera espessa de dióxido de carbono retém o calor.']]
+  ['Mercury, the planet closest to the Sun, is also the hottest planet.',0,'Myth. Venus is hotter, around 465 °C, because its thick carbon dioxide atmosphere traps heat.',['Mercúrio, o planeta mais próximo do Sol, é também o mais quente.','Mito. Vénus é mais quente, cerca de 465 °C, porque a sua atmosfera espessa de dióxido de carbono retém o calor.']],
+  ['Lightning is several times hotter than the surface of the Sun.',1,'Fact. A lightning channel heats the air to about 30,000 °C, around five times the Sun’s surface temperature of roughly 5,500 °C.',['Um relâmpago é várias vezes mais quente do que a superfície do Sol.','Facto. O canal de um relâmpago aquece o ar até cerca de 30 000 °C, umas cinco vezes a temperatura da superfície do Sol, de cerca de 5500 °C.']],
+  ['Counting the seconds between a flash and its thunder tells you roughly how far away the storm is.',1,'Fact. Sound travels about 1 km in 3 seconds, so 9 seconds means the lightning struck roughly 3 km away.',['Contar os segundos entre o clarão e o trovão dá-te uma ideia da distância da tempestade.','Facto. O som percorre cerca de 1 km em 3 segundos, por isso 9 segundos significam que o relâmpago caiu a uns 3 km.']],
+  ['Lightning never strikes the same place twice.',0,'Myth. Tall, pointed structures get hit again and again. The Empire State Building is struck around 20 times a year.',['Um relâmpago nunca cai duas vezes no mesmo sítio.','Mito. As estruturas altas e pontiagudas são atingidas vezes sem conta. O Empire State Building é atingido cerca de 20 vezes por ano.']],
+  ['Raindrops are shaped like teardrops.',0,'Myth. Small drops are nearly round, and bigger ones flatten underneath as they fall, like a hamburger bun.',['As gotas de chuva têm forma de lágrima.','Mito. As gotas pequenas são quase redondas, e as maiores achatam-se por baixo ao cair, como um pão de hambúrguer.']],
+  ['The classic snowflake has six arms because of how ice crystals are built.',1,'Fact. Water molecules lock into a hexagonal pattern as they freeze, which gives snow crystals their six-pointed shape.',['O floco de neve clássico tem seis braços por causa da estrutura dos cristais de gelo.','Facto. As moléculas de água encaixam-se num padrão hexagonal ao congelar, o que dá aos cristais de neve a sua forma de seis pontas.']],
+  ['The old saying “red sky at night, shepherd’s delight” has some science behind it in mid-latitudes.',1,'Fact. Weather there mostly moves from west to east, and a red sunset suggests dry, settled air arriving from the west.',['O velho ditado inglês “céu vermelho à noite, delícia do pastor” tem alguma ciência por trás nas latitudes médias.','Facto. Aí o tempo desloca-se sobretudo de oeste para leste, e um pôr do sol vermelho sugere ar seco e estável a chegar do lado oeste.']],
+  ['The sky is blue because it reflects the colour of the oceans.',0,'Myth. Air molecules scatter the short, blue wavelengths of sunlight far more than the red ones, so blue light reaches your eyes from every direction.',['O céu é azul porque reflete a cor dos oceanos.','Mito. As moléculas do ar dispersam muito mais os comprimentos de onda curtos, azuis, da luz solar do que os vermelhos, por isso a luz azul chega aos teus olhos de todas as direções.']],
+  ['Clouds are made of water vapour.',0,'Myth. Water vapour is an invisible gas. Clouds are made of countless tiny liquid droplets or ice crystals.',['As nuvens são feitas de vapor de água.','Mito. O vapor de água é um gás invisível. As nuvens são feitas de incontáveis gotículas de água líquida ou cristais de gelo.']],
+  ['A fluffy fair-weather cloud can weigh as much as hundreds of tonnes.',1,'Fact. A typical cumulus holds roughly 500 tonnes of water droplets, kept aloft by rising air and by the droplets being so tiny.',['Uma nuvem branca e fofa de bom tempo pode pesar centenas de toneladas.','Facto. Um cúmulo típico contém cerca de 500 toneladas de gotículas de água, mantidas no ar pela corrente ascendente e por serem tão minúsculas.']],
+  ['Cold air can hold more water vapour than warm air.',0,'Myth. It is the other way round. Warm air can hold roughly 6–7% more water vapour for every degree Celsius it warms.',['O ar frio consegue conter mais vapor de água do que o ar quente.','Mito. É o contrário. O ar quente consegue conter cerca de 6 a 7% mais vapor de água por cada grau Celsius que aquece.']],
+  ['Fog is simply a cloud that touches the ground.',1,'Fact. Fog and low cloud are the same thing. It is called fog when the cloud base is at ground level.',['O nevoeiro é simplesmente uma nuvem que toca no chão.','Facto. Nevoeiro e nuvem baixa são a mesma coisa. Chama-se nevoeiro quando a base da nuvem está ao nível do solo.']],
+  ['If the relative humidity is 100%, it must be raining.',0,'Myth. It only means the air is saturated. Fog can sit at 100% with no rain at all.',['Se a humidade relativa for de 100%, tem de estar a chover.','Mito. Só quer dizer que o ar está saturado. O nevoeiro pode estar a 100% sem chuva nenhuma.']],
+  ['Humid air is lighter than dry air.',1,'Fact. A water molecule is lighter than the nitrogen and oxygen molecules it displaces, so moist air is slightly less dense than dry air at the same temperature and pressure.',['O ar húmido é mais leve do que o ar seco.','Facto. Uma molécula de água é mais leve do que as moléculas de azoto e de oxigénio que desloca, por isso o ar húmido é ligeiramente menos denso do que o ar seco à mesma temperatura e pressão.']],
+  ['Falling air pressure usually means the weather is about to get worse.',1,'Fact. Falling pressure often signals an approaching low, bringing more cloud, wind and rain. Rising pressure usually means settled weather.',['Uma descida da pressão atmosférica costuma indicar que o tempo vai piorar.','Facto. Uma descida da pressão sinaliza muitas vezes a aproximação de uma depressão, com mais nuvens, vento e chuva. Uma subida da pressão costuma significar tempo estável.']],
+  ['Wind, not water, causes most deaths in US hurricanes.',0,'Myth. Studies of US tropical cyclones found that water causes the large majority of deaths, mainly storm surge and inland flooding.',['O vento, e não a água, causa a maioria das mortes nos furacões dos EUA.','Mito. Os estudos sobre os ciclones tropicais nos EUA concluíram que a água causa a grande maioria das mortes, sobretudo a maré de tempestade e as inundações no interior.']],
+  ['The Sun warms the air mostly by heating the ground first.',1,'Fact. Sunlight passes through clear air with little warming. The ground absorbs it and then heats the air above.',['O Sol aquece o ar sobretudo por aquecer primeiro o chão.','Facto. A luz solar atravessa o ar limpo sem o aquecer muito. O chão absorve-a e depois aquece o ar por cima.']],
+  ['It is warmer in summer because Earth is closer to the Sun.',0,'Myth. Seasons come from Earth’s tilt. Earth is actually closest to the Sun in early January, in the middle of the northern winter.',['O verão é mais quente porque a Terra está mais perto do Sol.','Mito. As estações do ano devem-se à inclinação da Terra. A Terra está, na verdade, mais perto do Sol no início de janeiro, em pleno inverno do hemisfério norte.']],
+  ['A northerly wind blows towards the north.',0,'Myth. Winds are named after where they come from, so a northerly blows from the north towards the south.',['Um vento do norte sopra em direção ao norte.','Mito. Os ventos têm o nome da direção de onde vêm, por isso um vento do norte sopra do norte para o sul.']],
+  ['A rainbow is really a full circle.',1,'Fact. From an aircraft or a high vantage point you can see the whole circle. On the ground, the horizon hides the lower part.',['Um arco-íris é, na verdade, um círculo completo.','Facto. De um avião ou de um ponto bem alto podes ver o círculo inteiro. No chão, o horizonte esconde a parte de baixo.']],
+  ['The Sahara is the largest desert on Earth.',0,'Myth. Antarctica is, at about 14 million km². The Sahara, at roughly 9 million km², is the largest hot desert.',['O Sara é o maior deserto da Terra.','Mito. A Antártida é, com cerca de 14 milhões de km². O Sara, com cerca de 9 milhões de km², é o maior deserto quente.']],
+  ['Air temperature has dropped below −89 °C on Earth.',1,'Fact. The WMO-recognised record is −89.2 °C at Vostok Station, Antarctica, on 21 July 1983.',['A temperatura do ar já desceu abaixo de −89 °C na Terra.','Facto. O recorde reconhecido pela OMM é de −89,2 °C na estação Vostok, na Antártida, a 21 de julho de 1983.']],
+  ['Oxygen makes up most of the air we breathe.',0,'Myth. Air is about 78% nitrogen and 21% oxygen, with argon and traces of other gases making up the rest.',['O oxigénio é a maior parte do ar que respiramos.','Mito. O ar é cerca de 78% azoto e 21% oxigénio, com árgon e vestígios de outros gases no resto.']],
+  ['The hole in the ozone layer is the main cause of global warming.',0,'Myth. They are separate problems. Ozone depletion lets in more ultraviolet light, while global warming comes mainly from greenhouse gases such as carbon dioxide.',['O buraco na camada de ozono é a principal causa do aquecimento global.','Mito. São problemas diferentes. A destruição do ozono deixa passar mais radiação ultravioleta, enquanto o aquecimento global vem sobretudo de gases com efeito de estufa, como o dióxido de carbono.']],
+  ['It can thunder while it snows.',1,'Fact. “Thundersnow” is rare but real. It needs unstable air, and it shows up in some winter storms and lake-effect snow.',['Pode haver trovoada enquanto neva.','Facto. A “trovoada com neve” é rara, mas existe. Precisa de ar instável e surge em algumas tempestades de inverno e em nevões de efeito de lago.']],
+  ['In the Northern Hemisphere, every tornado spins counterclockwise.',0,'Myth. Most do, but a small fraction spin clockwise. Each tornado takes its spin from the storm that spawns it.',['No hemisfério norte, todos os tornados rodam no sentido contrário ao dos ponteiros do relógio.','Mito. A maioria sim, mas uma pequena parte roda no sentido dos ponteiros do relógio. Cada tornado herda a rotação da tempestade que o gera.']],
+  ['A heat wave means the same temperature threshold everywhere.',0,'Myth. A heat wave is judged against the local climate, so a temperature that is ordinary in one place can count as a heat wave in another.',['Uma onda de calor significa o mesmo limite de temperatura em todo o lado.','Mito. Uma onda de calor mede-se em relação ao clima local, por isso uma temperatura normal num sítio pode ser onda de calor noutro.']],
+  ['Fahrenheit and Celsius show the same number at −40 degrees.',1,'Fact. It is the one temperature where the two scales meet: −40 °C is exactly −40 °F.',['Fahrenheit e Celsius mostram o mesmo número aos −40 graus.','Facto. É a única temperatura em que as duas escalas coincidem: −40 °C são exatamente −40 °F.']],
+  ['El Niño is a cooling of the tropical Pacific Ocean.',0,'Myth. El Niño is a warming of surface water in the central and eastern tropical Pacific. The cool phase is called La Niña.',['O El Niño é um arrefecimento do oceano Pacífico tropical.','Mito. O El Niño é um aquecimento da água à superfície no Pacífico tropical central e oriental. A fase fria chama-se La Niña.']],
+  ['The smell of rain comes partly from bacteria in the soil.',1,'Fact. Soil bacteria make a compound called geosmin, and falling raindrops launch it into the air. Our noses detect it at tiny concentrations.',['O cheiro da chuva vem em parte de bactérias do solo.','Facto. As bactérias do solo produzem um composto chamado geosmina, e as gotas de chuva lançam-no para o ar. O nosso nariz deteta-o em concentrações minúsculas.']],
+  ['A hurricane keeps getting stronger after it moves over land.',0,'Myth. Over land it loses its warm, moist ocean fuel and meets more friction, so it weakens, though the rain and flooding can last for days.',['Um furacão continua a ficar mais forte depois de passar para terra.','Mito. Em terra perde o combustível quente e húmido do oceano e encontra mais atrito, por isso enfraquece, embora a chuva e as inundações possam durar dias.']]
 ];
 
 /* ---- Facto do dia: 31 factos, nenhum repete os do "Sabias que" nem as perguntas ---- */
@@ -2320,41 +2291,36 @@ const DAILY = [
   ['Climate','Why we are not a frozen planet','The natural greenhouse effect lifts Earth’s average surface temperature to about 15 °C. Without it, it would be around −18 °C.',['Porque não somos um planeta gelado','O efeito de estufa natural eleva a temperatura média à superfície da Terra para cerca de 15 °C. Sem ele, seria à volta de −18 °C.']],
   ['Meteorology','Why storm clouds have anvils','A tall thunderstorm cloud flattens into an anvil when its rising air hits the stable layer at the top of the troposphere and has nowhere to go but sideways.',['Porque é que as nuvens de tempestade têm bigorna','Uma nuvem de trovoada alta achata-se numa bigorna quando o ar ascendente bate na camada estável no topo da troposfera e só pode espalhar-se para os lados.']],
   ['Meteorology','Dust devils need no storm','Dust devils spin up on hot, sunny ground under clear skies. They are usually far weaker than tornadoes, which grow out of thunderstorms.',['Os remoinhos de poeira não precisam de tempestade','Os remoinhos de poeira formam-se em solo quente e soalheiro, com céu limpo. Costumam ser muito mais fracos do que os tornados, que nascem de trovoadas.']],
-  ['Climate','Antarctica’s ice','Antarctica holds about 90% of all the ice on Earth.',['O gelo da Antártida','A Antártida guarda cerca de 90% de todo o gelo da Terra.']],
-  // ---- Factos do dia novos (recordes da OMM e física estabelecida) ----
-  ['Climate','The hottest air on record','Furnace Creek, in Death Valley, California, recorded 56.7 °C on 10 July 1913. It is the highest air temperature accepted by the WMO, although some researchers question the old measurement.',['O ar mais quente alguma vez registado','Furnace Creek, no Vale da Morte, na Califórnia, registou 56,7 °C a 10 de julho de 1913. É a temperatura do ar mais alta aceite pela OMM, embora alguns investigadores ponham em causa a medição antiga.']],
-  ['Meteorology','The lowest pressure ever measured','Typhoon Tip, in October 1979, had a sea-level pressure of 870 hPa, the lowest ever recorded on Earth. Normal sea-level pressure is about 1,013 hPa.',['A pressão mais baixa alguma vez medida','O tufão Tip, em outubro de 1979, tinha uma pressão ao nível do mar de 870 hPa, a mais baixa alguma vez registada na Terra. A pressão normal ao nível do mar ronda os 1013 hPa.']],
-  ['Climate','A 56 °C drop in one day','In Browning, Montana, the temperature fell from 6.7 °C to −48.8 °C in 24 hours on 23 and 24 January 1916, the largest 24-hour drop on record.',['Uma queda de 56 °C num só dia','Em Browning, no Montana, a temperatura caiu de 6,7 °C para −48,8 °C em 24 horas, a 23 e 24 de janeiro de 1916, a maior descida em 24 horas alguma vez registada.']],
-  ['Meteorology','From −20 °C to 7 °C in two minutes','On 22 January 1943 in Spearfish, South Dakota, a warm chinook wind lifted the temperature from about −20 °C to 7 °C in two minutes, the fastest rise on record.',['De −20 °C a 7 °C em dois minutos','A 22 de janeiro de 1943, em Spearfish, no Dakota do Sul, um vento quente chinook fez a temperatura subir de cerca de −20 °C para 7 °C em dois minutos, a subida mais rápida alguma vez registada.']],
-  ['Meteorology','31 millimetres of rain in one minute','On 4 July 1956 in Unionville, Maryland, 31.2 mm of rain fell in a single minute, the heaviest one-minute downpour on record.',['31 milímetros de chuva num minuto','A 4 de julho de 1956, em Unionville, no Maryland, caíram 31,2 mm de chuva num único minuto, o aguaceiro mais intenso num minuto alguma vez registado.']],
-  ['Meteorology','The biggest hailstone in the United States','A hailstone found in Vivian, South Dakota, on 23 July 2010 measured 20.3 cm across and weighed 0.88 kg, the largest ever recorded in the country.',['A maior pedra de granizo dos Estados Unidos','Uma pedra de granizo encontrada em Vivian, no Dakota do Sul, a 23 de julho de 2010, media 20,3 cm de diâmetro e pesava 0,88 kg, a maior alguma vez registada no país.']],
-  ['Atmosphere','Humid air is lighter','Water vapour is lighter than the nitrogen and oxygen it replaces, so humid air is slightly less dense than dry air at the same temperature and pressure.',['O ar húmido é mais leve','O vapor de água é mais leve do que o azoto e o oxigénio que substitui, por isso o ar húmido é ligeiramente menos denso do que o ar seco à mesma temperatura e pressão.']],
-  ['Atmosphere','Pressure halves every 5.5 km','Air pressure drops by half roughly every 5.5 km of height. At the summit of Mount Everest it is only about a third of the sea-level value.',['A pressão cai para metade a cada 5,5 km','A pressão do ar cai para metade a cada 5,5 km de altura, aproximadamente. No cume do Evereste é só cerca de um terço do valor ao nível do mar.']],
-  ['Thermodynamics','Water boils at 71 °C on Everest','Lower air pressure lowers the boiling point of water. Near the summit of Mount Everest it boils at roughly 71 °C, which is why cooking up there takes so long.',['No Evereste a água ferve aos 71 °C','Menos pressão do ar baixa o ponto de ebulição da água. Perto do cume do Evereste ferve a cerca de 71 °C, e é por isso que cozinhar lá em cima demora tanto.']],
-  ['Planetary science','Mars has almost no air','Mars’s atmosphere is about 95% carbon dioxide, but its surface pressure is under 1% of Earth’s, around 6 hPa.',['Marte quase não tem ar','A atmosfera de Marte é cerca de 95% dióxido de carbono, mas a pressão à superfície é menos de 1% da da Terra, à volta de 6 hPa.']],
-  ['Astronomy','You are spinning at 1,670 km/h','At the equator, Earth’s surface moves at roughly 1,670 km/h because of the planet’s rotation. Closer to the poles the speed drops towards zero.',['Estás a rodar a 1670 km/h','No equador, a superfície da Terra move-se a cerca de 1670 km/h por causa da rotação do planeta. Perto dos polos a velocidade desce para perto de zero.']],
-  ['Meteorology','Why hurricanes avoid the equator','A tropical cyclone needs the Coriolis effect to start spinning, and that effect is nearly zero at the equator. Storms rarely form within about 5° of latitude of it.',['Porque é que os furacões evitam o equador','Um ciclone tropical precisa do efeito de Coriolis para começar a rodar, e esse efeito é quase nulo no equador. As tempestades raramente se formam a menos de cerca de 5° de latitude dele.']],
-  ['Planetary science','A day on Venus outlasts its year','Venus takes about 243 Earth days to rotate once, but only about 225 to orbit the Sun, so its day is longer than its year.',['Em Vénus, o dia dura mais do que o ano','Vénus demora cerca de 243 dias terrestres a dar uma volta sobre si própria, mas só cerca de 225 a orbitar o Sol, por isso o dia é mais longo do que o ano.']],
-  ['Planetary science','Saturn’s hexagon','Around Saturn’s north pole, a jet stream forms a six-sided pattern roughly 30,000 km across, photographed by the Voyager and Cassini spacecraft.',['O hexágono de Saturno','À volta do polo norte de Saturno, uma corrente de jato desenha um padrão de seis lados com cerca de 30 000 km de largura, fotografado pelas sondas Voyager e Cassini.']],
-  ['Planetary science','It rains methane on Titan','Saturn’s moon Titan has clouds, rain and lakes, but they are made of methane and ethane, not water, at about −180 °C.',['Em Titã chove metano','A lua de Saturno Titã tem nuvens, chuva e lagos, mas são feitos de metano e etano, não de água, a cerca de −180 °C.']],
-  ['Physics','The speed of sound depends on temperature','Sound travels at about 343 m/s in air at 20 °C, and roughly 0.6 m/s faster for every extra degree Celsius.',['A velocidade do som depende da temperatura','O som viaja a cerca de 343 m/s no ar a 20 °C, e mais ou menos 0,6 m/s mais depressa por cada grau Celsius a mais.']],
-  ['Physics','The bathtub swirl myth','The Coriolis effect is far too weak to decide which way water spins down a plug. The shape of the basin and tiny leftover currents matter much more.',['O mito do redemoinho no ralo','O efeito de Coriolis é fraco demais para decidir o sentido em que a água gira no ralo. A forma do lavatório e pequenas correntes que sobram pesam muito mais.']],
-  ['Meteorology','Drizzle versus rain','By WMO convention, drops smaller than about 0.5 mm are drizzle and larger ones are rain.',['Chuvisco ou chuva','Por convenção da OMM, as gotas com menos de cerca de 0,5 mm são chuvisco e as maiores são chuva.']],
-  ['Meteorology','The fastest wind ever measured in a tornado','On 3 May 1999, a mobile Doppler radar measured winds of about 484 km/h (give or take 32) in a tornado near Bridge Creek, Oklahoma, a few dozen metres above the ground.',['O vento mais forte medido num tornado','A 3 de maio de 1999, um radar Doppler móvel mediu ventos de cerca de 484 km/h (mais ou menos 32) num tornado perto de Bridge Creek, no Oklahoma, a algumas dezenas de metros do chão.']],
-  ['Meteorology','The widest tornado','The tornado that hit El Reno, Oklahoma, on 31 May 2013 was 4.2 km wide, the widest ever recorded.',['O tornado mais largo','O tornado de El Reno, no Oklahoma, a 31 de maio de 2013, tinha 4,2 km de largura, o mais largo alguma vez registado.']],
-  ['Climate','28.96 metres of snow in one winter','Mount Baker, in Washington State, was buried by 28.96 metres of snow during the 1998–99 season, the most ever measured in a single season.',['28,96 metros de neve num só inverno','O monte Baker, no estado de Washington, foi coberto por 28,96 metros de neve na época de 1998–99, o máximo alguma vez medido numa única época.']],
+  ['Climate','Antarctica’s ice','Antarctica holds about 90% of all the ice on Earth.',['O gelo da Antártida','A Antártida guarda cerca de 90% de todo o gelo da Terra.']]
 ];
 
 let sciMode='fact',factI=0,qFresh=false;
 
 /* ---- Mito ou facto: estado do jogo (30 perguntas, ordem aleatória, com fim) ---- */
-function qNew(){
- const o=QZ.map((_,i)=>i);
- for(let i=o.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[o[i],o[j]]=[o[j],o[i]]}
- return{v:2,o,i:0,r:0,a:null};          // i = pergunta atual, r = certas, a = resposta dada (null = ainda não respondeu)
+const QZ_GAME=30;                                   // perguntas por jogo
+const qShuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function qNew(prev){
+ let seen=prev&&Array.isArray(prev.seen)?prev.seen.filter(i=>i>=0&&i<QZ.length):[];
+ const all=QZ.map((_,i)=>i),fresh=all.filter(i=>!seen.includes(i));
+ let o;
+ if(fresh.length>=QZ_GAME)o=qShuffle(fresh).slice(0,QZ_GAME);          // só perguntas ainda não vistas
+ else{                                                                  // quase não há novas: usa as que restam e completa com outras
+  const extra=qShuffle(all.filter(i=>seen.includes(i))).slice(0,QZ_GAME-fresh.length);
+  o=qShuffle([...fresh,...extra]);seen=[];                              // novo ciclo
+ }
+ return{v:3,o,i:0,r:0,a:null,seen};     // i = pergunta atual, r = certas, a = resposta dada (null = ainda não respondeu), seen = já respondidas
 }
-let qs=(()=>{const s=lsGet('qz2');return s&&s.v==2&&Array.isArray(s.o)&&s.o.length==QZ.length?s:qNew()})();
-const qSave=()=>lsSet('qz2',qs);
+let qs=(()=>{
+ const s=lsGet('qz3');
+ if(s&&s.v==3&&Array.isArray(s.o)&&Array.isArray(s.seen)&&s.o.every(i=>QZ[i]))return s;
+ const old=lsGet('qz2');                                                // jogo antigo (30 perguntas)
+ if(old&&old.v==2&&Array.isArray(old.o)&&old.o.every(i=>QZ[i])){
+  if(old.i<old.o.length)return{v:3,o:old.o,i:old.i,r:old.r,a:old.a,seen:old.o.slice(0,old.i+(old.a!=null?1:0))};   // continua o jogo
+  return qNew({seen:old.o});                                            // já tinha acabado: o próximo só traz as novas
+ }
+ return qNew();
+})();
+const qSave=()=>lsSet('qz3',qs);
 
 /* ============ idioma PT / EN ============ */
 for(const m of['toLocaleString','toLocaleDateString','toLocaleTimeString']){
@@ -3755,7 +3721,7 @@ function todayPane(){
  const c=data.current,d=data.daily,m=moon(),uv=d.uv_index_max[0],ci=comfortInfo(),h=data.hourly;
  const uvl=uv<3?'Low':uv<6?'Moderate':uv<8?'High':uv<11?'Very high':'Extreme';
  const best=ci.best<0?'Daylight has passed for today.':`Best time outside: <b>${new Date(h.time[ci.best]).toLocaleTimeString('en',{hour:'numeric'})}</b> · ${T(h.temperature_2m[ci.best])}° · ${h.precipitation_probability[ci.best]}% rain`;
- return`${orbHTML()}<div class="pane g2">
+ return`<div class="pane g2">
  <section class="card">
   ${sourceBadge()}
   <div class="strip">
@@ -3778,6 +3744,7 @@ function todayPane(){
   </div>
 
  <p class="best">${best}</p>
+ <div class="chips">${advice()}</div>
  <div id="station">${stationHTML()}</div>
 </section></div>`;
 }
@@ -4029,7 +3996,7 @@ dayArm();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){dayRefresh();dayArm()}});   // separador em segundo plano
 
 function quizCls(){
- if(sciMode!='quiz'||qs.a==null||qs.i>=QZ.length)return'';
+ if(sciMode!='quiz'||qs.a==null||qs.i>=qs.o.length)return'';
  return QZ[qs.o[qs.i]][1]==qs.a?' qok':' qbad';
 }
 function qMark(ok){
@@ -4039,13 +4006,13 @@ function qMark(ok){
  return`<div class="qm"><svg class="qmark" viewBox="0 0 64 64" aria-hidden="true"><circle class="qdisc" cx="32" cy="32" r="29"/><circle class="qring" cx="32" cy="32" r="29"/>${sym}</svg>${cf}</div>`;
 }
 function quizEnd(){
- const n=QZ.length,r=qs.r,t=r==n?0:r>=25?1:r>=18?2:r>=10?3:4;
+ const n=qs.o.length,r=qs.r,t=r==n?0:r>=25?1:r>=18?2:r>=10?3:4;
  const em=['🏆','🌟','👍','🌦️','🌱'][t];
  const vd=['Flawless. You could be on the forecasting desk.','Brilliant. Hardly any myth got past you.','Solid. A few myths slipped through, and now you know.','Not bad. Weather myths are sneaky.','The weather is full of surprises. Give it another go!'][t];
  return`<div class="qend"><div class="qem">${em}</div><div class="qscore"><b data-cu="${r}">0</b><span>/ ${n}</span></div><div class="qbar"><i style="width:${(r/n*100).toFixed(1)}%"></i></div><p class="qverdict">${vd}</p><button class="pill dk" data-qr>Play again</button></div>`;
 }
 function quizHTML(){
- const n=QZ.length;
+ const n=qs.o.length;
  if(qs.i>=n)return quizEnd();
  const z=QZ[qs.o[qs.i]],done=qs.a!=null,ok=done&&qs.a==z[1],last=qs.i+1>=n;
  const btn=(v,l)=>{let c='pill dk';if(done){if(v==z[1])c+=' qright';else if(v==qs.a)c+=' qwrong'}return`<button class="${c}" data-a="${v}"${done?' disabled':''}>${l}</button>`};
@@ -4126,19 +4093,7 @@ function render(){
 }
 
 /* ============ landing ============ */
-const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-74.01],['Sydney','Australia',-33.87,151.21],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Rio de Janeiro','Brazil',-22.91,-43.17],['Cape Town','South Africa',-33.92,18.42],['Mumbai','India',19.08,72.88],
- // extremos da Terra (5.º elemento = etiqueta EN/PT)
- ["Oymyakon", "Sakha, Russia", 63.46, 142.79, ["Coldest permanent village", "A aldeia mais fria"]],
- ["Verkhoyansk", "Sakha, Russia", 67.55, 133.39, ["Biggest yearly swing", "Maior amplitude anual"]],
- ["Vostok Station", "Antarctica", -78.46, 106.84, ["Coldest ever measured", "O mais frio alguma vez medido"]],
- ["Furnace Creek", "California, United States", 36.46, -116.87, ["Hottest air on record", "O ar mais quente registado"]],
- ["Dallol", "Afar, Ethiopia", 14.24, 40.3, ["Hottest on average", "A mais quente em média"]],
- ["Mawsynram", "Meghalaya, India", 25.3, 91.58, ["Rainiest on average", "A mais chuvosa em média"]],
- ["Arica", "Chile", -18.48, -70.31, ["Among the driest", "Entre as mais secas"]],
- ["La Rinconada", "Peru", -14.63, -69.45, ["Highest town", "A vila mais alta"]],
- ["Longyearbyen", "Svalbard, Norway", 78.22, 15.65, ["Northernmost town", "A cidade mais a norte"]],
- ["Ushuaia", "Argentina", -54.8, -68.3, ["Southernmost city", "A cidade mais a sul"]],
- ["Tristan da Cunha", "Tristan da Cunha", -37.11, -12.28, ["Most remote island", "A ilha mais remota"]]];
+const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-74.01],['Sydney','Australia',-33.87,151.21],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Rio de Janeiro','Brazil',-22.91,-43.17],['Cape Town','South Africa',-33.92,18.42],['Mumbai','India',19.08,72.88]];
 function landing(){
  clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);
  const hr=new Date().getHours(),night=hr<6||hr>=20,k=night?'night':'clear';
@@ -4180,7 +4135,7 @@ function landing(){
  fetch(u).then(r=>r.json()).then(j=>{
  const el=$('#marq');if(!el)return;
  const items=j.map((x,i)=>`<button class="cityc" data-ci="${i}">
-${emoji(x.current.weather_code,x.current.is_day)}<b>${T(x.current.temperature_2m)}°</b><span>${CITIES[i][0]}</span><small>${CITIES[i][4]?CITIES[i][4][LANG==='pt'?1:0]:(LABEL[x.current.weather_code]||'')}</small></button>`).join('');
+${emoji(x.current.weather_code,x.current.is_day)}<b>${T(x.current.temperature_2m)}°</b><span>${CITIES[i][0]}</span><small>${LABEL[x.current.weather_code]||''}</small></button>`).join('');
  el.innerHTML=`<div class="track">${items}${items}</div>`;
  el.onclick=e=>{const b=e.target.closest('[data-ci]');if(b){const c=CITIES[+b.dataset.ci];show(c[2],c[3],c[0],c[1])}};
  }).catch(()=>{const el=$('#marq');if(el)el.innerHTML='<p style="text-align:center">World conditions are unavailable right now. Search for a city above.</p>'});
@@ -4554,12 +4509,13 @@ main.addEventListener('click',e=>{
  const f=e.target.closest('[data-f]');if(f){factI+=+f.dataset.f;return drawSci()}
  const a=e.target.closest('[data-a]');
  if(a&&!a.disabled){
-  if(qs.a!=null||qs.i>=QZ.length)return;
-  const z=QZ[qs.o[qs.i]];qs.a=+a.dataset.a;if(qs.a==z[1])qs.r++;
+  if(qs.a!=null||qs.i>=qs.o.length)return;
+  const id=qs.o[qs.i],z=QZ[id];qs.a=+a.dataset.a;if(qs.a==z[1])qs.r++;
+  if(!qs.seen.includes(id))qs.seen.push(id);
   qSave();qFresh=true;return drawSci();
  }
  if(e.target.closest('[data-nq]')){qs.i++;qs.a=null;qSave();return drawSci()}
- if(e.target.closest('[data-qr]')){qs=qNew();qSave();return drawSci()}
+ if(e.target.closest('[data-qr]')){qs=qNew(qs);qSave();return drawSci()}
  if(e.target.closest('#tk')&&data){factI=+$('#tk').dataset.i;sciMode='fact';setTab('sci');$('#tabs').scrollIntoView({behavior:'smooth',block:'start'});return}
  if(e.target.closest('#fav')){
   const same=x=>x.name==place.name&&x.sub==place.sub;
@@ -8968,26 +8924,20 @@ ${k==='uv'?`<div class="m-uvbar" style="margin:14px 0 8px" aria-hidden="true"><i
   if(pane.firstElementChild)pane.classList.remove('m-in'),void pane.offsetWidth,pane.classList.add('m-in');
  }
 
- /* ---------- cidades do mundo + extremos da Terra (landing) ---------- */
+ /* ---------- cidades do mundo (landing) ---------- */
  function cities(){
   const el=$('#mcl');if(!el)return;
   const hc=homeCity(),home=hc&&isFinite(hc.lat)&&isFinite(hc.lon)?[{n:hc.name,s:hc.sub||'',lat:+hc.lat,lon:+hc.lon,home:1}]:[];
-  const mapC=c=>({n:c[0],s:c[1],lat:c[2],lon:c[3],tag:c[4]});
-  const Wd=home.concat(CITIES.filter(c=>!c[4]).map(mapC)),X=CITIES.filter(c=>c[4]).map(mapC),L=Wd.concat(X);
-  if(X.length&&!$('#mXt'))$('#mCities').insertAdjacentHTML('afterend',`<section class="m-cities m-xt" id="mXt"><h2 class="m-h2">${T2('Extremes of the Earth','Extremos da Terra')}</h2><div class="m-xs" id="mxs" role="list"></div></section>`);
+  const L=home.concat(CITIES.map(c=>({n:c[0],s:c[1],lat:c[2],lon:c[3]})));
   const u=`https://api.open-meteo.com/v1/forecast?latitude=${L.map(c=>c.lat.toFixed(3)).join(',')}&longitude=${L.map(c=>c.lon.toFixed(3)).join(',')}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=2&timezone=auto`;
-  el.innerHTML=Wd.map(()=>'<div class="m-cc sk"></div>').join('');
-  const xs=$('#mxs');if(xs)xs.innerHTML=X.map(()=>'<div class="m-cc m-xc sk"></div>').join('');
-  const card=(x,i)=>{const c=L[i],cu=x.current,d=x.daily,t=cu.temperature_2m,tone=t<=12?'cold':t<=24?'mild':'warm',tg=c.tag?c.tag[LANG==='pt'?1:0]:'';
-   return`<button type="button" class="m-cc${c.tag?' m-xc':''} ${tone}" data-ci="${i}" role="listitem"><b>${escH(c.n)}</b><small class="hm">${c.home?T2('My city','A minha cidade'):tg?escH(tg):''}</small>${c.home||!tg?`<small>${c.home?'':escH(c.s)}</small>`:`<small>${escH(c.s)}</small>`}
-<span class="mid"><i>${emoji(cu.weather_code,cu.is_day)}</i><span>${T(t)}<sup>°</sup></span></span>
-<span class="lo"><em class="d">↓${T(d.temperature_2m_min[0])}°</em><em class="u">↑${T(d.temperature_2m_max[0])}°</em><em class="r">${Math.round(d.precipitation_probability_max[0]||0)}%</em></span></button>`};
+  el.innerHTML=L.map(()=>'<div class="m-cc sk"></div>').join('');
   fetch(u).then(r=>r.json()).then(j=>{
-   const arr=Array.isArray(j)?j:[j],e2=$('#mcl'),x2=$('#mxs');if(!e2)return;
-   e2.innerHTML=arr.slice(0,Wd.length).map((x,i)=>card(x,i)).join('');
-   if(x2)x2.innerHTML=arr.slice(Wd.length).map((x,i)=>card(x,i+Wd.length)).join('');
-   const go=ev=>{const b=ev.target.closest('[data-ci]');if(b){const c=L[+b.dataset.ci];show(c.lat,c.lon,c.n,c.s)}};
-   e2.onclick=go;if(x2)x2.onclick=go;
+   const e2=$('#mcl');if(!e2)return;const arr=Array.isArray(j)?j:[j];
+   e2.innerHTML=arr.map((x,i)=>{const c=L[i],cu=x.current,d=x.daily,t=cu.temperature_2m,tone=t<=12?'cold':t<=24?'mild':'warm';
+    return`<button type="button" class="m-cc ${tone}" data-ci="${i}"><b>${escH(c.n)}</b><small${c.home?' class="hm"':''}>${c.home?T2('My city','A minha cidade'):escH(c.s)}</small>
+<span class="mid"><i>${emoji(cu.weather_code,cu.is_day)}</i><span>${T(t)}<sup>°</sup></span></span>
+<span class="lo"><em class="d">↓${T(d.temperature_2m_min[0])}°</em><em class="u">↑${T(d.temperature_2m_max[0])}°</em><em class="r">${Math.round(d.precipitation_probability_max[0]||0)}%</em></span></button>`}).join('');
+   e2.onclick=ev=>{const b=ev.target.closest('[data-ci]');if(b){const c=L[+b.dataset.ci];show(c.lat,c.lon,c.n,c.s)}};
   }).catch(()=>{const e2=$('#mcl');if(e2)e2.innerHTML=`<p class="m-err">${T2('World conditions are unavailable right now. Search for a city above.','Condições do mundo indisponíveis de momento. Pesquisa uma cidade acima.')}</p>`});
  }
 
@@ -9022,198 +8972,7 @@ ${k==='uv'?`<div class="m-uvbar" style="margin:14px 0 8px" aria-hidden="true"><i
  const _setTab=setTab;setTab=function(k){_setTab(k);afterTab(k)};
  const _landing=landing;landing=function(){_landing();afterLanding()};
  window.SkyM={sheet,cities,afterRender,afterTab};
- if(!data&&$('#hero.land')){afterLanding();cities()}   // a landing inicial desenha-se antes deste bloco existir
-})();
-
-/* ============ ORBE · conselheiro de roupa (esfera 3D em canvas) ============
-   Diz o que vestir e QUANDO (a partir da previsão hora a hora). Ao toque: muda de cor,
-   "pensa" (cores a rodopiar) e diz uma coisa — do tempo ou uma curiosidade verdadeira.
-   Se o picarem demais, fica vermelho e zangado. */
-function orbHTML(){return(typeof data!=='undefined'&&data&&window.SkyOrb)?SkyOrb.html():''}
-(function(){
- const P=()=>LANG==='pt';
- const reduced=()=>typeof still!=='undefined'&&!!still;
- const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
- const esc=s=>String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
-
- /* ---------- o que vestir, e quando ---------- */
- // temperatura aparente (Steadman / BoM, sem radiação): AT = Ta + 0,33·e − 0,70·ws − 4,00
- const apT=(t,rh,kmh)=>{const e=rh/100*6.105*Math.exp(17.27*t/(237.7+t));return t+.33*e-.7*(kmh/3.6)-4};
- const lvl=a=>a>=27?0:a>=20?1:a>=13?2:a>=6?3:4;
- const NM={en:['shorts and a light tee','a t-shirt','long sleeves','a warm jacket','a heavy coat, hat and gloves'],
-           pt:['calções e t-shirt leve','uma t-shirt','roupa de manga comprida','um casaco quente','casaco grosso, gorro e luvas']};
- function plan(){
-  const c=data.current,h=data.hourly,i0=idx0(),pt=P(),nm=NM[pt?'pt':'en'];
-  const hr=i=>+h.time[i].slice(11,13),H=i=>pt?hr(i)+'h':hr(i)+':00',dt=i=>h.time[i].slice(0,10);
-  // depois das 21 h o conselho é para amanhã (7 h–21 h); antes, vai até às 23 h de hoje. Nunca mistura a madrugada.
-  const tom=hr(i0)>=21,ix=[];
-  if(tom){for(let i=i0;i<h.time.length&&ix.length<15;i++)if(dt(i)>dt(i0)&&hr(i)>=7&&hr(i)<=21)ix.push(i)}
-  else{for(let i=i0;i<h.time.length&&i<i0+17;i++)if(dt(i)===dt(i0))ix.push(i)}
-  if(!ix.length)ix.push(i0);
-  const N=ix.length,L=ix.map((i,k)=>lvl(apT(h.temperature_2m[i],h.relative_humidity_2m[i],h.wind_speed_10m[i])));
-  const segs=[{k:0,l:L[0]}];
-  for(let k=1;k<N;k++){const cur=segs[segs.length-1].l;if(L[k]!==cur&&(k+1>=N||L[k+1]===L[k]))segs.push({k,l:L[k]})}
-  const out=segs.slice(0,3).map((s,j)=>j===0?(tom?(pt?`Amanhã, veste ${nm[s.l]}.`:`Tomorrow, wear ${nm[s.l]}.`):(pt?`Agora veste ${nm[s.l]}.`:`Right now, wear ${nm[s.l]}.`))
-    :(pt?`A partir das ${H(ix[s.k])}, passa para ${nm[s.l]}.`:`From ${H(ix[s.k])}, switch to ${nm[s.l]}.`));
-  const ex=[],pp=k=>h.precipitation_probability[ix[k]]||0;
-  let a=-1,b=-1;for(let k=0;k<N;k++){if(pp(k)>=50){if(a<0)a=k;b=k}else if(a>=0)break}
-  if(a>=0){const e=H(ix[b]+1);ex.push(a===0&&!tom?(pt?`Leva guarda-chuva: deve chover até às ${e}.`:`Take an umbrella: rain is likely until ${e}.`)
-                       :(pt?`Leva guarda-chuva entre as ${H(ix[a])} e as ${e}.`:`Take an umbrella from ${H(ix[a])} to ${e}.`))}
-  const uv=data.daily.uv_index_max[tom?1:0]||0,sw=h.shortwave_radiation||[],day=dt(ix[0]);
-  if(uv>=3&&sw.length){let mx=0;for(let i=0;i<h.time.length;i++)if(dt(i)===day)mx=Math.max(mx,sw[i]||0);
-   let s=-1,e=-1;for(let i=0;i<h.time.length;i++){if(dt(i)!==day)continue;if((sw[i]||0)>=mx*.5&&h.is_day[i]){if(s<0)s=i;e=i}}
-   if(s>=0&&e>=ix[0])ex.push(pt?`Protetor solar e óculos das ${H(Math.max(s,ix[0]))} às ${H(e+1)}.`:`Sunscreen and sunglasses ${H(Math.max(s,ix[0]))}–${H(e+1)}.`)}
-  let wi=-1;for(let k=0;k<N;k++){const g=h.wind_gusts_10m?h.wind_gusts_10m[ix[k]]:h.wind_speed_10m[ix[k]];if(g>=50){wi=k;break}}
-  if(wi>=0)ex.push(pt?`Leva um corta-vento: rajadas fortes por volta das ${H(ix[wi])}.`:`Bring a windproof layer: strong gusts around ${H(ix[wi])}.`);
-  const tv=ix.map(i=>h.temperature_2m[i]);
-  if(Math.max(...tv)>=28)ex.push(pt?'Leva água contigo.':'Carry water with you.');
-  if(Math.min(...tv)<=2)ex.push(pt?'Cuidado com gelo no chão.':'Watch for ice underfoot.');
-  if(!ex.length&&L[0]<=2)ex.push(pt?'Boa altura para um passeio.':'A good time for a walk.');
-  return{text:out.concat(ex.slice(0,2)).join(' '),segs,ex}
- }
-
- /* ---------- o que o orbe diz quando lhe tocam ---------- */
- const CUR={en:['Octopuses have three hearts.','Honey found in ancient Egyptian tombs was still edible.','Bananas are berries, but strawberries are not.','Wombat droppings are cube-shaped.','Sharks are older than trees.','The Eiffel Tower grows by up to 15 cm in summer, because metal expands in the heat.','A day on Venus is longer than its year.','Sound travels about four times faster in water than in air.','A group of flamingos is called a flamboyance.','Hummingbirds are the only birds that can fly backwards.','The shortest war in history, in 1896, lasted around 40 minutes.','I am just a sphere with opinions about jackets.'],
-  pt:['Os polvos têm três corações.','O mel encontrado em túmulos do antigo Egito ainda estava comestível.','As bananas são bagas, mas os morangos não.','O cocó do wombat tem forma de cubo.','Os tubarões são mais antigos do que as árvores.','A Torre Eiffel cresce até 15 cm no verão, porque o metal dilata com o calor.','Em Vénus, um dia é mais longo do que um ano.','O som viaja cerca de quatro vezes mais depressa na água do que no ar.','Um grupo de flamingos chama-se «flamboyance».','Os colibris são as únicas aves que voam para trás.','A guerra mais curta da história, em 1896, durou cerca de 40 minutos.','Sou só uma esfera com opiniões sobre casacos.']};
- const MAD={en:['Hey! Stop poking me!','I am getting red in the face here…','Last warning. I mean it.','GRRR! Hands off the orb!','Do I look like a button to you?!','That is it. I am boiling.'],
-  pt:['Eh! Pára de me picar!','Estou a ficar vermelho…','Último aviso. Estou a falar a sério.','GRRR! Larga o orbe!','Parece-te que sou um botão?!','Já chega. Estou a ferver.']};
- const CALM={en:'Okay… I am calm now. Please do not push it.',pt:'Pronto… já passou. Mas não abuses.'};
- function weatherLines(){
-  const c=data.current,h=data.hourly,d=data.daily,i0=idx0(),pt=P(),L=[];
-  const hr=i=>+h.time[i].slice(11,13),H=i=>pt?hr(i)+'h':hr(i)+':00';
-  L.push(pt?`Estão ${T(c.temperature_2m)}° agora, com sensação de ${T(c.apparent_temperature)}°.`:`It is ${T(c.temperature_2m)}° now and feels like ${T(c.apparent_temperature)}°.`);
-  const pr=h.precipitation_probability.slice(i0,i0+12),m=Math.max(...pr),at=pr.indexOf(m);
-  L.push(m<20?(pt?'Sem chuva à vista nas próximas horas.':'No rain in sight for the next few hours.'):(pt?`${m}% de probabilidade de chuva por volta das ${H(i0+at)}.`:`${m}% chance of rain around ${H(i0+at)}.`));
-  const ss=new Date(d.sunset[0]),now=new Date(c.time);
-  if(ss>now){const mn=Math.round((ss-now)/6e4);L.push(pt?`Faltam ${Math.floor(mn/60)}h${String(mn%60).padStart(2,'0')} para o pôr do sol, às ${d.sunset[0].slice(11,16)}.`:`${Math.floor(mn/60)}h${String(mn%60).padStart(2,'0')} until sunset at ${d.sunset[0].slice(11,16)}.`)}
-  else L.push(pt?`O sol nasce amanhã às ${d.sunrise[1].slice(11,16)}.`:`The Sun rises tomorrow at ${d.sunrise[1].slice(11,16)}.`);
-  L.push(pt?`O índice UV máximo de hoje é ${Math.round(d.uv_index_max[0])}.`:`Today’s peak UV index is ${Math.round(d.uv_index_max[0])}.`);
-  L.push(pt?`Vento a ${W(c.wind_speed_10m)}.`:`Wind at ${W(c.wind_speed_10m)}.`);
-  return L
- }
-
- /* ---------- paletas ---------- */
- const hsl=(h,s,l)=>{h=((h%360)+360)%360;s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return[f(0)*255,f(8)*255,f(4)*255]};
- const palHue=h=>[hsl(h,82,60),hsl(h+38,86,52),hsl(h-34,92,74)];
- function basePal(){
-  const c=data.current,t=c.temperature_2m;
-  const h=!c.is_day?250:t<=6?212:t<=14?192:t<=21?160:t<=28?36:14;
-  return{hue:h,pal:palHue(h)}
- }
- const RED=[[255,52,36],[168,6,10],[255,128,64]];
- const mixC=(a,b,k)=>a.map((v,i)=>v+(b[i]-v)*k);
- const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
-
- /* ---------- motor 3D: esfera iluminada com textura em rodopio ---------- */
- function engine(cv){
-  const S=cv.width,ctx=cv.getContext('2d'),img=ctx.createImageData(S,S),D=img.data,R=S/2;
-  const idx=[],NX=[],NY=[],NZ=[],DIF=[],SPEC=[],RIM=[],ALP=[];
-  let Lx=-.46,Ly=-.58,Lz=.67;const ln=Math.hypot(Lx,Ly,Lz);Lx/=ln;Ly/=ln;Lz/=ln;
-  let hx=Lx,hy=Ly,hz=Lz+1;const hn=Math.hypot(hx,hy,hz);hx/=hn;hy/=hn;hz/=hn;
-  for(let y=0;y<S;y++)for(let x=0;x<S;x++){
-   const nx=(x+.5-R)/R,ny=(y+.5-R)/R,r2=nx*nx+ny*ny;if(r2>1)continue;
-   const nz=Math.sqrt(1-r2),r=Math.sqrt(r2);
-   idx.push((y*S+x)*4);NX.push(nx);NY.push(ny);NZ.push(nz);
-   DIF.push(.38+.82*Math.max(0,nx*Lx+ny*Ly+nz*Lz));
-   SPEC.push(Math.pow(Math.max(0,nx*hx+ny*hy+nz*hz),56));
-   RIM.push(Math.pow(1-nz,2.4));
-   ALP.push(clamp((1-r)*R/1.4,0,1));
-  }
-  const n=idx.length,LR=new Float32Array(256),LG=new Float32Array(256),LB=new Float32Array(256);
-  const E={pal:basePal().pal,from:null,to:null,t0:0,dur:1,mode:'idle',think:0,sw:1,spd:.35,rot:0,alive:true,vis:true,last:0,glow:0};
-  E.set=(pal,ms)=>{E.from=E.cur||E.pal;E.to=pal;E.t0=performance.now();E.dur=Math.max(1,ms||800)};
-  E.cur=E.pal;
-  function lut(tt){
-   const p=E.cur,k=E.think;
-   for(let i=0;i<256;i++){
-    const f=i/255,a=f<.5?mixC(p[0],p[1],f*2):mixC(p[1],p[2],(f-.5)*2);
-    let c=a;if(k>.01){const rb=hsl(f*320+tt*130,88,60);c=mixC(a,rb,k*.9)}
-    LR[i]=c[0];LG[i]=c[1];LB[i]=c[2];
-   }
-  }
-  function draw(ts){
-   const tt=ts/1000;
-   if(E.to){const k=clamp((ts-E.t0)/E.dur,0,1),e=ease(k);E.cur=E.from.map((c,i)=>mixC(c,E.to[i],e));if(k>=1){E.pal=E.to;E.cur=E.to;E.to=null}}
-   const tgtT=E.mode==='think'?1:0,tgtS=E.mode==='think'?3.9:E.mode==='angry'?2.4:1,tgtV=E.mode==='think'?1.9:E.mode==='angry'?2.8:.34;
-   E.think+=(tgtT-E.think)*.12;E.sw+=(tgtS-E.sw)*.1;E.spd+=(tgtV-E.spd)*.1;
-   E.rot+=E.spd*(1/30);
-   lut(tt);
-   const ca=Math.cos(E.rot),sa=Math.sin(E.rot),sw=E.sw,rimC=E.cur[2];
-   for(let k=0;k<n;k++){
-    const nx=NX[k],ny=NY[k],nz=NZ[k],px=nx*ca+nz*sa,pz=-nx*sa+nz*ca;
-    const w=Math.sin(px*3.2+tt*.9+Math.sin(ny*2.6+tt*.6)*sw)+Math.sin(ny*3.6-tt*.7+Math.sin(pz*3.1+tt*.8)*sw)+Math.sin((pz+px)*2.7+tt*.5+Math.sin(px*2.1-ny*1.7)*sw*.5);
-    const li=clamp(((w/3+1)/2*255)|0,0,255),d=DIF[k],rm=RIM[k]*.55,sp=SPEC[k]*190,o=idx[k];
-    D[o]=clamp(LR[li]*d+rimC[0]*rm+sp,0,255);D[o+1]=clamp(LG[li]*d+rimC[1]*rm+sp,0,255);D[o+2]=clamp(LB[li]*d+rimC[2]*rm+sp,0,255);D[o+3]=ALP[k]*255;
-   }
-   ctx.putImageData(img,0,0);
-   if(ts-E.glow>120){E.glow=ts;const c=E.cur[0],host=cv.closest('.orb');if(host){host.style.setProperty('--oc',`rgb(${c.map(Math.round)})`);host.style.setProperty('--og',`rgba(${c.map(Math.round)},.5)`)}}
-  }
-  E.frame=ts=>{
-   if(!E.alive)return;
-   if(!document.body.contains(cv)){E.alive=false;return}
-   E.raf=requestAnimationFrame(E.frame);
-   if(document.hidden||!E.vis)return;
-   if(ts-E.last<33)return;E.last=ts;draw(ts);
-  };
-  E.once=()=>draw(performance.now());
-  E.stop=()=>{E.alive=false;cancelAnimationFrame(E.raf)};
-  if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>{E.vis=es[0].isIntersecting});io.observe(cv)}
-  return E
- }
-
- /* ---------- estado e interação ---------- */
- let eng=null,clicks=[],bag=[],thinking=false,angry=false,calmT=0,thinkT=0,hue=0,madN=0,lastTxt='';
- function say(txt,mad){
-  const b=$('#orbB'),p=$('#orbT');if(!b||!p)return;
-  p.textContent=txt;b.classList.toggle('mad',!!mad);b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');lastTxt=txt
- }
- function dots(){const p=$('#orbT');if(p)p.innerHTML='<span class="orb-dots" aria-label="…"><i></i><i></i><i></i></span>'}
- function nextLine(){
-  if(!bag.length){bag=[plan().text,...weatherLines(),...CUR[P()?'pt':'en']];for(let i=bag.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[bag[i],bag[j]]=[bag[j],bag[i]]}}
-  let s=bag.pop();if(s===lastTxt&&bag.length)s=bag.pop();return s
- }
- function fx(cls,ms){const o=$('#orb');if(!o)return;o.classList.remove(cls);void o.offsetWidth;o.classList.add(cls);setTimeout(()=>o&&o.classList.remove(cls),ms)}
- function think(){
-  if(thinking)return;thinking=true;
-  const base=basePal().hue;hue=(hue||base)+137.5;
-  eng.mode='think';fx('ping',900);fx('squish',520);dots();
-  if(reduced()){eng.once()}
-  clearTimeout(thinkT);
-  thinkT=setTimeout(()=>{
-   eng.set(palHue(hue),900);eng.mode='idle';thinking=false;
-   if(!angry){say(nextLine());fx('ping',900)}
-  },1000+Math.random()*500);
- }
- function goAngry(){
-  if(!angry){angry=true;clearTimeout(thinkT);thinking=false;eng.mode='angry';eng.set(RED,500);$('#orb').classList.add('angry');madN=0}
-  const L=MAD[P()?'pt':'en'];say(L[Math.min(madN,L.length-1)],true);madN++;fx('ping',700);
-  clearTimeout(calmT);calmT=setTimeout(calm,6500);
- }
- function calm(){
-  angry=false;clicks=[];madN=0;const o=$('#orb');if(o)o.classList.remove('angry');
-  eng.mode='idle';eng.set(palHue(hue||basePal().hue),1400);say(CALM[P()?'pt':'en']);
- }
- function onClick(){
-  const now=Date.now();clicks=clicks.filter(t=>now-t<4000);clicks.push(now);
-  if(angry||clicks.length>=6)return goAngry();
-  think();
- }
- function mount(){
-  const cv=$('#orbCv');if(!cv)return;
-  if(eng)eng.stop();
-  clicks=[];bag=[];thinking=false;angry=false;clearTimeout(calmT);clearTimeout(thinkT);hue=0;madN=0;lastTxt='';
-  eng=engine(cv);hue=basePal().hue;
-  const o=$('#orb');if(o)o.onclick=onClick;
-  eng.once();if(!reduced())requestAnimationFrame(eng.frame);
- }
- function html(){
-  const a=plan(),pt=P();
-  return`<section class="card orbcard" id="orbCard" aria-label="${pt?'Conselheiro de roupa':'Clothing advisor'}">
- <button type="button" class="orb" id="orb" aria-label="${pt?'Conselheiro de roupa. Toca para ouvir outra coisa.':'Clothing advisor. Tap to hear something else.'}"><span class="orb-in"><canvas id="orbCv" width="168" height="168"></canvas></span><i class="orb-ring"></i></button>
- <div class="orb-b pop" id="orbB" role="status" aria-live="polite"><p id="orbT">${esc(a.text)}</p></div></section>`
- }
- window.SkyOrb={html,mount};
- const _st=setTab;setTab=function(k){_st(k);if(k==='today')mount()};
+ if(!data&&$('#hero.land'))afterLanding();
 })();
 </script>
 </body>
