@@ -1749,6 +1749,7 @@ html.is-mobile .rtop .rnow{flex:none;width:100%;white-space:normal;overflow:visi
 html.is-mobile .rleg{flex-wrap:wrap;min-width:0}
 html.is-mobile .rctl{padding-bottom:2px}
 </style>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -1865,6 +1866,7 @@ html.is-mobile .rctl{padding-bottom:2px}
       <button class="term-chip" data-cmd="help">help</button>
       <button class="term-chip" data-cmd="now">now</button>
       <button class="term-chip" data-cmd="storms">storms</button>
+      <button class="term-chip" data-cmd="monthly">monthly</button>
       <button class="term-chip" data-cmd="calc all">calc all</button>
       <button class="term-chip" data-cmd="simulate inversion">sim inversion</button>
       <button class="term-chip" data-cmd="simulate plume --wind 12 --source 120">sim plume</button>
@@ -1992,6 +1994,9 @@ html.is-mobile .rctl{padding-bottom:2px}
       <button type="button" class="auth-eye-btn" id="authTogglePass" title="Ver / ocultar senha" aria-label="Ver / ocultar senha"></button>
      </div>
     </div>
+
+    <!-- Cloudflare Turnstile (anti-robôs) -->
+    <div id="authTurnstile" style="margin:6px 0"></div>
 
     <!-- Submit Button -->
     <button type="submit" class="pill solid big auth-submit-btn" id="authSubmitBtn">
@@ -6078,8 +6083,30 @@ const AUTH_CONFIG = {
   apiUrl: (typeof ATMO !== 'undefined' && ATMO.base) 
     ? ATMO.base.replace(/\/v1\/?$/, '/api/auth') 
     : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
-  googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com'
+  googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com',
+  turnstileSiteKey: '0x4AAAAAAFXe8LEPrrxgCRnj'   // Site Key do Turnstile (pública). Enquanto não a colares, o Turnstile fica desligado.
 };
+
+/* ============ Cloudflare Turnstile (anti-robôs) ============ */
+let tsWidgetId = null;
+function tsActive(){ return !!AUTH_CONFIG.turnstileSiteKey && AUTH_CONFIG.turnstileSiteKey !== 'COLA_AQUI_A_SITE_KEY'; }
+function tsEnsure(tries){
+  tries = tries || 0;
+  if(!tsActive() || tsWidgetId !== null) return;
+  const box = document.getElementById('authTurnstile');
+  if(!box || !window.turnstile){ if(tries < 25) setTimeout(()=>tsEnsure(tries+1), 600); return; }   // o script ainda está a carregar
+  tsWidgetId = window.turnstile.render(box, { sitekey: AUTH_CONFIG.turnstileSiteKey, theme: 'auto', size: 'flexible' });
+}
+function tsToken(){ try{ return tsWidgetId !== null ? (window.turnstile.getResponse(tsWidgetId) || '') : ''; }catch(e){ return ''; } }
+function tsReset(){ try{ if(tsWidgetId !== null) window.turnstile.reset(tsWidgetId); }catch(e){} }   // cada token só serve uma vez
+
+/* Sessão revogada no servidor (ex.: lockdown ou sessão expirada): sai localmente, sem apagar favoritos/preferências */
+function authSessionDead(){
+  if(!currentToken) return;
+  currentUser = null; currentToken = null;
+  try{ localStorage.removeItem('skylab_auth_user'); localStorage.removeItem('skylab_auth_token'); }catch(e){}
+  try{ updateAuthUI(); }catch(e){}
+}
 /* ==== sync de preferências (v2: um documento, "a escrita mais recente ganha") ==== */
 let syncT = null;
 async function prefsPush(){
@@ -6089,11 +6116,12 @@ async function prefsPush(){
   if(!Object.keys(payload).length) return;
   payload._ts = +localStorage.getItem('prefsTs') || Date.now();     // carimbo da última alteração local
   try{
-    await fetch(`${AUTH_CONFIG.apiUrl.replace('/auth','')}/prefs`,{
+    const pr = await fetch(`${AUTH_CONFIG.apiUrl.replace('/auth','')}/prefs`,{
       method:'PUT',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentToken}`},
       body:JSON.stringify(payload)
     });
+    if(pr.status===401) authSessionDead();
   }catch(e){}
   if(typeof pushSyncLoc==='function')pushSyncLoc();
 }
@@ -6107,6 +6135,7 @@ async function prefsPull(){
     const r = await fetch(`${AUTH_CONFIG.apiUrl.replace('/auth','')}/prefs`,{
       headers:{'Authorization':`Bearer ${currentToken}`}
     });
+    if(r.status===401){ authSessionDead(); return null; }
     if(!r.ok) return null;
     const j = await r.json();
     return j.prefs || null;
@@ -6338,6 +6367,7 @@ function authClearAlert(){
 function authOpen(){
   const ov=$('#authOv');if(!ov)return;
   authModalOpen=true;
+  tsEnsure();
   authClearAlert();
 
   if(currentUser&&currentUser.username){
@@ -6543,7 +6573,13 @@ function initAuthInputs(){
       if(!/^[a-zA-Z0-9_-]+$/.test(username))return authShowAlert(LANG==='pt'?'O nome de utilizador apenas pode conter letras, números, _ ou -.':'Username can only contain letters, numbers, _ and -.');
     }
     if(!email)return authShowAlert(LANG==='pt'?'Por favor introduz o teu email.':'Please enter your email.');
-    if(!password||password.length<6)return authShowAlert(LANG==='pt'?'A palavra-passe deve ter pelo menos 6 carateres.':'Password must be at least 6 characters.');
+    const minPw = authMode==='signup' ? 8 : 6;
+    if(!password||password.length<minPw)return authShowAlert(LANG==='pt'?`A palavra-passe deve ter pelo menos ${minPw} carateres.`:`Password must be at least ${minPw} characters.`);
+    if(password.length>128)return authShowAlert(LANG==='pt'?'A palavra-passe não pode ter mais de 128 carateres.':'Password must be at most 128 characters.');
+    const cf_turnstile = tsToken();
+    if(tsActive() && !cf_turnstile)return authShowAlert(window.turnstile
+      ?(LANG==='pt'?'A confirmar que és humano… tenta de novo dentro de segundos.':'Verifying you are human… try again in a moment.')
+      :(LANG==='pt'?'Não foi possível carregar a verificação anti-robôs. Desativa bloqueadores de anúncios e recarrega a página.':'Could not load the anti-bot check. Disable ad blockers and reload the page.'));
 
     const submitBtn=$('#authSubmitBtn');
     submitBtn.disabled=true;
@@ -6553,8 +6589,8 @@ function initAuthInputs(){
     try{
       const endpoint=authMode==='signup'?`${AUTH_CONFIG.apiUrl}/signup`:`${AUTH_CONFIG.apiUrl}/signin`;
       const payload=authMode==='signup' 
-        ?{username,email,password}
-        :{identifier:email,password};
+        ?{username,email,password,cf_turnstile}
+        :{identifier:email,password,cf_turnstile};
 
       const res=await fetch(endpoint,{
         method:'POST',
@@ -6586,6 +6622,7 @@ function initAuthInputs(){
     }finally{
       submitBtn.disabled=false;
       $('#authSubmitTxt').textContent=oldTxt;
+      tsReset();
     }
   };
 
@@ -6760,7 +6797,7 @@ function parseArgs(tokens, spec = {}){
   const raw = (eq<0 ? t : t.slice(0,eq)).replace(/^--?/,'').toLowerCase();
   const inline = eq<0 ? undefined : t.slice(eq+1);
   const key = names[raw];
-  if(!key){ errors.push(`unknown flag '${eq<0?t:t.slice(0,eq)}'`); continue; }
+  if(!key){ errors.push(`unknown flag '${eq<0?t:t.slice(0,eq)}'` + hint(raw, Object.keys(names))); continue; }
   const type = spec[key].type || 'bool';
   if(type === 'bool'){ flags[key] = inline === undefined ? true : !/^(0|false|no|off)$/i.test(inline); continue; }
   const vals = inline !== undefined ? [inline] : [];
@@ -6775,6 +6812,18 @@ function parseArgs(tokens, spec = {}){
  return { args, flags, errors };
 }
 const splitList = s => String(s||'').split(/[,\s]+/).filter(Boolean);
+
+/* ---- fuzzy matching for "did you mean" ---- */
+const lev = (a,b) => { a = String(a).toLowerCase(); b = String(b).toLowerCase(); const m = a.length, n = b.length; if(!m) return n; if(!n) return m;
+ let prev = Array.from({length:n+1}, (_,j) => j);
+ for(let i=1;i<=m;i++){ const cur = [i]; for(let j=1;j<=n;j++) cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1]===b[j-1] ? 0 : 1)); prev = cur; }
+ return prev[n]; };
+const suggest = (word, pool, max = 3) => {
+ const w = String(word).toLowerCase(), lim = Math.max(2, Math.ceil(w.length/3));
+ return [...new Set(pool)].map(p => [p, p.toLowerCase().startsWith(w) ? 0 : lev(w,p)]).filter(([,d]) => d <= lim)
+  .sort((x,y) => x[1]-y[1] || x[0].length-y[0].length).slice(0,max).map(x => x[0]);
+};
+const hint = (word, pool) => { const s = suggest(word, pool); return s.length ? ` — did you mean ${s.join(', ')}?` : ''; };
 
 /* =====================================================================
    2. REGISTRIES  — add a command / metric / exporter with one call
@@ -7141,10 +7190,16 @@ async function resolvePlace(name){
   throw new Error('no location selected in SkyLab yet');
  }
  const m = /^(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)$/.exec(n);
- if(m) return { lat:+m[1], lon:+m[2], name:`${(+m[1]).toFixed(3)},${(+m[2]).toFixed(3)}`, sub:'coordinates' };
- const r = await geo(n, 1);
+ if(m){
+  if(Math.abs(+m[1]) > 90 || Math.abs(+m[2]) > 180) throw new Error(`coordinates out of range: latitude must be -90…90 and longitude -180…180 (got ${m[1]}, ${m[2]})`);
+  return { lat:+m[1], lon:+m[2], name:`${(+m[1]).toFixed(3)},${(+m[2]).toFixed(3)}`, sub:'coordinates' };
+ }
+ if(n.length < 2 || !/\p{L}/u.test(n)) throw new Error(`'${n}' is not a place name or a lat,lon pair`);
+ const r = await geo(n, 5);
  if(!r.length) throw new Error(`location not found: "${n}"`);
- return r[0];
+ const flat = x => String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const q = flat(n), hit = r.find(x => { const f = flat(x.name); return f.includes(q) || q.includes(f); });
+ return hit || { ...r[0], fuzzy:true };
 }
 
 async function fetchWeather(pl, { refresh=false } = {}){
@@ -7181,7 +7236,14 @@ const resolveVar = (ctx,name) => {
  const m = Object.keys(h).filter(x => x !== 'time' && x.startsWith(n));
  return m.length === 1 ? m[0] : null;
 };
-const resolveVars = (ctx,str) => { const ok = [], bad = []; splitList(str).forEach(n => { const k = resolveVar(ctx,n); k ? (ok.includes(k)||ok.push(k)) : bad.push(n); }); return { ok, bad }; };
+const resolveVars = (ctx,str) => {
+ const ok = [], bad = [];
+ splitList(str).forEach(n => { const k = resolveVar(ctx,n); k ? (ok.includes(k)||ok.push(k)) : bad.push(n); });
+ if(bad.length){ const pool = varNamesFor(ctx);
+  throw new Error(`unknown variable${bad.length>1?'s':''}: ${bad.map(b => `'${b}'` + hint(b,pool)).join('; ')}  (list them with: vars)`); }
+ if(!ok.length) throw new Error('no variable given (see: vars)');
+ return { ok, bad };
+};
 const varNamesFor = ctx => ctx ? [...Object.keys(ctx.raw.hourly).filter(k=>k!=='time'), ...Object.keys(ALIAS)] : Object.keys(ALIAS);
 const hhmm = s => (s||'').slice(11,16);
 const needCtx = t => { if(!t.ctx) throw new Error("no context loaded — run: fetch -loc <city>"); return t.ctx; };
@@ -7294,7 +7356,7 @@ if(this.history[this.history.length-1] !== line){ this.history.push(line); if(th
       const name = tokens.shift().toLowerCase(), def = commands.get(name);
       if(!def){
         out.err(`Error: Command not found. Type 'help' for available commands.`);
-        const near = commands.names().filter(n => n.startsWith(name.slice(0,2))).slice(0,4);
+        const near = suggest(name, commands.names());
         if(near.length) out.dim(`did you mean: ${near.join(', ')}?`);
         this.scroll(); return;
       }
@@ -7350,13 +7412,19 @@ if(this.history[this.history.length-1] !== line){ this.history.push(line); if(th
       }
       // Validate common numeric options before any command executes; otherwise
       // strings such as '--hours banana' could silently fall back to defaults.
-      const numericFlags = new Set(['at','time','hours','back','rows','depth','alt','dtemp','wind','source']);
+      // [min, max] per flag; a "command.flag" entry overrides the generic "flag" one.
+      const RANGES = { at:[-48,168], time:[-48,168], hours:[1,216], 'plot.hours':[2,168], 'stats.hours':[2,216], 'export.hours':[0,216], back:[0,48], rows:[1,12],
+        'view.depth':[0,10], depth:[1,5000], alt:[1,6000], dtemp:[0,30], wind:[0,300], source:[0.001,100000], t:[-90,60], rh:[0,100], p:[100,1100], days:[7,46] };
+      const NUM = /^[+-]?(\d+\.?\d*|\.\d+)$/;
+      const bail = msg => { out.err('Error: ' + msg); out.dim(`Usage: ${def.usage || def.name}`); this.scroll(); };
       for(const [key, value] of Object.entries(flags)){
-        if(numericFlags.has(key) && (value === '' || !Number.isFinite(Number(value)))){
-          out.err(`Error: '--${key}' requires a numeric value; received '${value}'.`);
-          out.dim(`Usage: ${def.usage || def.name}`); this.scroll(); return;
-        }
+        const rg = RANGES[def.name + '.' + key] || RANGES[key];
+        if(!rg) continue;
+        if(typeof value !== 'string' || !NUM.test(value.trim())){ bail(`'--${key}' requires a number; received '${value}'.`); return; }
+        if(+value < rg[0] || +value > rg[1]){ bail(`'--${key}' must be between ${rg[0]} and ${rg[1]}; received ${value}.`); return; }
       }
+      if(flags.steps !== undefined && !splitList(flags.steps).every(x => /^[+-]?\d+$/.test(x))){ bail(`'--steps' must be whole hour offsets such as 3,6,12,24; received '${flags.steps}'.`); return; }
+      if(flags.stability !== undefined && !/^[A-Fa-f]$/.test(flags.stability)){ bail(`'--stability' must be a Pasquill class A-F; received '${flags.stability}'.`); return; }
       // Validate command-specific enumerated values centrally.
       const enumArgs = { theme:['modern','retro','amber'], mock:['on','off','1','0','true','false'] };
       if(enumArgs[def.name] && args[0] && !enumArgs[def.name].includes(args[0].toLowerCase())){
@@ -7467,7 +7535,7 @@ commands
   const q = flags.loc || args.join(' ');
   out.dim(q ? `resolving "${q}" …` : 'resolving SkyLab location …');
   const pl = await resolvePlace(q);
-  out.line(`→ ${pl.name}${pl.sub ? ', ' + pl.sub : ''}  (${pl.lat.toFixed(4)}, ${pl.lon.toFixed(4)})`);
+  if(pl.fuzzy) out.warn(`  ! no exact match for "${q}" — using the closest result. Check it is the place you meant, or use lat,lon.`);
   out.dim(CFG.mock ? 'GET mock://skylab …' : 'GET api.open-meteo.com/v1/forecast …');
   const r = await fetchWeather(pl, { refresh:flags.refresh });
   term.ctx = buildCtx(pl, r.raw, { cached:r.cached, dropped:r.dropped });
@@ -7525,6 +7593,7 @@ commands
  run({ term, out, args }){
   const c = needCtx(term), v = nowVals(c), pf = (args[0]||'').toLowerCase();
   const keys = Object.keys(c.raw.hourly).filter(k => k !== 'time' && (!pf || k.includes(pf)));
+  if(!keys.length) throw new Error(`no variable matches '${pf}'` + hint(pf, varNamesFor(c)));
   const al = {}; for(const [a,k] of Object.entries(ALIAS)) (al[k] = al[k] || []).push(a);
   out.table(['VARIABLE','UNIT','NOW','ALIASES'], keys.map(k => [k, dispU(unitOf(c,k)) || '-', fmt(v[k],2), (al[k]||[]).join(' ')]), ['l','l','r','l']);
   out.dim(`${keys.length} variable(s)`);
@@ -7949,6 +8018,62 @@ commands.register('export', { group:'export', alias:['exp'], usage:'export --for
  run({ term, out }){ out.kv([['UTC', new Date().toISOString().replace('T',' ').slice(0,19)+'Z'], ['location now', term.ctx && term.ctx.raw.current ? term.ctx.raw.current.time.replace('T',' ') + '  ' + (term.ctx.raw.timezone||'') : '—']]); }});
 
 /* =====================================================================
+   MONTHLY OUTLOOK — ECMWF EC46 (46 days) via the Open-Meteo seasonal API
+   ===================================================================== */
+const monthlyCache = new Map();
+const avgOf = a => { const v = a.filter(num); return v.length ? v.reduce((s,x) => s+x, 0)/v.length : null; };
+const pctl = (a, p) => { const s = a.filter(num).sort((x,y) => x-y); if(!s.length) return null; const i = (s.length-1)*p, lo = Math.floor(i), hi = Math.ceil(i); return s[lo] + (s[hi]-s[lo])*(i-lo); };
+async function fetchMonthly(pl, days, refresh){
+ if(CFG.mock) throw new Error('monthly needs the live API — turn mock off with:  mock off');
+ const key = `${pl.lat.toFixed(2)},${pl.lon.toFixed(2)}|${days}`, hit = monthlyCache.get(key);
+ if(hit && !refresh && Date.now() - hit.t < 6*3600e3) return { ...hit.d, cached:true };
+ const url = `https://seasonal-api.open-meteo.com/v1/seasonal?latitude=${pl.lat}&longitude=${pl.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=${days}&timezone=auto`;
+ const r = await fetch(url);
+ if(!r.ok){ let j = {}; try{ j = await r.json(); }catch(e){} throw new Error(j.reason || `Open-Meteo seasonal HTTP ${r.status}`); }
+ const raw = await r.json(), d = raw.daily;
+ if(!d || !Array.isArray(d.time) || !d.time.length) throw new Error('the seasonal API returned no daily data for this location');
+ // one column per ensemble member (temperature_2m_max, …_member01, …) or a single mean column
+ const members = v => Object.keys(d).filter(k => k === v || k.startsWith(v + '_member')).map(k => d[k]);
+ const mx = members('temperature_2m_max'), mn = members('temperature_2m_min'), pr = members('precipitation_sum');
+ if(!mx.length) throw new Error('the seasonal API did not return temperature data');
+ const col = (ms, i) => ms.map(m => m[i]).filter(num);
+ const rows = d.time.slice(0, days).map((date, i) => { const x = col(mx,i), n = col(mn,i), p = col(pr,i);
+  return { date, tmax:avgOf(x), lo:pctl(x,.1), hi:pctl(x,.9), tmin:avgOf(n), rain:avgOf(p), wet:p.length ? p.filter(v => v >= 1).length/p.length : null }; });
+ const res = { rows, members:mx.length };
+ monthlyCache.set(key, { t:Date.now(), d:res });
+ return { ...res, cached:false };
+}
+commands.register('monthly', { group:'parse', alias:['month','outlook'], usage:'monthly [--days 7-46] [--daily] [--refresh]',
+ summary:'Monthly outlook (ECMWF ensemble, up to 46 days): weekly temperature, rain and member spread', maxArgs:0,
+ flags:{ days:{type:'str',alias:['n'],help:'outlook length, 7–46 (default 30)'}, daily:{type:'bool',help:'also print the day-by-day table'}, refresh:{type:'bool',alias:['r'],help:'bypass the 6 h cache'} },
+ examples:['monthly','monthly --days 45','monthly --daily'],
+ complete:()=>['--days','--daily','--refresh'],
+ async run({ term, out, flags }){
+  const c = needCtx(term), days = flags.days ? Math.round(+flags.days) : 30;
+  out.dim(`GET seasonal-api.open-meteo.com/v1/seasonal …  (${days} days · ECMWF ensemble)`);
+  const m = await fetchMonthly(c.place, days, flags.refresh), R = m.rows;
+  out.hd(`▌ ${c.place.name} · monthly outlook · ${R[0].date} → ${R[R.length-1].date} · ${m.members} member${m.members > 1 ? 's' : ''}${m.cached ? ' · cached' : ''}`);
+  const sum = a => a.reduce((s,x) => s + (num(x) ? x : 0), 0), weeks = [];
+  for(let i = 0; i < R.length; i += 7) weeks.push(R.slice(i, i+7));
+  out.table(['WEEK','DATES','TMAX','TMIN','TMAX p10…p90','RAIN mm','WET DAYS'],
+   weeks.map((w,k) => [`W${k+1}`, `${w[0].date.slice(5)} … ${w[w.length-1].date.slice(5)}`, fmt(avgOf(w.map(x => x.tmax)),1), fmt(avgOf(w.map(x => x.tmin)),1),
+    `${fmt(avgOf(w.map(x => x.lo)),0)}…${fmt(avgOf(w.map(x => x.hi)),0)}`, fmt(sum(w.map(x => x.rain)),1), fmt(sum(w.map(x => x.wet)),1)]),
+   ['l','l','r','r','r','r','r']);
+  out.line();
+  out.line('  Tmax  ' + sparkline(R.map(x => x.tmax)), 'c-spark');
+  out.line('  Tmin  ' + sparkline(R.map(x => x.tmin)), 'c-spark');
+  out.line('  rain  ' + sparkline(R.map(x => x.rain), 0), 'c-spark');
+  out.dim('        ' + R[0].date.slice(5) + ' '.repeat(Math.max(1, R.length - 10)) + R[R.length-1].date.slice(5));
+  out.kv([['mean Tmax / Tmin', `${fmt(avgOf(R.map(x => x.tmax)),1)} / ${fmt(avgOf(R.map(x => x.tmin)),1)} °C`],
+   ['total rain (ens. mean)', `${fmt(sum(R.map(x => x.rain)),0)} mm over ${R.length} days`],
+   ['wettest week', (() => { const t = weeks.map(w => sum(w.map(x => x.rain))), k = t.indexOf(Math.max(...t)); return `W${k+1} · ${fmt(t[k],1)} mm`; })()]]);
+  if(flags.daily) out.table(['DATE','TMAX','p10','p90','TMIN','RAIN mm','WET %'],
+   R.map(x => [x.date.slice(5), fmt(x.tmax,1), fmt(x.lo,1), fmt(x.hi,1), fmt(x.tmin,1), fmt(x.rain,1), num(x.wet) ? fmt(x.wet*100,0) : '—']), ['l','r','r','r','r','r','r']);
+  out.warn('Read weeks, not days: beyond ~2 weeks single days are not predictable. 36 km grid, not bias-corrected — an area outlook, not a point forecast.');
+  out.dim('p10…p90 = range across ensemble members · WET DAYS = expected days with ≥ 1 mm · source: ECMWF EC46/SEAS5 via Open-Meteo');
+ }});
+
+/* =====================================================================
    10. EXPORTERS  (add yours with exporters.register)
    ===================================================================== */
 const fNum = x => num(x) ? (Number.isInteger(x) ? x.toFixed(1) : String(+x.toFixed(4))) + 'f' : 'NAN';
@@ -8246,8 +8371,7 @@ SkyTerm.commands.register('storms', {
       }
 
       if (!matches.length) {
-        out.warn(`No tracked storm matches "${query}". Run "storms" for the list.`);
-        return;
+        throw new Error(`no tracked storm matches "${query}" — run "storms" for the list`);
       }
 
       if (matches.length > 1) {
