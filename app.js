@@ -2070,6 +2070,21 @@ const runCounters=(r=document)=>$$('[data-cu]',r).forEach(el=>{countUp(el,+el.da
 
 /* ============ ticker ============ */
 let tI=0;
+/* Condições de várias cidades: primeiro pelo worker (cache + chave + "stale"), depois directo ao Open-Meteo, com uma segunda tentativa */
+async function worldFetch(lats,lons,daily){
+  try{
+    const r=await fetch(`${WORKER}/world?lat=${lats.join(',')}&lon=${lons.join(',')}${daily?'&daily=1':''}`);
+    if(r.ok){const j=await r.json();if(j&&!j.error)return j}
+  }catch(e){}
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=temperature_2m,weather_code,is_day&timezone=auto`
+    +(daily?'&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=2':'');
+  let last;
+  for(let i=0;i<2;i++){
+    try{const r=await fetch(u);if(r.ok)return await r.json();last=new Error('HTTP '+r.status)}catch(e){last=e}
+    await new Promise(res=>setTimeout(res,700));
+  }
+  throw last;
+}
 function startTicker(){
  clearInterval(tickT);const el=$('#tk');if(!el)return;
  const pool=factPool();tI=data?0:Math.floor(Math.random()*pool.length);
@@ -2147,10 +2162,7 @@ function landing(){
  {const a=$('#mtLoc'),b=$('#mtSur');if(a)a.onclick=locate;if(b)b.onclick=surprise}
  globeStart();
  if(IS_MOBILE){mobileCities();return}
- const u=`https://api.open-meteo.com/v1/forecast?latitude=${CITIES.map(c=>c[2]).join(',')}
-&longitude=${CITIES.map(c=>c[3]).join(',')}
-&current=temperature_2m,weather_code,is_day&timezone=auto`;
- fetch(u).then(r=>r.json()).then(j=>{
+ worldFetch(CITIES.map(c=>c[2]),CITIES.map(c=>c[3]),false).then(j=>{
  const el=$('#marq');if(!el)return;
  const items=j.map((x,i)=>`<button class="cityc" data-ci="${i}">
 ${emoji(x.current.weather_code,x.current.is_day)}<b>${T(x.current.temperature_2m)}°</b><span>${CITIES[i][0]}</span><small>${LABEL[x.current.weather_code]||''}</small></button>`).join('');
@@ -7143,9 +7155,8 @@ ${k==='uv'?`<div class="m-uvbar" style="margin:14px 0 8px" aria-hidden="true"><i
   const el=$('#mcl');if(!el)return;
   const hc=homeCity(),home=hc&&isFinite(hc.lat)&&isFinite(hc.lon)?[{n:hc.name,s:hc.sub||'',lat:+hc.lat,lon:+hc.lon,home:1}]:[];
   const L=home.concat(CITIES.map(c=>({n:c[0],s:c[1],lat:c[2],lon:c[3]})));
-  const u=`https://api.open-meteo.com/v1/forecast?latitude=${L.map(c=>c.lat.toFixed(3)).join(',')}&longitude=${L.map(c=>c.lon.toFixed(3)).join(',')}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=2&timezone=auto`;
   el.innerHTML=L.map(()=>'<div class="m-cc sk"></div>').join('');
-  fetch(u).then(r=>r.json()).then(j=>{
+  worldFetch(L.map(c=>c.lat),L.map(c=>c.lon),true).then(j=>{
    const e2=$('#mcl');if(!e2)return;const arr=Array.isArray(j)?j:[j];
    e2.innerHTML=arr.map((x,i)=>{const c=L[i],cu=x.current,d=x.daily,t=cu.temperature_2m,tone=t<=12?'cold':t<=24?'mild':'warm';
     return`<button type="button" class="m-cc ${tone}" data-ci="${i}"><b>${escH(c.n)}</b><small${c.home?' class="hm"':''}>${c.home?T2('My city','A minha cidade'):escH(c.s)}</small>
