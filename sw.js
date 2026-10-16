@@ -1,5 +1,5 @@
-const C='skylab-v3';
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(['./'])))});
+const C='skylab-v4';   // sobe sempre que mudares index.html / styles.css / app.js: apaga a cache antiga no 'activate'
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(['./','index.html','styles.css','app.js'])))});
 self.addEventListener('activate',e=>e.waitUntil(
   caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>clients.claim())
 ));
@@ -22,7 +22,8 @@ self.addEventListener('push',e=>{
 });
 self.addEventListener('notificationclick',e=>{
   e.notification.close();
-  const url=(e.notification.data&&e.notification.data.url)||'./';
+  let url=(e.notification.data&&e.notification.data.url)||'./';
+  try{ if(new URL(url,location.href).origin!==location.origin) url='./'; }catch(_){ url='./'; }   // só abre páginas do próprio site
   e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(l=>{
     for(const c of l) if('focus' in c) return c.focus();
     return clients.openWindow(url);
