@@ -1777,3 +1777,76 @@ html.is-mobile .pv-rows b{text-align:left;max-width:none}
 .auth-verify-actions{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px 14px;margin-top:16px;font-size:13px}
 .auth-verify-actions button{background:none;border:0;padding:4px 0;font:inherit;font-weight:600;color:var(--acc);cursor:pointer}
 .auth-verify-actions button:disabled{opacity:.55;cursor:default}
+
+/* ═══════════ CORREÇÕES v10 — conta no telemóvel, página de privacidade, desempenho ═══════════ */
+
+/* 1) Barra inferior nunca por cima de painéis. A regra .m-nav.show (display:grid) vencia a regra hlock por ordem,
+      por isso a barra continuava visível com a conta aberta e (no Safari/iOS, por causa do backdrop-filter) tapava o botão «Apagar conta». */
+html.is-mobile.hlock .m-nav,html.is-mobile.hlock .m-nav.show,
+html.is-mobile.pv-open .m-nav,html.is-mobile.pv-open .m-nav.show,
+html.is-mobile.m-typing .m-nav,html.is-mobile.m-typing .m-nav.show{display:none!important}
+html.is-mobile.hlock #toast{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+
+/* Painéis (conta, favoritos, furacões…): altura real do ecrã visível (dvh) e espaço extra no fim para o último botão ficar sempre ao alcance */
+@media (max-width:720px){
+  html.is-mobile .hov{height:100vh;height:100dvh;align-items:end}
+  html.is-mobile .hcard,html.is-mobile .fav-card,html.is-mobile .auth-card{
+    max-height:calc(100vh - env(safe-area-inset-top,0px) - 10px);
+    max-height:calc(100dvh - env(safe-area-inset-top,0px) - 10px);
+    overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+    padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+  html.is-mobile .auth-card{width:100%;max-width:none;padding-left:18px;padding-right:18px}
+  html.is-mobile .auth-profile-actions{padding-bottom:6px}
+}
+
+/* 2) Página de privacidade: elementos neutros (já não são <header>/<main>), sem rolagem lateral, com margens */
+#privPage{overflow-x:hidden;overflow-y:auto;max-width:100%;text-align:left;overscroll-behavior:contain;scroll-behavior:auto;
+  padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);box-sizing:border-box}
+#privPage *,#privPage *::before,#privPage *::after{box-sizing:border-box}
+#privPage .pv-bar{margin:0;width:100%;min-width:0;gap:8px;flex-wrap:nowrap;
+  padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,calc((100% - 760px)/2)) 10px}
+#privPage .pv-logo{min-width:0;margin:0 auto 0 2px}
+#privPage .pv-main{width:100%;max-width:760px;margin:0 auto;min-width:0;padding:26px 18px calc(48px + env(safe-area-inset-bottom,0px))}
+#privPage .pv-card,#privPage .pv-hero{min-width:0;max-width:100%}
+#privPage .pv-card{text-align:left;overflow-wrap:anywhere;word-break:normal}
+#privPage .pv-card h2{align-items:center;flex-wrap:wrap}
+#privPage .pv-lead,#privPage .pv-kicker,#privPage .pv-s{text-align:left;overflow-wrap:anywhere}
+#privPage .pv-btn{max-width:100%;word-break:break-word;overflow-wrap:anywhere;text-align:center}
+#privPage .pv-tags{grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
+#privPage .pv-rows>div{min-width:0;overflow-wrap:anywhere}
+#privPage .pv-rows b{overflow-wrap:anywhere}
+#privPage .pv-list{padding-left:20px}
+#privPage::before{animation:none}           /* o fundo animado por baixo de uma barra com blur obrigava a repintar tudo a cada frame */
+html.is-mobile #privPage{background:linear-gradient(170deg,var(--a),var(--b))}
+html.is-mobile #privPage .pv-bar{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(18,52,96,.78);border-radius:0 0 18px 18px}
+html.is-mobile #privPage .pv-main{padding:20px 14px calc(40px + env(safe-area-inset-bottom,0px))}
+html.is-mobile #privPage .pv-card{padding:16px 15px;margin:10px 0}
+html.is-mobile #privPage .pv-chips li,html.is-mobile #privPage .pv-chips li{-webkit-backdrop-filter:none;backdrop-filter:none}
+html.is-mobile #privPage .pv-hero h1{font-size:clamp(34px,10.5vw,46px)}
+@media (max-width:380px){#privPage .pv-logo{font-size:22px}#privPage .pv-seg button{padding:6px 9px}}
+
+/* 3) Ligação «Privacidade» no rodapé da landing (telemóvel): ficava na cor de destaque, quase invisível sobre o fundo escuro */
+html.is-mobile body:has(main.lnd) footer .priv-link,
+html.is-mobile body:has(main.lnd) footer .priv-link:visited{color:#fff!important;text-decoration:underline;font-weight:600;
+  min-height:32px;padding:4px 2px;display:inline-block;vertical-align:baseline}
+
+/* 4) Desempenho no telemóvel: menos repinturas e menos camadas com blur por baixo de animações */
+html.is-mobile .aurora{animation:none;opacity:.3}                      /* parado: já não obriga os blurs de cima a recalcular a cada frame */
+html.is-mobile #fx{will-change:auto}
+html.is-mobile .card{-webkit-backdrop-filter:none;backdrop-filter:none}
+html.is-mobile .ncbox,html.is-mobile .tt,html.is-mobile .m-strip,html.is-mobile .land .m-tiles,html.is-mobile footer,
+html.is-mobile .cityc,html.is-mobile .chip,html.is-mobile .search input,html.is-mobile .m-nav,html.is-mobile header.stuck{
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+html.is-mobile header.stuck{background:rgba(14,44,86,.88)}
+html.is-mobile .m-nav.show{background:rgba(255,255,255,.96)}
+html.is-mobile .ncbox,html.is-mobile .tt,html.is-mobile .m-strip{background:rgba(9,30,60,.5)}
+html.is-mobile .land .m-tiles{background:rgba(9,30,60,.6)}
+html.is-mobile .search input{background:rgba(255,255,255,.22)}
+html.is-mobile .hov.on{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(8,26,52,.55)}
+html.is-mobile .hov{transition:opacity .25s ease}
+html.is-mobile .hcard{transition:transform .35s cubic-bezier(.2,.9,.3,1),opacity .25s ease}
+html.is-mobile .m-nav .m-ind{transition:transform .35s cubic-bezier(.3,1.2,.4,1)}
+html.is-mobile body{-webkit-font-smoothing:antialiased}
+/* animações decorativas contínuas param quando o painel está por cima */
+html.hlock .aurora,html.hlock .halo,html.hlock .lg,html.hlock .spark,html.pv-open .lg{animation-play-state:paused}
+@media (hover:none){.card{transition:none}}

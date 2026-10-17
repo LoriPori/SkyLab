@@ -2082,8 +2082,8 @@ function privacyHTML(pt){
  const sec=(k,i,t,body)=>`<section class="pv-card" id="pv-${k}"><h2><span class="pv-n">${String(i).padStart(2,'0')}</span>${t}</h2>${body}</section>`;
  const prov=[['Open-Meteo',L('forecast','previsão')],['BigDataCloud',L('place names','nomes de locais')],['Atmospore',L('pollen','pólen')],['IPMA',L('Portugal warnings','avisos de Portugal')],['RainViewer',L('radar','radar')],['NASA GIBS',L('satellite','satélite')],['OpenWeather',L('map layers','camadas')],['CARTO · OpenStreetMap',L('maps','mapas')],['Google',L('sign-in, profile photo, email codes (Gmail)','início de sessão, foto de perfil, códigos por email (Gmail)')],['Cloudflare',L('hosting, database, bot check','alojamento, base de dados, anti-bot')],['GitHub Pages',L('site hosting','alojamento do site')],['unpkg · jsDelivr',L('map and globe libraries, map data','bibliotecas do mapa e do globo, dados dos mapas')],['NOAA',L('station observations','observações de estações')]].map(([a,b])=>`<li><b>${a}</b><small>${b}</small></li>`).join('');
  const rows=[[L('Account (username, email, password hash, Google ID and photo URL)','Conta (username, email, hash da palavra-passe, ID e foto Google)'),L('Until you delete your account','Até apagares a conta')],[L('Synced data (favourites, main city, history…)','Dados sincronizados (favoritos, cidade principal, histórico…)'),L('Until you delete your account','Até apagares a conta')],[L('Pending email verification (email, username, password hash, code hash)','Verificação de email pendente (email, username, hash da palavra-passe, hash do código)'),L('10 minutes at most','10 minutos no máximo')],[L('Login sessions','Sessões de início de sessão'),L('14 days','14 dias')],[L('Push address, keys and approximate location','Endereço e chaves push e localização aproximada'),L('Until you turn them off or delete your account','Até as desativares ou apagares a conta')],[L('Security logs','Registos de segurança'),L('7 days','7 dias')],[L('Without an account','Sem conta'),L('Nothing is stored on my servers','Nada fica nos meus servidores')]].map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
- return `<header class="pv-bar"><button type="button" class="pv-back" data-priv-close aria-label="${L('Back to Skylab','Voltar ao Skylab')}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>${L('Back','Voltar')}</span></button><div class="pv-logo"><span class="lg"></span>Skylab</div><div class="pv-seg" role="group" aria-label="Language"><button type="button" data-pv-lang="pt" aria-pressed="${pt}">PT</button><button type="button" data-pv-lang="en" aria-pressed="${!pt}">EN</button></div></header>
-<main class="pv-main">
+ return `<div class="pv-bar"><button type="button" class="pv-back" data-priv-close aria-label="${L('Back to Skylab','Voltar ao Skylab')}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>${L('Back','Voltar')}</span></button><div class="pv-logo"><span class="lg"></span>Skylab</div><div class="pv-seg" role="group" aria-label="Language"><button type="button" data-pv-lang="pt" aria-pressed="${pt}">PT</button><button type="button" data-pv-lang="en" aria-pressed="${!pt}">EN</button></div></div>
+<div class="pv-main">
 <section class="pv-hero"><p class="pv-kicker">${L('Privacy · GDPR','Privacidade · RGPD')}</p><h1>${L('Your data, in plain words.','Os teus dados, sem letras pequenas.')}</h1><p class="pv-lead">${L('Skylab is an independent project. No ads, no trackers, no selling data. Here is exactly what is stored, where, for how long, and how to erase it.','O Skylab é um projeto independente. Sem anúncios, sem rastreadores, sem vender dados. Aqui está exatamente o que é guardado, onde, durante quanto tempo e como apagar.')}</p><ul class="pv-chips">${chips}</ul><p class="pv-s">${L('Last updated: October 2026','Atualizado: outubro de 2026')}</p><nav class="pv-toc" aria-label="${L('Sections','Secções')}">${tocH}</nav></section>
 ${sec('who',1,L('Who I am','Quem sou'),`<p>${L('Skylab is an independent personal project by Lourenço (Lisbon, Portugal), who is the controller of the data described here. Skylab is meant for people aged 13 or over. Contact: ','O Skylab é um projeto pessoal independente do Lourenço (Lisboa, Portugal), responsável pelos dados aqui descritos. O Skylab destina-se a pessoas com 13 ou mais anos. Contacto: ')}${m}.</p>`)}
 ${sec('free',2,L('Without an account','Sem conta'),`<p>${L('You can use all the weather features without signing in. Nothing about you is stored on my servers. Your choices (units, language, recent places, favourites, main city, last place viewed, terminal history and theme, developer mode, and a counter of your most visited places used to pick where notifications go) stay in your browser’s local storage. Skylab sets no cookies of its own and uses no advertising or analytics cookies or trackers. Fonts are hosted by Skylab itself. Google sign-in and the Cloudflare Turnstile anti-bot check are only loaded when you open the sign-in window, and may use their own cookies or similar technologies under their own policies.','Podes usar o tempo todo sem iniciar sessão. Nada sobre ti fica guardado nos meus servidores. As tuas escolhas (unidades, idioma, locais recentes, favoritos, cidade principal, último local visto, histórico e tema do terminal, modo programador e um contador dos locais mais visitados, usado para escolher para onde vão as notificações) ficam no armazenamento local do teu browser. O Skylab não define cookies próprios nem usa cookies de publicidade ou de análise, nem rastreadores. As letras são alojadas pelo próprio Skylab. O início de sessão Google e a verificação anti-robô Cloudflare Turnstile só são carregados quando abres a janela de início de sessão, e podem usar os seus próprios cookies ou tecnologias semelhantes, segundo as suas políticas.')}</p><p>${L('Your device location is requested when you press “locate”. If you have already allowed location for this site, Skylab may also use it when you open the page to suggest your city; otherwise it only guesses a city from your time zone, on your device. Coordinates are used to fetch the forecast and are not stored unless you save a place as a favourite, set a main city or enable notifications. What you type in the city search is sent to the Open-Meteo geocoding service.','A localização do teu dispositivo é pedida quando carregas em “localizar”. Se já deste permissão de localização a este site, o Skylab pode também usá-la ao abrir a página para sugerir a tua cidade; caso contrário, apenas deduz uma cidade a partir do teu fuso horário, no teu dispositivo. As coordenadas servem para obter a previsão e não são guardadas, a não ser que guardes um local como favorito, definas uma cidade principal ou ativas notificações. O texto que escreves na pesquisa de cidades é enviado ao serviço de geocodificação do Open-Meteo.')}</p>`)}
@@ -2094,7 +2094,7 @@ ${sec('third',6,L('Third parties','Terceiros'),`<p>${L('To show you data, your b
 ${sec('keep',7,L('Legal basis & retention','Base legal e conservação'),`<p>${L('Account data and notifications are processed to provide the service you ask for (GDPR Art. 6(1)(b)); push notifications and device location rely on your consent (Art. 6(1)(a)), which you can withdraw at any time by turning them off. Security logs rest on my legitimate interest in protecting the service (Art. 6(1)(f)).','Os dados da conta e das notificações são tratados para prestar o serviço que pedes (RGPD, art. 6.º, n.º 1, al. b); as notificações push e a localização do dispositivo assentam no teu consentimento (art. 6.º, n.º 1, al. a), que podes retirar a qualquer momento desativando-as. Os registos de segurança assentam no meu interesse legítimo em proteger o serviço (art. 6.º, n.º 1, al. f).')}</p><div class="pv-rows">${rows}</div><p>${L('Some providers above are based outside the EU (for example Cloudflare and Google, in the US) and rely on safeguards such as the EU–US Data Privacy Framework or standard contractual clauses.','Alguns dos fornecedores acima ficam fora da UE (por exemplo Cloudflare e Google, nos EUA) e recorrem a garantias como o Quadro de Privacidade de Dados UE–EUA ou cláusulas contratuais-tipo.')}</p>`)}
 ${sec('rights',8,L('Your rights','Os teus direitos'),`<p>${L('You can delete your account and all its data yourself from the account menu (“Delete account”). You can also ask me for access, correction, a copy (portability), restriction or objection.','Podes apagar a tua conta e todos os dados associados no menu da conta («Apagar conta»). Podes também pedir-me acesso, retificação, uma cópia (portabilidade), limitação ou oposição.')}</p><p class="pv-cta"><a class="pv-btn" href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a></p><p>${L('You may complain to the Portuguese data protection authority, ','Podes apresentar reclamação à autoridade portuguesa de proteção de dados, a ')}<a href="https://www.cnpd.pt/" target="_blank" rel="noopener">CNPD</a>.</p>`)}
 <p class="pv-end"><button type="button" class="pv-x" data-priv-close>${L('Back to Skylab','Voltar ao Skylab')}</button></p>
-</main>`;
+</div>`;
 }
 let pvPushed=false;
 function pvRender(){
@@ -2434,6 +2434,7 @@ async function globeStart(){
  }
  function loop(now){
   if(!cv.isConnected)return;                                                  // saiu da landing: pára
+  if(document.hidden||document.documentElement.classList.contains('hlock')||document.documentElement.classList.contains('pv-open')){last=now;requestAnimationFrame(loop);return}
   const dt=Math.min(64,now-last);last=now;step(now,dt);draw(now);requestAnimationFrame(loop);
  }
  const pos=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
@@ -2478,17 +2479,26 @@ function fxSize(){fx.width=innerWidth;fx.height=innerHeight}
 addEventListener('resize',()=>{fxSize();fxSet(mode);moveInd()});
 function fxSet(k){
  mode=k;const n={rain:170,storm:230,snow:130,night:110,clear:34,cloud:14,fog:12}[k]||0;
- parts=Array.from({length:n},()=>({x:Math.random()*fx.width,y:Math.random()*fx.height,z:Math.random()*.8+.4,t:Math.random()*6}));
+ const nn=IS_MOBILE?Math.ceil(n*.6):n;
+ parts=Array.from({length:nn},()=>({x:Math.random()*fx.width,y:Math.random()*fx.height,z:Math.random()*.8+.4,t:Math.random()*6}));
  splashes=[];tune(k);
 }
+let fxLast=0;
+function fxBusy(){const h=document.documentElement.classList;return document.hidden||h.contains('hlock')||h.contains('pv-open')}
 function fxLoop(t){
+ if(fxBusy()){requestAnimationFrame(fxLoop);return}              // nada a desenhar por baixo de um painel ou com o separador escondido
+ if(IS_MOBILE&&t-fxLast<30){requestAnimationFrame(fxLoop);return}  // ~33 fps no telemóvel: metade do trabalho, sem diferença visível
+ fxLast=t;
  cx.clearRect(0,0,fx.width,fx.height);
- for(const p of parts){
-  if(mode=='rain'||mode=='storm'){
-   cx.strokeStyle='rgba(235,245,255,.55)';cx.lineWidth=p.z;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-2*p.z,p.y+14*p.z);cx.stroke();
-   p.y+=17*p.z;p.x-=2*p.z;
-   if(p.y>fx.height*(.93+p.t/100)){if(splashes.length<60&&Math.random()<.5)splashes.push({x:p.x,y:p.y,r:1,a:.5});p.y=-20;p.x=Math.random()*fx.width}
-  }else if(mode=='snow'){
+ if(mode=='rain'||mode=='storm'){
+  cx.strokeStyle='rgba(235,245,255,.55)';cx.lineWidth=1;cx.beginPath();
+  for(const p of parts){cx.moveTo(p.x,p.y);cx.lineTo(p.x-2*p.z,p.y+14*p.z)}
+  cx.stroke();
+  for(const p of parts){p.y+=17*p.z;p.x-=2*p.z;
+   if(p.y>fx.height*(.93+p.t/100)){if(splashes.length<60&&Math.random()<.5)splashes.push({x:p.x,y:p.y,r:1,a:.5});p.y=-20;p.x=Math.random()*fx.width}}
+ }
+ for(const p of (mode=='rain'||mode=='storm')?[]:parts){
+  if(mode=='snow'){
    cx.fillStyle='rgba(255,255,255,.92)';cx.beginPath();cx.arc(p.x,p.y,1.5*p.z+.5,0,7);cx.fill();
    p.y+=.8*p.z;p.x+=Math.sin(t/900+p.t)*.5;if(p.y>fx.height+10){p.y=-10;p.x=Math.random()*fx.width}
   }else if(mode=='night'){
@@ -2630,18 +2640,28 @@ $('#logo').onclick=()=>{
   landing();
   window.scrollTo(0,0);
 };
+let hgStuck=null,hgRaf=0;
 function syncHeaderGlass(){
+  hgRaf=0;
   const stuck = scrollY > 20; // same condition the glass card uses
+  if(stuck===hgStuck)return;
+  hgStuck=stuck;
   $('#hd').classList.toggle('stuck', stuck);
 }
-addEventListener('scroll', syncHeaderGlass, {passive:true});
+addEventListener('scroll', ()=>{if(!hgRaf)hgRaf=requestAnimationFrame(syncHeaderGlass)}, {passive:true});
 syncHeaderGlass(); // run once on load too (fixes refresh mid-scroll / back-nav)
 
+let pmE=null,pmRaf=0;
 document.addEventListener('pointermove',e=>{
- const hero=$('#hero');if(hero){hero.style.setProperty('--px',((e.clientX/innerWidth-.5)*2).toFixed(2));hero.style.setProperty('--py',((e.clientY/innerHeight-.5)*2).toFixed(2))}
- const el=e.target.closest&&e.target.closest('.card');
- if(el){const r=el.getBoundingClientRect();el.style.setProperty('--mx',(e.clientX-r.left)+'px');el.style.setProperty('--my',(e.clientY-r.top)+'px')}
-});
+ if(e.pointerType==='touch'||document.documentElement.classList.contains('is-mobile'))return;   // sem rato não há parallax/brilho: evita trabalho (e layout) a cada toque
+ pmE=e;if(pmRaf)return;
+ pmRaf=requestAnimationFrame(()=>{
+  pmRaf=0;const e=pmE;if(!e)return;
+  const hero=$('#hero');if(hero){hero.style.setProperty('--px',((e.clientX/innerWidth-.5)*2).toFixed(2));hero.style.setProperty('--py',((e.clientY/innerHeight-.5)*2).toFixed(2))}
+  const el=e.target.closest&&e.target.closest('.card');
+  if(el){const r=el.getBoundingClientRect();el.style.setProperty('--mx',(e.clientX-r.left)+'px');el.style.setProperty('--my',(e.clientY-r.top)+'px')}
+ });
+},{passive:true});
 document.addEventListener('keydown',e=>{
  if(e.key=='Escape')closeSg();
  if(e.target.matches('input')||e.metaKey||e.ctrlKey||e.altKey)return;
