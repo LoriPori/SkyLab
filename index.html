@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://challenges.cloudflare.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://accounts.google.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https: ; frame-src https://challenges.cloudflare.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://challenges.cloudflare.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://accounts.google.com; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https: ; frame-src https://challenges.cloudflare.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Skylab — Weather & Science</title>
@@ -33,11 +33,8 @@
 <meta name="twitter:description" content="Explore live global weather radars, synoptic analysis, atmospheric physics simulations, and hyper-local telemetry.">
 <meta name="twitter:image" content="https://loripori.github.io/SkyLab/icon-web.png">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Instrument+Serif&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css">
 <noscript><style>html body{visibility:visible!important}</style></noscript>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -248,6 +245,24 @@
 
    <div class="auth-alert" id="authAlert" hidden></div>
 
+   <!-- Passo 2: código enviado por email -->
+   <div id="authVerifyView">
+    <p class="auth-verify-msg" id="authVerifyMsg"></p>
+    <form id="authCodeForm" class="auth-form" novalidate>
+     <div class="auth-field">
+      <label for="authCode" class="auth-label"><span id="lblCode">Código de verificação</span></label>
+      <div class="auth-input-wrap">
+       <input type="text" id="authCode" class="auth-input auth-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-describedby="authVerifyMsg">
+      </div>
+     </div>
+     <button type="submit" class="pill solid big auth-submit-btn" id="authCodeBtn"><span id="authCodeTxt">Confirmar</span></button>
+    </form>
+    <div class="auth-verify-actions">
+     <button type="button" class="auth-switch-link" id="authResend">Reenviar código</button>
+     <button type="button" class="auth-switch-link" id="authVerifyBack">Mudar de email</button>
+    </div>
+   </div>
+
    <form id="authForm" class="auth-form" novalidate>
     <!-- Username (Sign Up only) -->
     <div class="auth-field" id="fieldUsername">
@@ -291,6 +306,7 @@
      <span id="authSubmitTxt">Criar Conta</span>
     </button>
    </form>
+   <p class="auth-legal" id="authLegal"></p>
 
    <div class="auth-switch-prompt">
     <span id="authSwitchMsg">Já tens conta?</span>
@@ -304,7 +320,9 @@
  Weather by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
  Places by <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a> ·
  Pollen by <a href="https://atmospore.ai/" target="_blank" rel="noopener">Atmospore</a> ·
- Portugal forecasts &amp; warnings by <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a>
+ Portugal forecasts &amp; warnings by <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a> ·
+ <a href="mailto:skylab.support@gmail.com">Contact · Contacto</a> ·
+ <button type="button" class="priv-link" data-priv>Privacy · Privacidade</button>
  <span class="db-badge">
  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
  <span>Data stored on <strong>Cloudflare D1</strong></span>

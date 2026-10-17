@@ -484,7 +484,7 @@ const FACTS_PT=[
 
 const firstS=s=>s.split('. ')[0].replace(/\.$/,'')+'.';          // o ticker mostra só a 1.ª frase do facto
 FACTS.forEach((f,i)=>{const p=f[5]||FACTS_PT[i];if(p){PT[f[1]]=p[0];PT[f[2]]=p[1];PT[firstS(f[2])]=firstS(p[1])}});
-QZ.forEach((z,i)=>{const p=z[3]||QZ_PT[i];if(p){PT[z[0]]=p[0];PT[z[2]]=p[1]}});
+QZ.forEach((z,i)=>{const p=z[3];if(p){PT[z[0]]=p[0];PT[z[2]]=p[1]}});
 DAILY.forEach(f=>{PT[f[1]]=f[3][0];PT[f[2]]=f[3][1]});
 Object.assign(PT,{ 'Fact of the day':'Facto do dia','See result':'Ver resultado','Play again':'Jogar outra vez',
  'Flawless. You could be on the forecasting desk.':'Impecável. Já podias estar na redação do tempo.',
@@ -2070,6 +2070,68 @@ const runCounters=(r=document)=>$$('[data-cu]',r).forEach(el=>{countUp(el,+el.da
 
 /* ============ ticker ============ */
 let tI=0;
+
+/* ============ Privacidade / Privacy — página própria (#privacy), no estilo do Skylab; abre a partir de qualquer [data-priv] ============ */
+const CONTACT_EMAIL='skylab.support@gmail.com';
+function privacyHTML(pt){
+ const L=(en,p)=>pt?p:en,m=`<a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>`;
+ const ck='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+ const chips=[L('No ads or trackers','Sem anúncios nem rastreadores'),L('Works without an account','Funciona sem conta'),L('Delete your account yourself','Apagas a conta tu mesmo'),L('Hosted on Cloudflare','Alojado na Cloudflare')].map(t=>`<li>${ck}<span>${t}</span></li>`).join('');
+ const toc=[['who',L('Who I am','Quem sou')],['free',L('Without an account','Sem conta')],['acc',L('With an account','Com conta')],['push',L('Notifications','Notificações')],['sec',L('Security logs','Registos de segurança')],['third',L('Third parties','Terceiros')],['keep',L('Legal basis & retention','Base legal e conservação')],['rights',L('Your rights','Os teus direitos')]];
+ const tocH=toc.map(([k,t])=>`<a href="#pv-${k}">${t}</a>`).join('');
+ const sec=(k,i,t,body)=>`<section class="pv-card" id="pv-${k}"><h2><span class="pv-n">${String(i).padStart(2,'0')}</span>${t}</h2>${body}</section>`;
+ const prov=[['Open-Meteo',L('forecast','previsão')],['BigDataCloud',L('place names','nomes de locais')],['Atmospore',L('pollen','pólen')],['IPMA',L('Portugal warnings','avisos de Portugal')],['RainViewer',L('radar','radar')],['NASA GIBS',L('satellite','satélite')],['OpenWeather',L('map layers','camadas')],['CARTO · OpenStreetMap',L('maps','mapas')],['Google',L('sign-in, profile photo, email codes (Gmail)','início de sessão, foto de perfil, códigos por email (Gmail)')],['Cloudflare',L('hosting, database, bot check','alojamento, base de dados, anti-bot')],['GitHub Pages',L('site hosting','alojamento do site')],['unpkg · jsDelivr',L('map and globe libraries, map data','bibliotecas do mapa e do globo, dados dos mapas')],['NOAA',L('station observations','observações de estações')]].map(([a,b])=>`<li><b>${a}</b><small>${b}</small></li>`).join('');
+ const rows=[[L('Account (username, email, password hash, Google ID and photo URL)','Conta (username, email, hash da palavra-passe, ID e foto Google)'),L('Until you delete your account','Até apagares a conta')],[L('Synced data (favourites, main city, history…)','Dados sincronizados (favoritos, cidade principal, histórico…)'),L('Until you delete your account','Até apagares a conta')],[L('Pending email verification (email, username, password hash, code hash)','Verificação de email pendente (email, username, hash da palavra-passe, hash do código)'),L('10 minutes at most','10 minutos no máximo')],[L('Login sessions','Sessões de início de sessão'),L('14 days','14 dias')],[L('Push address, keys and approximate location','Endereço e chaves push e localização aproximada'),L('Until you turn them off or delete your account','Até as desativares ou apagares a conta')],[L('Security logs','Registos de segurança'),L('7 days','7 dias')],[L('Without an account','Sem conta'),L('Nothing is stored on my servers','Nada fica nos meus servidores')]].map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
+ return `<header class="pv-bar"><button type="button" class="pv-back" data-priv-close aria-label="${L('Back to Skylab','Voltar ao Skylab')}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>${L('Back','Voltar')}</span></button><div class="pv-logo"><span class="lg"></span>Skylab</div><div class="pv-seg" role="group" aria-label="Language"><button type="button" data-pv-lang="pt" aria-pressed="${pt}">PT</button><button type="button" data-pv-lang="en" aria-pressed="${!pt}">EN</button></div></header>
+<main class="pv-main">
+<section class="pv-hero"><p class="pv-kicker">${L('Privacy · GDPR','Privacidade · RGPD')}</p><h1>${L('Your data, in plain words.','Os teus dados, sem letras pequenas.')}</h1><p class="pv-lead">${L('Skylab is an independent project. No ads, no trackers, no selling data. Here is exactly what is stored, where, for how long, and how to erase it.','O Skylab é um projeto independente. Sem anúncios, sem rastreadores, sem vender dados. Aqui está exatamente o que é guardado, onde, durante quanto tempo e como apagar.')}</p><ul class="pv-chips">${chips}</ul><p class="pv-s">${L('Last updated: October 2026','Atualizado: outubro de 2026')}</p><nav class="pv-toc" aria-label="${L('Sections','Secções')}">${tocH}</nav></section>
+${sec('who',1,L('Who I am','Quem sou'),`<p>${L('Skylab is an independent personal project by Lourenço (Lisbon, Portugal), who is the controller of the data described here. Skylab is meant for people aged 13 or over. Contact: ','O Skylab é um projeto pessoal independente do Lourenço (Lisboa, Portugal), responsável pelos dados aqui descritos. O Skylab destina-se a pessoas com 13 ou mais anos. Contacto: ')}${m}.</p>`)}
+${sec('free',2,L('Without an account','Sem conta'),`<p>${L('You can use all the weather features without signing in. Nothing about you is stored on my servers. Your choices (units, language, recent places, favourites, main city, last place viewed, terminal history and theme, developer mode, and a counter of your most visited places used to pick where notifications go) stay in your browser’s local storage. Skylab sets no cookies of its own and uses no advertising or analytics cookies or trackers. Fonts are hosted by Skylab itself. Google sign-in and the Cloudflare Turnstile anti-bot check are only loaded when you open the sign-in window, and may use their own cookies or similar technologies under their own policies.','Podes usar o tempo todo sem iniciar sessão. Nada sobre ti fica guardado nos meus servidores. As tuas escolhas (unidades, idioma, locais recentes, favoritos, cidade principal, último local visto, histórico e tema do terminal, modo programador e um contador dos locais mais visitados, usado para escolher para onde vão as notificações) ficam no armazenamento local do teu browser. O Skylab não define cookies próprios nem usa cookies de publicidade ou de análise, nem rastreadores. As letras são alojadas pelo próprio Skylab. O início de sessão Google e a verificação anti-robô Cloudflare Turnstile só são carregados quando abres a janela de início de sessão, e podem usar os seus próprios cookies ou tecnologias semelhantes, segundo as suas políticas.')}</p><p>${L('Your device location is requested when you press “locate”. If you have already allowed location for this site, Skylab may also use it when you open the page to suggest your city; otherwise it only guesses a city from your time zone, on your device. Coordinates are used to fetch the forecast and are not stored unless you save a place as a favourite, set a main city or enable notifications. What you type in the city search is sent to the Open-Meteo geocoding service.','A localização do teu dispositivo é pedida quando carregas em “localizar”. Se já deste permissão de localização a este site, o Skylab pode também usá-la ao abrir a página para sugerir a tua cidade; caso contrário, apenas deduz uma cidade a partir do teu fuso horário, no teu dispositivo. As coordenadas servem para obter a previsão e não são guardadas, a não ser que guardes um local como favorito, definas uma cidade principal ou ativas notificações. O texto que escreves na pesquisa de cidades é enviado ao serviço de geocodificação do Open-Meteo.')}</p>`)}
+${sec('acc',3,L('With an account','Com conta'),`<p>${L('Stored in a Cloudflare D1 database:','Guardado numa base de dados Cloudflare D1:')}</p><ul class="pv-list"><li>${L('your username and email;','o teu username e o teu email;')}</li><li>${L('if you sign up with a password, only a salted PBKDF2 hash of it, never the password itself;','se te registares com palavra-passe, apenas um hash PBKDF2 com sal, nunca a palavra-passe;')}</li><li>${L('if you sign in with Google, your Google identifier and profile picture URL;','se entrares com Google, o teu identificador Google e o URL da foto de perfil;')}</li><li>${L('your synced data: favourite places, main city, recent places, last place viewed, units, language, selected tab, developer-mode setting, and terminal theme and command history (up to 200 commands, so avoid typing personal information there);','os teus dados sincronizados: locais favoritos, cidade principal, locais recentes, último local visto, unidades, idioma, separador escolhido, modo programador, e tema e histórico de comandos do terminal (até 200 comandos, por isso evita escrever informação pessoal aí);')}</li><li>${L('your login sessions: a hash of the session token, valid for 14 days.','as tuas sessões: um hash do token, válido 14 dias.')}</li></ul><p>${L('To create an account (or the first time you sign in with an older account) I email a 6-digit code to the address you entered, sent from skylab.support@gmail.com through Gmail. The account is only created once you enter it. Until then, your email, username and a password hash wait in a pending record that is deleted when you verify or after 10 minutes; the code itself is stored only as a hash.','Para criar uma conta (ou na primeira vez que entras com uma conta antiga) envio um código de 6 dígitos para o email que indicaste, a partir de skylab.support@gmail.com através do Gmail. A conta só é criada depois de o introduzires. Até lá, o teu email, o username e um hash da palavra-passe ficam num registo pendente, apagado quando confirmas ou ao fim de 10 minutos; o próprio código só é guardado em forma de hash.')}</p><p>${L('I only use your email to identify your account, sign you in and send you verification codes: no newsletters, no marketing. While you are signed in, your session token and basic profile (username, email, photo) are also kept in your browser’s local storage.','Uso o teu email apenas para identificar a conta, iniciar sessão e enviar-te códigos de verificação: sem newsletters nem marketing. Enquanto tens sessão iniciada, o token da sessão e o perfil básico (username, email, foto) ficam também no armazenamento local do teu browser.')}</p>`)}
+${sec('push',4,L('Notifications','Notificações'),`<p>${L('If you enable notifications I store your browser’s push address and keys, an approximate location (about 100 m) with its name, plus language and unit, so I can send weather alerts. You can turn them off at any time.','Se ativares as notificações guardo o endereço e as chaves push do teu browser, uma localização aproximada (cerca de 100 m) com o nome, o idioma e a unidade, para poder enviar avisos do tempo. Podes desativá-las quando quiseres.')} ${L('To receive them, a service worker is installed in your browser.','Para as receber, é instalado um service worker no teu browser.')}</p>`)}
+${sec('sec',5,L('Security logs','Registos de segurança'),`<p>${L('For abuse prevention I keep security logs (an identifier derived from your IP address and the type of incident) for 7 days. In a serious incident the IP may appear in a private alert to the maintainer.','Para prevenir abusos guardo registos de segurança (um identificador derivado do teu IP e o tipo de incidente) durante 7 dias. Num incidente grave o IP pode constar de um alerta privado enviado ao responsável.')}</p>`)}
+${sec('third',6,L('Third parties','Terceiros'),`<p>${L('To show you data, your browser or my server contacts these services. They can see your IP address and, where relevant, the coordinates requested.','Para mostrar dados, o teu browser ou o meu servidor contactam estes serviços, que podem ver o teu IP e, quando aplicável, as coordenadas pedidas.')}</p><ul class="pv-tags">${prov}</ul><p>${L('When you choose a password, its hash prefix (5 characters, never the password) is checked against Have I Been Pwned.','Quando escolhes uma palavra-passe, o prefixo do seu hash (5 carateres, nunca a palavra-passe) é verificado no Have I Been Pwned.')}</p><p>${L('Forecast, radar and map layers from some providers pass through my Cloudflare Worker, which caches them. I do not log these ordinary requests (only abuse incidents, see Security logs), but Cloudflare, as host, processes technical logs under its own policy.','A previsão, o radar e as camadas de mapa de alguns fornecedores passam pelo meu Cloudflare Worker, que os guarda em cache. Não registo estes pedidos normais (apenas incidentes de abuso, ver Registos de segurança), mas a Cloudflare, como alojadora, trata registos técnicos segundo a sua própria política.')}</p>`)}
+${sec('keep',7,L('Legal basis & retention','Base legal e conservação'),`<p>${L('Account data and notifications are processed to provide the service you ask for (GDPR Art. 6(1)(b)); push notifications and device location rely on your consent (Art. 6(1)(a)), which you can withdraw at any time by turning them off. Security logs rest on my legitimate interest in protecting the service (Art. 6(1)(f)).','Os dados da conta e das notificações são tratados para prestar o serviço que pedes (RGPD, art. 6.º, n.º 1, al. b); as notificações push e a localização do dispositivo assentam no teu consentimento (art. 6.º, n.º 1, al. a), que podes retirar a qualquer momento desativando-as. Os registos de segurança assentam no meu interesse legítimo em proteger o serviço (art. 6.º, n.º 1, al. f).')}</p><div class="pv-rows">${rows}</div><p>${L('Some providers above are based outside the EU (for example Cloudflare and Google, in the US) and rely on safeguards such as the EU–US Data Privacy Framework or standard contractual clauses.','Alguns dos fornecedores acima ficam fora da UE (por exemplo Cloudflare e Google, nos EUA) e recorrem a garantias como o Quadro de Privacidade de Dados UE–EUA ou cláusulas contratuais-tipo.')}</p>`)}
+${sec('rights',8,L('Your rights','Os teus direitos'),`<p>${L('You can delete your account and all its data yourself from the account menu (“Delete account”). You can also ask me for access, correction, a copy (portability), restriction or objection.','Podes apagar a tua conta e todos os dados associados no menu da conta («Apagar conta»). Podes também pedir-me acesso, retificação, uma cópia (portabilidade), limitação ou oposição.')}</p><p class="pv-cta"><a class="pv-btn" href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a></p><p>${L('You may complain to the Portuguese data protection authority, ','Podes apresentar reclamação à autoridade portuguesa de proteção de dados, a ')}<a href="https://www.cnpd.pt/" target="_blank" rel="noopener">CNPD</a>.</p>`)}
+<p class="pv-end"><button type="button" class="pv-x" data-priv-close>${L('Back to Skylab','Voltar ao Skylab')}</button></p>
+</main>`;
+}
+let pvPushed=false;
+function pvRender(){
+ const p=$('#privPage');if(!p)return;
+ const y=p.scrollTop;p.innerHTML=privacyHTML(p.dataset.lang==='pt');p.scrollTop=y;
+}
+function pvShow(){
+ let p=$('#privPage');
+ if(!p){p=document.createElement('div');p.id='privPage';p.setAttribute('role','dialog');p.setAttribute('aria-modal','true');p.setAttribute('aria-label','Privacy');p.hidden=true;document.body.appendChild(p);
+  p.addEventListener('click',e=>{
+   if(e.target.closest('[data-priv-close]')){closePrivacy();return}
+   const l=e.target.closest('[data-pv-lang]');if(l){p.dataset.lang=l.dataset.pvLang;pvRender();return}
+   const a=e.target.closest('a[href^="#pv-"]');if(a){e.preventDefault();const t=p.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})}
+  })}
+ if(!p.hidden)return;
+ p.dataset.lang=LANG;pvRender();p.hidden=false;p.scrollTop=0;
+ document.documentElement.classList.add('pv-open');
+ const b=p.querySelector('.pv-back');if(b)b.focus({preventScroll:true});
+}
+function pvHide(){
+ const p=$('#privPage');if(!p||p.hidden)return;
+ p.hidden=true;document.documentElement.classList.remove('pv-open');
+}
+function openPrivacy(){
+ if(location.hash!=='#privacy'){history.pushState(null,'','#privacy');pvPushed=true}
+ pvShow();
+}
+function closePrivacy(){
+ if(pvPushed&&location.hash==='#privacy'){pvPushed=false;history.back();return}
+ if(location.hash==='#privacy')history.replaceState(null,'',location.pathname+location.search);
+ pvHide();
+}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('[data-priv]')){e.preventDefault();openPrivacy()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const p=$('#privPage');if(p&&!p.hidden){e.preventDefault();closePrivacy()}}});
+window.addEventListener('hashchange',()=>{if(location.hash==='#privacy')pvShow();else pvHide()});
+if(location.hash==='#privacy')setTimeout(pvShow,0);
+
 /* Condições de várias cidades: primeiro pelo worker (cache + chave + "stale"), depois directo ao Open-Meteo, com uma segunda tentativa */
 async function worldFetch(lats,lons,daily){
   try{
@@ -2674,7 +2736,7 @@ const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABA
 /* ===== Vento: partículas animadas (substitui as setas) ===== */
 let windTok=0,windT=0,windCv=null,windCx=null,windRaf=0,windLast=0,windGrid=null,windFld=null,windP=[];
 // Change from {rows:6, cols:8} to:
-const WGR = { rows: 8, cols: 12 }, WSTEP = 6, WK = .045, WFADE = .045;WBK=[[0,12,.38,1],[12,35,.58,1.2],[35,60,.78,1.5],[60,1e9,.92,1.8]];
+const WGR = { rows: 8, cols: 12 }, WSTEP = 6, WK = .045, WFADE = .045;const WBK=[[0,12,.38,1],[12,35,.58,1.2],[35,60,.78,1.5],[60,1e9,.92,1.8]];
 
 function windStopLoop(){cancelAnimationFrame(windRaf);windRaf=0}
 function windClear(){if(windCx&&windCv)windCx.clearRect(0,0,windCv.width,windCv.height)}
@@ -4115,8 +4177,24 @@ const AUTH_CONFIG = {
     ? ATMO.base.replace(/\/v1\/?$/, '/api/auth') 
     : 'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/api/auth',
   googleClientId: '175966063647-g97am2pbroisp0oiuqp8p5ek052ins8p.apps.googleusercontent.com',
-  turnstileSiteKey: 'COLA_AQUI_A_SITE_KEY'   // Site Key do Turnstile (pública). Enquanto não a colares, o Turnstile fica desligado.
+  turnstileSiteKey: '0x4AAAAAAFXe8LEPrrxgCRnj'   // Site Key do Turnstile (pública). Enquanto não a colares, o Turnstile fica desligado.
 };
+
+/* ============ Terceiros do login: só carregam quando abres a janela de início de sessão ============ */
+const _once = {};
+function loadScriptOnce(src){
+  if(_once[src]) return _once[src];
+  return _once[src] = new Promise((res, rej)=>{
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = res; s.onerror = ()=>{ delete _once[src]; rej(new Error('load '+src)); };
+    document.head.appendChild(s);
+  });
+}
+function authLoadThirdParty(){
+  loadScriptOnce('https://accounts.google.com/gsi/client').catch(()=>{});                                   // Google Sign-In
+  if(tsActive()) loadScriptOnce('https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit').catch(()=>{});   // Turnstile
+}
 
 /* ============ Cloudflare Turnstile (anti-robôs) ============ */
 let tsWidgetId = null;
@@ -4378,6 +4456,7 @@ function authSetMode(mode){
   $('#authSwitchLink').textContent=isUp
     ?(LANG==='pt'?'Iniciar sessão':'Sign In')
     :(LANG==='pt'?'Regista-te':'Sign Up');
+  if($('#authLegal'))$('#authLegal').innerHTML=LANG==='pt'?`Os teus dados são tratados como descrito na <button type="button" class="priv-link" data-priv>Privacidade</button>. Contacto: ${CONTACT_EMAIL}`:`Your data is handled as described in <button type="button" class="priv-link" data-priv>Privacy</button>. Contact: ${CONTACT_EMAIL}`;
   if($('#lblUsername'))$('#lblUsername').textContent=LANG==='pt'?'Nome de utilizador':'Username';
   if($('#profUserLbl'))$('#profUserLbl').textContent=LANG==='pt'?'Nome de utilizador':'Username';
   if($('#profEmailLbl'))$('#profEmailLbl').textContent=LANG==='pt'?'Email':'Email';
@@ -4395,9 +4474,40 @@ function authClearAlert(){
   const el=$('#authAlert');if(el)el.hidden=true;
 }
 
+/* ============ Verificação de email: código de 6 dígitos ============ */
+let authVerifyEmail='',authResendT=null,authCool=0;
+function authResendPaint(){
+  const b=$('#authResend');if(!b)return;const pt=LANG==='pt';
+  b.disabled=authCool>0;
+  b.textContent=authCool>0?(pt?`Reenviar código (${authCool}s)`:`Resend code (${authCool}s)`):(pt?'Reenviar código':'Resend code');
+}
+function authStartCooldown(s){
+  clearInterval(authResendT);authCool=Math.max(0,Math.ceil(s||0));authResendPaint();
+  if(authCool>0)authResendT=setInterval(()=>{authCool--;authResendPaint();if(authCool<=0)clearInterval(authResendT)},1000);
+}
+function authShowVerify(d){
+  const pt=LANG==='pt';authVerifyEmail=d.email;
+  $('#authLoggedOutView').dataset.step='verify';
+  $('#authTitle').textContent=pt?'Confirma o teu email':'Confirm your email';
+  $('#authSubtitle').textContent=pt?'Enviámos-te um código de 6 dígitos':'We sent you a 6-digit code';
+  const m=$('#authVerifyMsg');m.textContent='';
+  const b=document.createElement('b');b.textContent=d.email;
+  m.append(pt?'Enviámos um código para ':'We sent a code to ',b,pt?'. Vê também o spam. O código expira em 10 minutos.':'. Check your spam folder too. It expires in 10 minutes.');
+  $('#lblCode').textContent=pt?'Código de verificação':'Verification code';
+  $('#authCodeTxt').textContent=pt?'Confirmar':'Confirm';
+  $('#authVerifyBack').textContent=pt?'Mudar de email':'Change email';
+  authClearAlert();authStartCooldown(d.resend_in||45);
+  const c=$('#authCode');c.value='';setTimeout(()=>c.focus(),60);
+}
+function authVerifyReset(){
+  clearInterval(authResendT);authVerifyEmail='';
+  const v=$('#authLoggedOutView');if(v&&v.dataset.step)delete v.dataset.step;
+}
+
 function authOpen(){
   const ov=$('#authOv');if(!ov)return;
   authModalOpen=true;
+  if(!(currentUser&&currentUser.username))authLoadThirdParty();
   tsEnsure();
   authClearAlert();
 
@@ -4434,6 +4544,7 @@ function authOpen(){
 }
 
 function authClose(){
+  authVerifyReset();
   const ov=$('#authOv');if(!ov||ov.hidden)return;
   authModalOpen=false;
   ov.classList.remove('on');
@@ -4620,8 +4731,8 @@ function initAuthInputs(){
     try{
       const endpoint=authMode==='signup'?`${AUTH_CONFIG.apiUrl}/signup`:`${AUTH_CONFIG.apiUrl}/signin`;
       const payload=authMode==='signup' 
-        ?{username,email,password,cf_turnstile}
-        :{identifier:email,password,cf_turnstile};
+        ?{username,email,password,cf_turnstile,lang:LANG}
+        :{identifier:email,password,cf_turnstile,lang:LANG};
 
       const res=await fetch(endpoint,{
         method:'POST',
@@ -4630,6 +4741,7 @@ function initAuthInputs(){
       });
 
       const data=await res.json();
+      if(res.ok&&data&&data.pending){authShowVerify(data);return}      // falta confirmar o email com o código
       if(!res.ok||!data.success){
         throw new Error(data.error||(LANG==='pt'?'Falha na autenticação.':'Authentication failed.'));
       }
@@ -4658,6 +4770,40 @@ function initAuthInputs(){
   };
 
   $('#authGoogleBtn').onclick=()=>authTriggerGoogle();
+
+  $('#authCode').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,6)});
+  $('#authCodeForm').onsubmit=async(e)=>{
+    e.preventDefault();authClearAlert();
+    const pt=LANG==='pt',code=$('#authCode').value.trim();
+    if(!/^\d{6}$/.test(code))return authShowAlert(pt?'Introduz os 6 dígitos do código.':'Enter the 6-digit code.');
+    const btn=$('#authCodeBtn');btn.disabled=true;
+    try{
+      const res=await fetch(`${AUTH_CONFIG.apiUrl}/verify`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:authVerifyEmail,code})});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok||!data.success)throw new Error(data.error||(pt?'Código incorreto ou expirado.':'Wrong or expired code.'));
+      currentUser=data.user;currentToken=data.token;
+      lsSet('skylab_auth_user',currentUser);lsSet('skylab_auth_token',currentToken);
+      updateAuthUI();startUserWeatherLoop();await prefsAfterLogin();
+      toast(data.welcome
+        ?(pt?`Bem-vindo ao Skylab, ${currentUser.username}!`:`Welcome to Skylab, ${currentUser.username}!`)
+        :(pt?`Sessão iniciada como ${currentUser.username}`:`Signed in as ${currentUser.username}`));
+      authClose();
+    }catch(err){
+      authShowAlert(err.message||(pt?'Erro de ligação ao servidor.':'Server connection error.'));
+    }finally{btn.disabled=false}
+  };
+  $('#authResend').onclick=async()=>{
+    if(authCool>0)return;authClearAlert();const pt=LANG==='pt';
+    try{
+      const res=await fetch(`${AUTH_CONFIG.apiUrl}/resend`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:authVerifyEmail,lang:LANG})});
+      const data=await res.json().catch(()=>({}));
+      if(res.status===429&&data.retry_after)authStartCooldown(data.retry_after);
+      if(!res.ok)throw new Error(data.error||(pt?'Não foi possível reenviar o código.':'Could not resend the code.'));
+      if(data.sent===false){authVerifyReset();authSetMode(authMode);authShowAlert(pt?'O pedido expirou. Volta a preencher o formulário.':'The request expired. Please fill in the form again.');return}
+      authStartCooldown(data.resend_in||45);authShowAlert(pt?'Enviámos-te um novo código.':'We sent you a new code.','ok');
+    }catch(err){authShowAlert(err.message)}
+  };
+  $('#authVerifyBack').onclick=()=>{authVerifyReset();authSetMode(authMode)};
 
   $('#authOv').addEventListener('click',(e)=>{
     if(e.target===$('#authOv'))authClose();
@@ -4713,19 +4859,15 @@ function authTriggerGoogle(){
       }
     });
     client.requestAccessToken({ prompt: 'select_account' });
+  } else if(AUTH_CONFIG.googleClientId){
+    authLoadThirdParty();
+    authShowAlert(LANG==='pt'?'A carregar o início de sessão Google… carrega no botão outra vez dentro de um instante.':'Loading Google sign-in… press the button again in a moment.','ok');
   } else {
     authShowAlert(LANG==='pt'
       ?'Para ativar o início de sessão Google, configure o Google Client ID no AUTH_CONFIG (ou utilize o registo com email/palavra-passe).'
       :'To enable Google Sign-In, add your Google Client ID to AUTH_CONFIG (or use email/password sign-in).');
   }
 }
-
-(function loadGoogleGSI(){
-  const s=document.createElement('script');
-  s.src='https://accounts.google.com/gsi/client';
-  s.async=true;s.defer=true;
-  document.head.appendChild(s);
-})();
 
 addEventListener('keydown',e=>{
  if(authModalOpen){
@@ -7031,7 +7173,7 @@ ${k==='uv'?`<div class="m-uvbar" style="margin:14px 0 8px" aria-hidden="true"><i
 <div class="m-pref"><span>${T2('Units','Unidades')}</span><div class="m-seg" role="group"><button type="button" data-u="c" aria-pressed="${unit==='c'}">°C</button><button type="button" data-u="f" aria-pressed="${unit==='f'}">°F</button></div></div>
 <div class="m-pref"><span>${T2('Language','Idioma')}</span><div class="m-seg" role="group"><button type="button" data-l="pt" aria-pressed="${LANG==='pt'}">PT</button><button type="button" data-l="en" aria-pressed="${LANG==='en'}">EN</button></div></div>
 <div class="m-pref"><span>${T2('Ambient sound','Som ambiente')}<small>${T2('Weather sounds that follow the sky','Sons do tempo que acompanham o céu')}</small></span><button type="button" class="m-sw" data-act="snd" role="switch" aria-pressed="${!!sOn}" aria-label="${T2('Ambient sound','Som ambiente')}"></button></div>
-<p class="m-credits">${T2('Weather by','Tempo por')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · ${T2('Places by','Locais por')} <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a> · ${T2('Pollen by','Pólen por')} <a href="https://atmospore.ai/" target="_blank" rel="noopener">Atmospore</a> · ${T2('Portugal forecasts and warnings by','Previsões e avisos de Portugal pelo')} <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a></p>`}
+<p class="m-credits">${T2('Weather by','Tempo por')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · ${T2('Places by','Locais por')} <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a> · ${T2('Pollen by','Pólen por')} <a href="https://atmospore.ai/" target="_blank" rel="noopener">Atmospore</a> · ${T2('Portugal forecasts and warnings by','Previsões e avisos de Portugal pelo')} <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a> · <a href="mailto:${CONTACT_EMAIL}">${T2('Contact','Contacto')}</a> · <button type="button" class="priv-link" data-priv>${T2('Privacy','Privacidade')}</button></p>`}
  function menuOpen(){$('#mMenuB').innerHTML=menuHTML();openSheet('mMenu')}
  const PROXY={auth:'#authBtn',fav:'#favBtn',hur:'#hbtn',term:'#termBtn',inst:'#inst'};
  function menuClick(e){
