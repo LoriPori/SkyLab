@@ -1779,9 +1779,7 @@ function todayPane(){
  const c=data.current,d=data.daily,m=moon(),uv=d.uv_index_max[0],ci=comfortInfo(),h=data.hourly;
  const uvl=uv<3?'Low':uv<6?'Moderate':uv<8?'High':uv<11?'Very high':'Extreme';
  const best=ci.best<0?'Daylight has passed for today.':`Best time outside: <b>${new Date(h.time[ci.best]).toLocaleTimeString('en',{hour:'numeric'})}</b> · ${T(h.temperature_2m[ci.best])}° · ${h.precipitation_probability[ci.best]}% rain`;
- return`<div class="pane g2">
- <section class="card">
-  ${sourceBadge()}
+ return`${window.SkyOrb?SkyOrb.html():''}<div class="pane g2"> <section class="card"> ${sourceBadge()}
   <div class="strip">
    ${ringHTML(ci)}
    <div class="mini"><span>Wind</span><b><svg class="wind" style="--r:${(c.wind_direction_10m||0)+180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>${W(c.wind_speed_10m)}</b></div>
@@ -2230,7 +2228,19 @@ function render(){
 
 /* ═══════════ LANDING — landing page, city search, globe, sky canvas, sound, events, silent alerts ═══════════ */
 /* ============ landing ============ */
-const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-74.01],['Sydney','Australia',-33.87,151.21],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Rio de Janeiro','Brazil',-22.91,-43.17],['Cape Town','South Africa',-33.92,18.42],['Mumbai','India',19.08,72.88]];
+const CITIES=[['Tokyo','Japan',35.68,139.69],['New York','United States',40.71,-74.01],['Sydney','Australia',-33.87,151.21],['Reykjavík','Iceland',64.15,-21.94],['Dubai','United Arab Emirates',25.2,55.27],['Rio de Janeiro','Brazil',-22.91,-43.17],['Cape Town','South Africa',-33.92,18.42],['Mumbai','India',19.08,72.88],
+// extremos da Terra (5.º elemento = etiqueta EN/PT)
+["Oymyakon","Sakha, Russia",63.46,142.79,["Coldest permanent village","A aldeia mais fria"]],
+["Verkhoyansk","Sakha, Russia",67.55,133.39,["Biggest yearly swing","Maior amplitude anual"]],
+["Vostok Station","Antarctica",-78.46,106.84,["Coldest ever measured","O mais frio alguma vez medido"]],
+["Furnace Creek","California, United States",36.46,-116.87,["Hottest air on record","O ar mais quente registado"]],
+["Dallol","Afar, Ethiopia",14.24,40.3,["Hottest on average","A mais quente em média"]],
+["Mawsynram","Meghalaya, India",25.3,91.58,["Rainiest on average","A mais chuvosa em média"]],
+["Arica","Chile",-18.48,-70.31,["Among the driest","Entre as mais secas"]],
+["La Rinconada","Peru",-14.63,-69.45,["Highest town","A vila mais alta"]],
+["Longyearbyen","Svalbard, Norway",78.22,15.65,["Northernmost town","A cidade mais a norte"]],
+["Ushuaia","Argentina",-54.8,-68.3,["Southernmost city","A cidade mais a sul"]],
+["Tristan da Cunha","Tristan da Cunha",-37.11,-12.28,["Most remote island","A ilha mais remota"]]];
 function landing(){
  clearInterval(tickT);lastKey='';data=null;place=null;ipmaUpdate(null);
  const hr=new Date().getHours(),night=hr<6||hr>=20,k=night?'night':'clear';
@@ -4556,8 +4566,165 @@ function authVerifyReset(){
   const v=$('#authLoggedOutView');if(v&&v.dataset.step)delete v.dataset.step;
 }
 
+function authShell(){
+  let ov=$('#authOv');if(ov)return ov;
+  ov=document.createElement('div');
+  ov.className='hov auth-ov';ov.id='authOv';ov.hidden=true;
+  ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','authTitle');
+  ov.innerHTML=`<div class="hcard auth-card">
+  <div class="hh">
+   <div class="hht">
+    <div class="auth-avatar-ico" id="authHeaderAvatar">
+      <img id="authCardIco" src="imgs/icons/person.png" alt="" width="22" height="22" data-fb="Auth">
+    </div>
+    <div>
+     <h2 id="authTitle">Skylab Account</h2>
+     <p id="authSubtitle">Join Skylab to access your profile & settings</p>
+    </div>
+   </div>
+   <button class="hx" id="authClose" aria-label="Close">✕</button>
+  </div>
+
+  <!-- Profile View (When Logged In) -->
+  <div id="authLoggedInView" hidden class="auth-profile-view">
+   <div class="auth-clean-card">
+    <div class="auth-prof-user-row">
+     <span class="auth-prof-label" id="profUserLbl">Nome de utilizador</span>
+     <b id="profUsername" class="auth-prof-username"></b>
+    </div>
+    <div class="auth-prof-email-row">
+     <span class="auth-prof-label" id="profEmailLbl">Email</span>
+     <span class="auth-prof-email" id="profEmail"></span>
+    </div>
+   </div>
+   <div class="auth-prog">
+    <button type="button" class="auth-prog-btn" id="progBtn" aria-pressed="false" aria-describedby="progDesc">
+     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+    </button>
+    <label class="auth-prog-txt" for="progBtn">
+     <b id="progLbl">Programmer mode</b>
+     <span id="progDesc">Terminal, raw data and technical detail</span>
+    </label>
+    <span class="auth-prog-state" id="progState">OFF</span>
+   </div>
+   <div class="auth-prog" id="pushRow">
+    <button type="button" class="auth-prog-btn" id="pushBtn" aria-pressed="false" aria-describedby="pushDesc">
+     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    </button>
+    <label class="auth-prog-txt" for="pushBtn">
+     <b id="pushLbl">Weather notifications</b>
+     <span id="pushDesc">Now and what’s coming</span>
+    </label>
+    <span class="auth-prog-state" id="pushState">OFF</span>
+   </div>
+   <div class="auth-profile-actions">
+    <button type="button" class="pill solid big auth-logout-btn" id="authLogoutBtn">Terminar Sessão</button>
+    <button type="button" class="pill solid big auth-delete-btn" id="authDeleteBtn">Apagar Conta</button>
+   </div>
+  </div>
+
+  <!-- Auth Form View (When Logged Out) -->
+  <div id="authLoggedOutView">
+   <div class="auth-tabs" role="tablist">
+    <button type="button" id="authTabSignup" class="auth-tab active" role="tab" aria-selected="true">Criar Conta</button>
+    <button type="button" id="authTabSignin" class="auth-tab" role="tab" aria-selected="false">Iniciar Sessão</button>
+   </div>
+
+   <!-- Google Sign-In Button -->
+   <div class="auth-google-wrap">
+    <button type="button" class="auth-google-btn" id="authGoogleBtn">
+     <img src="imgs/icons/google.png" alt="" width="19" height="19" data-fb="Google">
+     <span id="googleBtnTxt">Continuar com o Google</span>
+    </button>
+   </div>
+
+   <div class="auth-divider">
+    <span id="authDividerTxt">ou com email</span>
+   </div>
+
+   <div class="auth-alert" id="authAlert" hidden></div>
+
+   <!-- Passo 2: código enviado por email -->
+   <div id="authVerifyView">
+    <p class="auth-verify-msg" id="authVerifyMsg"></p>
+    <form id="authCodeForm" class="auth-form" novalidate>
+     <div class="auth-field">
+      <label for="authCode" class="auth-label"><span id="lblCode">Código de verificação</span></label>
+      <div class="auth-input-wrap">
+       <input type="text" id="authCode" class="auth-input auth-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-describedby="authVerifyMsg">
+      </div>
+     </div>
+     <button type="submit" class="pill solid big auth-submit-btn" id="authCodeBtn"><span id="authCodeTxt">Confirmar</span></button>
+    </form>
+    <div class="auth-verify-actions">
+     <button type="button" class="auth-switch-link" id="authResend">Reenviar código</button>
+     <button type="button" class="auth-switch-link" id="authVerifyBack">Mudar de email</button>
+    </div>
+   </div>
+
+   <form id="authForm" class="auth-form" novalidate>
+    <!-- Username (Sign Up only) -->
+    <div class="auth-field" id="fieldUsername">
+     <label for="authUsername" class="auth-label">
+      <span id="lblUsername">Nome de utilizador</span>
+     </label>
+     <div class="auth-input-wrap">
+      <input type="text" id="authUsername" class="auth-input" placeholder="ex: sky_explorer" maxlength="15" autocomplete="username">
+      <span class="auth-char-count" id="authCharCount">0/15</span>
+     </div>
+    </div>
+
+    <!-- Email -->
+    <div class="auth-field" id="fieldEmail">
+     <label for="authEmail" class="auth-label"><span id="lblEmail">Email</span></label>
+     <div class="auth-input-wrap">
+      <input type="email" id="authEmail" class="auth-input has-dyn-icon" placeholder="o.teu.email@exemplo.com" autocomplete="email" required>
+      <span class="auth-dyn-ico" aria-hidden="true">
+       <img src="imgs/icons/email.png" alt="" data-fb="Email">
+      </span>
+     </div>
+    </div>
+
+    <!-- Password -->
+    <div class="auth-field" id="fieldPassword">
+     <label for="authPassword" class="auth-label"><span id="lblPassword">Palavra-passe</span></label>
+     <div class="auth-input-wrap">
+      <input type="password" id="authPassword" class="auth-input has-dyn-icon" placeholder="••••••••" autocomplete="current-password" required>
+      <span class="auth-dyn-ico" aria-hidden="true">
+       <img src="imgs/icons/lock.png" alt="" data-fb="Lock">
+      </span>
+      <button type="button" class="auth-eye-btn" id="authTogglePass" title="Ver / ocultar senha" aria-label="Ver / ocultar senha"></button>
+     </div>
+    </div>
+
+    <!-- Cloudflare Turnstile (anti-robôs) -->
+    <div id="authTurnstile" style="margin:6px 0"></div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="pill solid big auth-submit-btn" id="authSubmitBtn">
+     <span id="authSubmitTxt">Criar Conta</span>
+    </button>
+   </form>
+   <p class="auth-legal" id="authLegal"></p>
+
+   <div class="auth-switch-prompt">
+    <span id="authSwitchMsg">Já tens conta?</span>
+    <button type="button" class="auth-switch-link" id="authSwitchLink">Iniciar sessão</button>
+   </div>
+  </div>
+ </div>`;
+  document.body.appendChild(ov);
+  initAuthInputs();
+  if(typeof progUI==='function') progUI();
+  if(typeof pushUI==='function') pushUI();
+  const pb=$('#progBtn');if(pb)pb.onclick=progToggle;
+  const psb=$('#pushBtn');if(psb)psb.onclick=pushToggle;
+  trTree(ov);
+  return ov;
+}
+
 function authOpen(){
-  const ov=$('#authOv');if(!ov)return;
+  const ov=authShell();
   authModalOpen=true;
   if(!(currentUser&&currentUser.username))authLoadThirdParty();
   tsEnsure();
@@ -4936,7 +5103,8 @@ addEventListener('keydown',e=>{
  }
 },true);
 
-initAuthInputs();
+const authBtnEl = $('#authBtn');
+if(authBtnEl) authBtnEl.onclick = () => authModalOpen ? authClose() : authOpen();
 updateAuthUI();
 if (currentUser) startUserWeatherLoop();
 /* ============ Quick Tools Popover Toggle ============ */
@@ -6655,6 +6823,80 @@ SkyTerm.commands.register('storms', {
   }
 });
 /* ============ Terminal lifecycle ============ */
+function termShell(){
+ let ov = $('#termOverlay');
+ if(ov) return ov;
+ ov = document.createElement('div');
+ ov.className = 'term-overlay';
+ ov.id = 'termOverlay';
+ ov.setAttribute('aria-hidden', 'true');
+ ov.innerHTML = `<aside class="term-drawer" id="termDrawer" role="dialog" aria-modal="true" aria-label="Skylab Atmospheric Physics Terminal">
+  <div class="term-header">
+   <div class="term-brand">
+    <div class="term-brand-icon">
+     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+    </div>
+    <div class="term-titles">
+     <h2>SKYLAB // ATMOSPHERIC PHYSICS TERMINAL <span class="term-cursor">_</span></h2>
+     <p id="termOpTag">OPERATOR: LEVEL-2 TELEMETRY LINK</p>
+    </div>
+   </div>
+   <div class="term-controls">
+    <button class="term-btn-icon" id="termFsBtn" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">⛶</button>
+    <button class="term-btn-icon" id="termCloseBtn" title="Close Terminal (Esc)" aria-label="Close Terminal">✕</button>
+   </div>
+  </div>
+
+  <div class="term-meta-strip">
+   <div style="display:flex;align-items:center;gap:12px">
+    <span><span class="term-dot" style="display:inline-block"></span> STREAM: ACTIVE</span>
+    <span id="termCoords">LAT: --.---- LON: --.----</span>
+    <span id="termElev">ELEV: -- m</span>
+   </div>
+   <div id="termUtc">UTC: ----/--/-- --:--:--</div>
+  </div>
+
+  <div class="term-nav-bar">
+   <div class="term-chips" id="cliChips" role="toolbar" aria-label="Quick commands">
+    <button class="term-chip" data-cmd="help">help</button>
+    <button class="term-chip" data-cmd="now">now</button>
+    <button class="term-chip" data-cmd="storms">storms</button>
+    <button class="term-chip" data-cmd="monthly">monthly</button>
+    <button class="term-chip" data-cmd="calc all">calc all</button>
+    <button class="term-chip" data-cmd="simulate inversion">sim inversion</button>
+    <button class="term-chip" data-cmd="simulate plume --wind 12 --source 120">sim plume</button>
+    <button class="term-chip" data-cmd="simulate parcel">sim parcel</button>
+   </div>
+   <div class="term-actions">
+    <button class="term-act-btn" id="cliCopyBtn" title="Copy the previous output">Copy last</button>
+    <button class="term-act-btn" id="cliThemeBtn" title="Cycle modern / retro / amber">Theme: modern</button>
+   </div>
+  </div>
+
+  <!-- Intentionally empty of data: output is written strictly after an authenticated open -->
+  <div class="term-body cli" id="termBody">
+   <div class="cli-out" id="cliOut" aria-live="polite"></div>
+   <div class="cli-prompt"><label class="cli-ps1" id="cliPs1" for="cliIn"></label><input id="cliIn" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Terminal command"></div>
+  </div>
+ </aside>`;
+ document.body.appendChild(ov);
+
+ $('#termCloseBtn').onclick = () => termClose();
+ $('#termFsBtn').onclick = () => $('#termDrawer').classList.toggle('fullscreen');
+ $('#termOverlay').onclick = (e) => { if(e.target === $('#termOverlay')) termClose(); };
+ $('#termBody').addEventListener('click', () => { if(!getSelection().toString()) $('#cliIn').focus(); });
+ $('#cliChips').addEventListener('click', e => {
+  const b = e.target.closest('.term-chip'); if(!b || !termInst || termInst.busy) return;
+  termInst.exec(b.dataset.cmd);
+ });
+ $('#cliCopyBtn').onclick = () => termInst && termInst.exec('copy');
+ $('#cliThemeBtn').onclick = () => {
+  const order = ['modern','retro','amber'], cur = termInst ? termInst.theme : 'modern';
+  SkyTerm.setTheme(order[(order.indexOf(cur)+1) % order.length]);
+ };
+ return ov;
+}
+
 function termOpen(){
  if(!isUserAuth()){
   authOpen();
@@ -6665,8 +6907,8 @@ function termOpen(){
   toast(LANG==='pt'?'A aguardar dados meteorológicos...':'Waiting for meteorological data...');
   return;
  }
+ const ov = termShell();
  termIsOpen = true;
- const ov = $('#termOverlay');
  ov.classList.add('active');
  ov.setAttribute('aria-hidden','false');
  document.documentElement.classList.add('hlock');
@@ -6699,20 +6941,8 @@ function termClose(){
 }
 
 /* Event bindings */
-$('#termBtn').onclick = () => termOpen();
-$('#termCloseBtn').onclick = () => termClose();
-$('#termFsBtn').onclick = () => $('#termDrawer').classList.toggle('fullscreen');
-$('#termOverlay').onclick = (e) => { if(e.target === $('#termOverlay')) termClose(); };
-$('#termBody').addEventListener('click', () => { if(!getSelection().toString()) $('#cliIn').focus(); });
-$('#cliChips').addEventListener('click', e => {
- const b = e.target.closest('.term-chip'); if(!b || !termInst || termInst.busy) return;
- termInst.exec(b.dataset.cmd);
-});
-$('#cliCopyBtn').onclick = () => termInst && termInst.exec('copy');
-$('#cliThemeBtn').onclick = () => {
- const order = ['modern','retro','amber'], cur = termInst ? termInst.theme : 'modern';
- SkyTerm.setTheme(order[(order.indexOf(cur)+1) % order.length]);
-};
+const termBtnEl = $('#termBtn');
+if(termBtnEl) termBtnEl.onclick = () => termOpen();
 document.addEventListener('keydown', e => {
  if(e.key !== 'Escape' || !termIsOpen) return;
  const i = $('#cliIn');
@@ -7349,20 +7579,25 @@ ${k==='uv'?`<div class="m-uvbar" style="margin:14px 0 8px" aria-hidden="true"><i
  }
 
  /* ---------- cidades do mundo (landing) ---------- */
- function cities(){
+  function cities(){
   const el=$('#mcl');if(!el)return;
   const hc=homeCity(),home=hc&&isFinite(hc.lat)&&isFinite(hc.lon)?[{n:hc.name,s:hc.sub||'',lat:+hc.lat,lon:+hc.lon,home:1}]:[];
-  const L=home.concat(CITIES.map(c=>({n:c[0],s:c[1],lat:c[2],lon:c[3]})));
-  el.innerHTML=L.map(()=>'<div class="m-cc sk"></div>').join('');
-  worldFetch(L.map(c=>c.lat),L.map(c=>c.lon),true).then(j=>{
-   const e2=$('#mcl');if(!e2)return;const arr=Array.isArray(j)?j:[j];
-   e2.innerHTML=arr.map((x,i)=>{const c=L[i],cu=x.current,d=x.daily,t=cu.temperature_2m,tone=t<=12?'cold':t<=24?'mild':'warm';
-    return`<button type="button" class="m-cc ${tone}" data-ci="${i}"><b>${escH(c.n)}</b><small${c.home?' class="hm"':''}>${c.home?T2('My city','A minha cidade'):escH(c.s)}</small>
-<span class="mid"><i>${emoji(cu.weather_code,cu.is_day)}</i><span>${T(t)}<sup>°</sup></span></span>
-<span class="lo"><em class="d">↓${T(d.temperature_2m_min[0])}°</em><em class="u">↑${T(d.temperature_2m_max[0])}°</em><em class="r">${Math.round(d.precipitation_probability_max[0]||0)}%</em></span></button>`}).join('');
-   e2.onclick=ev=>{const b=ev.target.closest('[data-ci]');if(b){const c=L[+b.dataset.ci];show(c.lat,c.lon,c.n,c.s)}};
+  const mapC=c=>({n:c[0],s:c[1],lat:c[2],lon:c[3],tag:c[4]});
+  const Wd=home.concat(CITIES.filter(c=>!c[4]).map(mapC)),X=CITIES.filter(c=>c[4]).map(mapC),L=Wd.concat(X);
+  if(X.length&&!$('#mXt'))$('#mCities').insertAdjacentHTML('afterend',`<section class="m-cities m-xt" id="mXt"><h2 class="m-h2">${T2('Extremes of the Earth','Extremos da Terra')}</h2><div class="m-xs" id="mxs" role="list"></div></section>`);
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${L.map(c=>c.lat.toFixed(3)).join(',')}&longitude=${L.map(c=>c.lon.toFixed(3)).join(',')}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=2&timezone=auto`;
+  el.innerHTML=Wd.map(()=>'<div class="m-cc sk"></div>').join('');
+  const xs=$('#mxs');if(xs)xs.innerHTML=X.map(()=>'<div class="m-cc m-xc sk"></div>').join('');
+  const card=(x,i)=>{const c=L[i],cu=x.current,d=x.daily,t=cu.temperature_2m,tone=t<=12?'cold':t<=24?'mild':'warm',tg=c.tag?c.tag[LANG==='pt'?1:0]:'';
+    return`<button type="button" class="m-cc${c.tag?' m-xc':''} ${tone}" data-ci="${i}" role="listitem"><b>${escH(c.n)}</b><small class="hm">${c.home?T2('My city','A minha cidade'):tg?escH(tg):''}</small>${c.home||!tg?`<small>${c.home?'':escH(c.s)}</small>`:`<small>${escH(c.s)}</small>`}<span class="mid"><i>${emoji(cu.weather_code,cu.is_day)}</i><span>${T(t)}<sup>°</sup></span></span><span class="lo"><em class="d">${T(d.temperature_2m_min[0])}°</em><em class="u">${T(d.temperature_2m_max[0])}°</em><em class="r">${Math.round(d.precipitation_probability_max[0]||0)}%</em></span></button>`};
+  fetch(u).then(r=>r.json()).then(j=>{
+    const arr=Array.isArray(j)?j:[j],e2=$('#mcl'),x2=$('#mxs');if(!e2)return;
+    e2.innerHTML=arr.slice(0,Wd.length).map((x,i)=>card(x,i)).join('');
+    if(x2)x2.innerHTML=arr.slice(Wd.length).map((x,i)=>card(x,i+Wd.length)).join('');
+    const go=ev=>{const b=ev.target.closest('[data-ci]');if(b){const c=L[+b.dataset.ci];show(c.lat,c.lon,c.n,c.s)}};
+    e2.onclick=go;if(x2)x2.onclick=go;
   }).catch(()=>{const e2=$('#mcl');if(e2)e2.innerHTML=`<p class="m-err">${T2('World conditions are unavailable right now. Search for a city above.','Condições do mundo indisponíveis de momento. Pesquisa uma cidade acima.')}</p>`});
- }
+  }
 
  /* ---------- arranque ---------- */
  scrim=document.createElement('div');scrim.className='m-scrim';scrim.id='mScrim';
