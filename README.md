@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="favicon.ico" alt="SkyLab logo" width="96" height="96">
+  <img src="brand/logo.png" alt="SkyLab logo" width="96" height="96">
 </p>
 
 <h1 align="center">SkyLab</h1>
