@@ -17,7 +17,7 @@
 <p align="center">
   <img alt="Vanilla JS" src="https://img.shields.io/badge/stack-vanilla%20JS-f7df1e">
   <img alt="Cloudflare Workers" src="https://img.shields.io/badge/backend-Cloudflare%20Workers-f38020">
-  <img alt="License" src="https://img.shields.io/badge/license-TODO-lightgrey">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
 <!-- Screenshot banner. Put the real file names from your /screenshots folder here. -->
