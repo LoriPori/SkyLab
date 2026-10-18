@@ -1,12 +1,12 @@
 
 <p align="center">
-  <img src="brand/logo.png" alt="SkyLab logo" width="96" height="96">
+  <img src="icon-web-512.png" alt="SkyLab logo" width="96" height="96">
 </p>
 
 <h1 align="center">SkyLab</h1>
 
 <p align="center">
-  <em>The science behind what you see in the sky.</em>
+  <em>The sky, explained to you.</em>
 </p>
 
 <p align="center">
