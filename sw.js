@@ -1,4 +1,4 @@
-const C='skylab-v8';   // sobe sempre que mudares index.html / styles.css / app.js: apaga a cache antiga no 'activate'
+const C='skylab-v9';   // sobe sempre que mudares index.html / styles.css / app.js: apaga a cache antiga no 'activate'
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(['./','index.html','styles.css','app.js'])))});
 self.addEventListener('activate',e=>e.waitUntil(
   caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>clients.claim())

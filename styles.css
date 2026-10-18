@@ -1895,3 +1895,11 @@ html.is-mobile .m-xt{order:7}
 .m-xc.cold{border-top-color:#2f8df0}
 .m-cc small.hm:empty{display:none}
 .m-xc small.hm{white-space:normal;line-height:1.2;min-height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+/* ---------- Next 24 hours: só desliza na horizontal (nunca na vertical) ---------- */
+.hours,.m-hours .m-hs{overflow-x:auto;overflow-y:hidden;overscroll-behavior-y:none;touch-action:pan-x;max-height:none}
+.m-hours{overflow-y:hidden}
+
+/* ---------- esconder TODAS as barras de scroll (o scroll continua a funcionar) ---------- */
+*{scrollbar-width:none;-ms-overflow-style:none}
+*::-webkit-scrollbar{display:none;width:0;height:0}
