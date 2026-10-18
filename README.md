@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="icon-web-512.png" alt="SkyLab logo" width="96" height="96">
+  <img src="icon-web.png" alt="SkyLab logo" width="96" height="96">
 </p>
 
 <h1 align="center">SkyLab</h1>
@@ -13,14 +13,13 @@
   <a href="https://loripori.github.io/SkyLab/"><strong>Open the live app »</strong></a>
 </p>
 
-<!-- Badges: small status pills. Format: ![text](image-url). Shields.io makes them. -->
 <p align="center">
   <img alt="Vanilla JS" src="https://img.shields.io/badge/stack-vanilla%20JS-f7df1e">
   <img alt="Cloudflare Workers" src="https://img.shields.io/badge/backend-Cloudflare%20Workers-f38020">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
-<!-- Screenshot banner. Put the real file names from your /screenshots folder here. -->
+
 <p align="center">
   <img src="screenshots/desktop-landing.png" alt="SkyLab on desktop" width="720">
 </p>
@@ -50,8 +49,8 @@
 
 ## About
 
-<!-- 2 to 4 sentences. What is it, for whom, what makes it different? -->
-*Write here: a short, plain description of SkyLab. What does someone get when they open it?*
+
+SkyLab is a project intended to inform you about the current weather. Not just "the" weather, but the whole science behind it! It's incredibly fun! Wether you are a regular citizen, a very applied student or just a weather enthusiast, SkyLab will fit you. It fetches high-quality data from various open-source platforms, like Open-Weather and Rain Viewer. Oh, forgot to mention something: this app/website was entirely built with free tools and built with the help of Claude, as I'm not an experienced coder. But the whole framework, backend and databases; that was all made and coordinated by me, the proud developer of this (I believe) good weather app. Feel free to explore it and all its features; SkyLab has a whole world of functionalities worth explore. Don't forget to read the rest!
 
 ## Why I built it
 
