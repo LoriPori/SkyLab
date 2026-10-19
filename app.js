@@ -66,6 +66,15 @@ const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const T=c=>Math.round(unit=='c'?c:c*9/5+32);
 const W=k=>unit=='c'?Math.round(k)+' km/h':Math.round(k*.539957)+' kt';
 const deg=()=>unit=='c'?'°C':'°F';
+/* pressão e chuva seguem o botão °C/°F: °C → hPa · mm ; °F → inHg · in (o mapa e as fórmulas científicas ficam em hPa) */
+const HPA_INHG=.0295300;
+const dcm=(v,n)=>{const t=v.toFixed(n);return LANG=='pt'?t.replace('.',','):t};
+const pU=()=>unit=='c'?'hPa':'inHg';
+const pN=h=>unit=='c'?String(Math.round(h)):dcm(h*HPA_INHG,2);                   // valor absoluto, sem unidade
+const pf=h=>pN(h)+' '+pU();                                                          // valor absoluto com unidade
+const pdS=d=>unit=='c'?dcm(d,1)+' hPa':dcm(d*HPA_INHG,2)+' inHg';                    // DIFERENÇA de pressão com unidade
+const rateS=mm=>{if(unit=='c')return(mm<1?mm.toFixed(2):mm<10?mm.toFixed(1):String(Math.round(mm)))+' mm/h';
+ const v=mm/25.4;return(v<.1?v.toFixed(3):v<1?v.toFixed(2):v.toFixed(1))+' in/h'};     // intensidade de chuva
 const hm=m=>`${Math.floor(m/60)}h ${Math.round(m%60)}m`;
 const fmtT=s=>s.slice(11,16);
 const idx0=()=>Math.max(0,data.hourly.time.findIndex(t=>t>=data.current.time.slice(0,13)+':00'));
@@ -685,12 +694,46 @@ async function reverse(lat,lon){
  }catch(e){return{name:'Your location',sub:''}}
 }
 const geo=async(n,c=5)=>((await(await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(n)}&count=${c}&language=${LANG}`)).json()).results||[]).map(x=>({lat:x.latitude,lon:x.longitude,name:x.name,sub:[x.admin1,x.country].filter(Boolean).join(', ')}));
+/* ============ offline: última previsão guardada + faixa "sem ligação" ============ */
+const WX_KEY='skylab_lastwx';
+function wxSave(){try{localStorage.setItem(WX_KEY,JSON.stringify({t:Date.now(),place,data}))}catch(e){}}   // fora do lsSet: não vai para a nuvem
+function wxLoad(lat,lon){try{const o=JSON.parse(localStorage.getItem(WX_KEY));
+ if(o&&o.data&&o.data.current&&o.place&&Math.abs(o.place.lat-lat)<.01&&Math.abs(o.place.lon-lon)<.01)return o}catch(e){}return null}
+let offStamp=0,lastOk=0,lastTry=null;
+function offlineBar(on,stamp){
+ let b=$('#offBar');
+ if(!on){offStamp=0;if(b)b.classList.remove('on');return}
+ if(stamp)offStamp=stamp;
+ if(!b){b=document.createElement('div');b.id='offBar';b.setAttribute('role','status');document.body.appendChild(b);
+  b.addEventListener('click',e=>{if(e.target.closest('button'))offRetry()})}
+ const d=offStamp?new Date(offStamp):null,sameDay=d&&d.toDateString()==new Date().toDateString();
+ const when=d?d.toLocaleString(LOC(),sameDay?{hour:'2-digit',minute:'2-digit'}:{weekday:'short',hour:'2-digit',minute:'2-digit'}):'';
+ const head=navigator.onLine?T2('Can’t reach the weather service','Sem acesso ao serviço do tempo'):T2('You’re offline','Estás sem ligação');
+ const tail=when?T2(`Showing the forecast saved at ${when}. Please try again.`,`A mostrar a previsão guardada às ${when}. Tenta outra vez.`):T2('Please check your connection and try again.','Verifica a ligação e tenta outra vez.');
+ b.innerHTML=`<i class="od" aria-hidden="true"></i><span><b>${head}</b> · ${tail}</span><button type="button">${T2('Try again','Tentar de novo')}</button>`;
+ b.classList.add('on');
+}
+async function offRetry(){
+ const btn=$('#offBar button');if(btn){btn.disabled=true;btn.textContent=T2('Trying…','A tentar…')}
+ try{const t=lastTry||(place&&{lat:place.lat,lon:place.lon,name:place.name,sub:place.sub});if(t)await show(t.lat,t.lon,t.name,t.sub);else{landing();await new Promise(r=>setTimeout(r,1200))}}catch(e){}
+ const b2=$('#offBar button');if(b2){b2.disabled=false;b2.textContent=T2('Try again','Tentar de novo')}
+ if(!navigator.onLine&&!$('#offBar.on'))offlineBar(true,offStamp);
+}
+addEventListener('offline',()=>offlineBar(true,data?lastOk:0));
+addEventListener('online',()=>{if(!place)offlineBar(false)});   // com local, o handler 'online' abaixo volta a pedir a previsão e esconde a faixa se correr bem
+
 async function show(lat,lon,name,sub){
- document.body.classList.add('busy');
+ document.body.classList.add('busy');lastTry={lat,lon,name,sub};
  try{
   const[d,rev]=await Promise.all([getWeather(lat,lon),name?{name,sub}:reverse(lat,lon)]);
-  data=d;place={lat,lon,name:rev.name,sub:rev.sub};lsSet('place',place);visitBump(place);render();ipmaUpdate(place);
- }catch(e){error('Could not load the forecast',(navigator.onLine?e.message:'You appear to be offline.')+' Check your connection and try again.')}
+  data=d;place={lat,lon,name:rev.name,sub:rev.sub};lsSet('place',place);visitBump(place);wxSave();lastOk=Date.now();offlineBar(false);render();ipmaUpdate(place);
+ }catch(e){
+  const o=wxLoad(lat,lon);
+  if(o){
+   try{data=o.data;place={lat,lon,name:name||o.place.name,sub:sub||o.place.sub};lsSet('place',place);render();ipmaUpdate(place);offlineBar(true,o.t)}
+   catch(e2){error(T2('Could not load the forecast','Não foi possível carregar a previsão'),T2('You appear to be offline. Check your connection and try again.','Parece que estás sem ligação. Verifica a ligação e tenta outra vez.'),true)}
+  }else error(navigator.onLine?'Could not load the forecast':'You’re offline',(navigator.onLine?e.message:'This forecast hasn’t been saved on this device yet.')+' Check your connection and try again.',true)
+ }
  document.body.classList.remove('busy');
 }
 function locate(){
@@ -700,7 +743,7 @@ function locate(){
   e=>error(e.code==1?'Location access is blocked':'Couldn’t get your location',e.code==1?'Allow location for this page in your browser settings, or search for a city above.':'Try again, or search for a city above.'),
   {enableHighAccuracy:false,timeout:12000,maximumAge:600000});
 }
-function error(h,p){main.className='';main.innerHTML=`<div class="msg"><h2>${h}</h2><p>${p}</p><button class="pill" data-act="locate">Try my location again</button></div>`}
+function error(h,p,retry){main.className='';main.innerHTML=`<div class="msg"><h2>${h}</h2><p>${p}</p>${retry&&lastTry?`<button class="pill" data-act="retry">${T2('Try again','Tentar de novo')}</button> `:''}<button class="pill" data-act="locate">Try my location again</button></div>`}
 
 /* ============ helpers for text ============ */
 function heroLine(){
@@ -774,7 +817,7 @@ function lab(){
  const deltaP = +(pVal - pPast).toFixed(1);
  
  const pArrow = deltaP > 0.4 ? '↗ ' : deltaP < -0.4 ? '↘ ' : '→ ';
- const pTrendVal = `${pArrow}${deltaP > 0 ? '+' : ''}${deltaP} hPa/3h`;
+ const pTrendVal = `${pArrow}${deltaP > 0 ? '+' : ''}${pdS(deltaP)}/3h`;
  const pTrendTxt = deltaP <= -1.5 
    ? 'Falling rapidly (Front approaching)' 
    : deltaP <= -0.5 
@@ -795,7 +838,7 @@ const soundTxt=unit=='c'?Math.round(soundMs*3.6)+' km/h':Math.round(soundMs*1.94
  ['Barometric trend',pTrendVal,pTrendTxt],
  ['Speed of sound',soundTxt,'Faster in warm air'],
  ['Daylight',hm(dl),`Tomorrow ${df>=0?'+':'−'}${Math.abs(df)}s`],
- ['Pressure',Math.round(pVal)+' hPa',pVal<1005?'Low, unsettled':pVal>1020?'High, settled':'Near average']
+ ['Pressure',pf(pVal),pVal<1005?'Low, unsettled':pVal>1020?'High, settled':'Near average']
  ];
 
  return tiles.map(([a,b,s],n)=>`<div class="st" style="--n:${n}"><span>${tr(a)}</span><b>${b}</b><span>${tr(s)}</span></div>`).join('');
@@ -891,11 +934,11 @@ const PATTERNS={
  'front-cold':s=>({
   title:T2('A cold front is passing overhead','Uma frente fria está a passar'),
   body:T2(
-   `In the last three hours <i>pressure has dropped ${dec1(s.dP)} hPa</i> and the <i>dew point has climbed ${decDT(s.dDew)}°</i>. Rain is falling. Warm, humid air ahead of the front is being forced up over the colder air arriving behind it. As it rises it cools, the vapour condenses, and the drops fall. This is the most active phase of a frontal passage — expect the rain to ease within a few hours, then pressure to rise and the sky to clear.`,
-   `Nas últimas três horas a <i>pressão caiu ${dec1(s.dP)} hPa</i> e o <i>ponto de orvalho subiu ${decDT(s.dDew)}°</i>. Está a chover. O ar quente e húmido à frente da frente está a ser forçado a subir sobre o ar mais frio que chega por trás. Ao subir, arrefece, o vapor condensa-se e as gotas caem. Esta é a fase mais ativa de uma passagem frontal — é de esperar que a chuva abrande dentro de poucas horas, a pressão comece a subir e o céu a limpar.`
+   `In the last three hours <i>pressure has dropped ${pdS(s.dP)}</i> and the <i>dew point has climbed ${decDT(s.dDew)}°</i>. Rain is falling. Warm, humid air ahead of the front is being forced up over the colder air arriving behind it. As it rises it cools, the vapour condenses, and the drops fall. This is the most active phase of a frontal passage — expect the rain to ease within a few hours, then pressure to rise and the sky to clear.`,
+   `Nas últimas três horas a <i>pressão caiu ${pdS(s.dP)}</i> e o <i>ponto de orvalho subiu ${decDT(s.dDew)}°</i>. Está a chover. O ar quente e húmido à frente da frente está a ser forçado a subir sobre o ar mais frio que chega por trás. Ao subir, arrefece, o vapor condensa-se e as gotas caem. Esta é a fase mais ativa de uma passagem frontal — é de esperar que a chuva abrande dentro de poucas horas, a pressão comece a subir e o céu a limpar.`
   ),
   signals:[
-   T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),
+   T2(`ΔP ${pdS(s.dP)}/3h`,`ΔP ${pdS(s.dP)}/3h`),
    T2(`Dew +${decDT(s.dDew)}° in 3h`,`Orvalho +${decDT(s.dDew)}° em 3h`),
    T2(`Code ${s.code} — rain`,`Código ${s.code} — chuva`)
   ]
@@ -903,11 +946,11 @@ const PATTERNS={
  'front-warm':s=>({
   title:T2('A warm front is moving through','Uma frente quente está a passar'),
   body:T2(
-   `Pressure is falling gently (${dec1(s.dP)} hPa over 3h), the dew point is high at ${decT(s.dewNow)}°, and rain is falling. Warm air is sliding up over cooler air ahead of the front — but the slope is shallow, so the rain is steady rather than heavy and can last for hours. Behind the front the air will be noticeably warmer and more humid.`,
-   `A pressão está a descer suavemente (${dec1(s.dP)} hPa em 3 h), o ponto de orvalho está alto, em ${decT(s.dewNow)}°, e está a chover. O ar quente desliza sobre o ar mais frio à frente da frente — mas o declive é suave, por isso a chuva é contínua em vez de forte e pode durar horas. Depois da frente, o ar estará claramente mais quente e húmido.`
+   `Pressure is falling gently (${pdS(s.dP)} over 3h), the dew point is high at ${decT(s.dewNow)}°, and rain is falling. Warm air is sliding up over cooler air ahead of the front — but the slope is shallow, so the rain is steady rather than heavy and can last for hours. Behind the front the air will be noticeably warmer and more humid.`,
+   `A pressão está a descer suavemente (${pdS(s.dP)} em 3 h), o ponto de orvalho está alto, em ${decT(s.dewNow)}°, e está a chover. O ar quente desliza sobre o ar mais frio à frente da frente — mas o declive é suave, por isso a chuva é contínua em vez de forte e pode durar horas. Depois da frente, o ar estará claramente mais quente e húmido.`
   ),
   signals:[
-   T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),
+   T2(`ΔP ${pdS(s.dP)}/3h`,`ΔP ${pdS(s.dP)}/3h`),
    T2(`Dew ${decT(s.dewNow)}°`,`Orvalho ${decT(s.dewNow)}°`),
    T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`)
   ]
@@ -919,7 +962,7 @@ const PATTERNS={
    `A pressão está a subir, o <i>ponto de orvalho está a descer (${decDT(s.dDew)}° em 3 h)</i> e o céu está a limpar. Entrou uma massa de ar mais fria e seca por trás da frente. Este é o tempo mais limpo de todo o ciclo frontal: nítido, estável, muitas vezes com visibilidade excelente. É também o momento em que a temperatura pode descer mais depressa.`
   ),
   signals:[
-   T2(`ΔP +${dec1(s.dP)} hPa/3h`,`ΔP +${dec1(s.dP)} hPa/3h`),
+   T2(`ΔP +${pdS(s.dP)}/3h`,`ΔP +${pdS(s.dP)}/3h`),
    T2(`Dew ${decDT(s.dDew)}° in 3h`,`Orvalho ${decDT(s.dDew)}° em 3h`),
    T2(`Code ${s.code} — clear`,`Código ${s.code} — limpo`)
   ]
@@ -927,11 +970,11 @@ const PATTERNS={
  'high':s=>({
   title:T2('An anticyclone sits over the region','Um anticiclone está sobre a região'),
   body:T2(
-   `Pressure is ${Math.round(pMSL())} hPa, the sky is clear and there is little wind. In a high-pressure system, <i>air descends from aloft</i>, warming and drying as it sinks. That sinking is what clears the sky — clouds cannot survive the descent. It also explains why nights are colder than expected under a high: with no clouds to trap heat, the ground radiates it straight to space.`,
-   `A pressão está a ${Math.round(pMSL())} hPa, o céu está limpo e há pouco vento. Num anticiclone, o <i>ar desce de níveis altos</i>, aquecendo e secando à medida que afunda. Essa descida é o que limpa o céu — as nuvens não sobrevivem ao movimento descendente. Também explica porque é que as noites são mais frias do que se esperaria sob um anticiclone: sem nuvens para reter calor, o solo irradia-o direto para o espaço.`
+   `Pressure is ${pf(pMSL())}, the sky is clear and there is little wind. In a high-pressure system, <i>air descends from aloft</i>, warming and drying as it sinks. That sinking is what clears the sky — clouds cannot survive the descent. It also explains why nights are colder than expected under a high: with no clouds to trap heat, the ground radiates it straight to space.`,
+   `A pressão está a ${pf(pMSL())}, o céu está limpo e há pouco vento. Num anticiclone, o <i>ar desce de níveis altos</i>, aquecendo e secando à medida que afunda. Essa descida é o que limpa o céu — as nuvens não sobrevivem ao movimento descendente. Também explica porque é que as noites são mais frias do que se esperaria sob um anticiclone: sem nuvens para reter calor, o solo irradia-o direto para o espaço.`
   ),
   signals:[
-   T2(`Pressure ${Math.round(pMSL())} hPa`,`Pressão ${Math.round(pMSL())} hPa`),
+   T2(`Pressure ${pf(pMSL())}`,`Pressão ${pf(pMSL())}`),
    T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`),
    T2(`Code ${s.code} — clear`,`Código ${s.code} — limpo`)
   ]
@@ -991,7 +1034,7 @@ const PATTERNS={
    `A pressão está estável, por isso não há nenhum sistema de grande escala a empurrar estes aguaceiros — são células convectivas individuais que se formam onde o ar está localmente instável. Passam depressa e entre eles há muitas vezes longos períodos de sol. É o tipo de tempo em que um lado de uma colina pode estar à chuva e o outro ao sol.`
   ),
   signals:[
-   T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),
+   T2(`ΔP ${pdS(s.dP)}/3h`,`ΔP ${pdS(s.dP)}/3h`),
    T2(`Code ${s.code} — showers`,`Código ${s.code} — aguaceiros`),
    T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`)
   ]
@@ -1003,7 +1046,7 @@ const PATTERNS={
    `A pressão está estável, o ponto de orvalho perto do normal e o vento fraco. A atmosfera está em transição — nenhuma das assinaturas clássicas (uma frente a passar, um anticiclone instalado, uma massa de ar tropical ou polar) está presente com força suficiente para explicar o tempo por si só. Este é o estado mais comum de todos: nem dramático, nem caótico, apenas a atmosfera a fazer o que faz.`
   ),
   signals:[
-   T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`),
+   T2(`ΔP ${pdS(s.dP)}/3h`,`ΔP ${pdS(s.dP)}/3h`),
    T2(`Dew ${decT(s.dewNow)}°`,`Orvalho ${decT(s.dewNow)}°`),
    T2(`Wind ${W(s.wind)}`,`Vento ${W(s.wind)}`)
   ]
@@ -1015,7 +1058,7 @@ Object.assign(PATTERNS,{
   title:T2('Bomb cyclone','Ciclone-bomba'),
   body:T2('Pressure is falling very fast — a sign of explosive cyclogenesis. Expect rapid intensification of wind and rain over the next hours.',
           'A pressão está a cair muito depressa — sinal de ciclogénese explosiva. Espera-se intensificação rápida de vento e chuva nas próximas horas.'),
-  signals:[T2(`Pressure drop ${s.dP?.toFixed(1)||'–'} hPa`,`Queda de pressão ${s.dP?.toFixed(1)||'–'} hPa`),
+  signals:[T2(`Pressure drop ${s.dP!=null?pdS(s.dP):'–'}`,`Queda de pressão ${s.dP!=null?pdS(s.dP):'–'}`),
            T2(`Wind ${Math.round(s.wind)} km/h`,`Vento ${Math.round(s.wind)} km/h`),
            T2('Rapid intensification','Intensificação rápida')]
  }),
@@ -1167,23 +1210,23 @@ function synLine(s){                                               // frase + ch
   const e=synNearest(s);if(!e)return null;
   const kind=e.hi?T2('high (A)','alta (A)'):T2('low (B)','baixa (B)');
   return{
-    text:T2(`On the pressure map a ${kind} of ${Math.round(e.p)} hPa sits ${synWhere(e)}.`,`No mapa de pressão há uma ${kind} de ${Math.round(e.p)} hPa ${synWhere(e)}.`),
-    chip:`${e.hi?'A':'B'} ${Math.round(e.p)} hPa · ${e.d<150?T2('overhead','por cima'):synDist(e.d)+' '+synDir(e.b)}`
+    text:T2(`On the pressure map a ${kind} of ${pf(e.p)} sits ${synWhere(e)}.`,`No mapa de pressão há uma ${kind} de ${pf(e.p)} ${synWhere(e)}.`),
+    chip:`${e.hi?'A':'B'} ${pf(e.p)} · ${e.d<150?T2('overhead','por cima'):synDist(e.d)+' '+synDir(e.b)}`
   };
 }
 const SKY_ALIAS={'high-near':'high','ridge':'high','low-near':'showers','trough':'showers'};   // ícones reutilizados
 Object.assign(PATTERNS,{
  'high-near':s=>{
   const e=synNearest(s),rel=s.syn&&s.syn.rel,north=place.lat>=0;
-  const relTxt=rel!=null&&rel>.5?T2(`, about ${dec1(rel)} hPa above the surrounding area`,`, cerca de ${dec1(rel)} hPa acima da zona envolvente`):'';
-  const drift=Math.abs(s.dP)>=1.5?T2(` Pressure has moved ${dec1(s.dP)} hPa in three hours, so the high is building or drifting rather than sitting still — expect conditions to keep changing.`,` A pressão variou ${dec1(s.dP)} hPa em três horas, por isso a alta está a formar-se ou a deslocar-se em vez de estar parada — as condições devem continuar a mudar.`):'';
+  const relTxt=rel!=null&&rel>.5?T2(`, about ${pdS(rel)} above the surrounding area`,`, cerca de ${pdS(rel)} acima da zona envolvente`):'';
+  const drift=Math.abs(s.dP)>=1.5?T2(` Pressure has moved ${pdS(s.dP)} in three hours, so the high is building or drifting rather than sitting still — expect conditions to keep changing.`,` A pressão variou ${pdS(s.dP)} em três horas, por isso a alta está a formar-se ou a deslocar-se em vez de estar parada — as condições devem continuar a mudar.`):'';
   const cloud=s.code===3?T2(` The sky is overcast here anyway: under a weak high, moisture trapped below the sinking air can form low cloud.`,` Aqui o céu está encoberto na mesma: sob uma alta fraca, a humidade presa por baixo do ar que desce pode formar nuvens baixas.`):'';
   return{
    title:T2('A high-pressure centre nearby','Um centro de alta pressão nas proximidades'),
    body:T2(
-    `The pressure map shows a closed high, the <i>A of ${Math.round(e.p)} hPa</i>, ${synWhere(e)}. It is a ${synStr(e)} anticyclone, but it does not need to be strong to matter: what counts is that pressure is higher here than around it${relTxt}. Air sinks inside a high and spirals ${north?'clockwise':'anticlockwise'} around it, which thins out cloud and keeps the wind light.${drift}${cloud}`,
-    `O mapa de pressão mostra uma alta fechada, o <i>A de ${Math.round(e.p)} hPa</i>, ${synWhere(e)}. É um anticiclone ${synStr(e)}, mas não precisa de ser forte para contar: o que interessa é que a pressão aqui é superior à do ar à volta${relTxt}. O ar desce dentro de uma alta e gira ${north?'no sentido dos ponteiros do relógio':'no sentido contrário ao dos ponteiros do relógio'} à volta dela, o que dissipa a nebulosidade e mantém o vento fraco.${drift}${cloud}`),
-   signals:[synLine(s).chip,T2(`Pressure ${Math.round(pMSL())} hPa (sea level)`,`Pressão ${Math.round(pMSL())} hPa (nível do mar)`),T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`)]
+    `The pressure map shows a closed high, the <i>A of ${pf(e.p)}</i>, ${synWhere(e)}. It is a ${synStr(e)} anticyclone, but it does not need to be strong to matter: what counts is that pressure is higher here than around it${relTxt}. Air sinks inside a high and spirals ${north?'clockwise':'anticlockwise'} around it, which thins out cloud and keeps the wind light.${drift}${cloud}`,
+    `O mapa de pressão mostra uma alta fechada, o <i>A de ${pf(e.p)}</i>, ${synWhere(e)}. É um anticiclone ${synStr(e)}, mas não precisa de ser forte para contar: o que interessa é que a pressão aqui é superior à do ar à volta${relTxt}. O ar desce dentro de uma alta e gira ${north?'no sentido dos ponteiros do relógio':'no sentido contrário ao dos ponteiros do relógio'} à volta dela, o que dissipa a nebulosidade e mantém o vento fraco.${drift}${cloud}`),
+   signals:[synLine(s).chip,T2(`Pressure ${pf(pMSL())} (sea level)`,`Pressão ${pf(pMSL())} (nível do mar)`),T2(`ΔP ${pdS(s.dP)}/3h`,`ΔP ${pdS(s.dP)}/3h`)]
   };
  },
  'low-near':s=>{
@@ -1192,24 +1235,24 @@ Object.assign(PATTERNS,{
   return{
    title:T2('A low-pressure centre nearby','Um centro de baixa pressão nas proximidades'),
    body:T2(
-    `The pressure map shows a closed low, the <i>B of ${Math.round(e.p)} hPa</i>, ${synWhere(e)}: a ${synStr(e)} depression. Air converges and rises into a low and spirals ${north?'anticlockwise':'clockwise'} around its centre, which is why cloud, rain and wind tend to gather around it.${calm}`,
-    `O mapa de pressão mostra uma baixa fechada, o <i>B de ${Math.round(e.p)} hPa</i>, ${synWhere(e)}: uma depressão ${synStr(e)}. O ar converge e sobe numa baixa e gira ${north?'no sentido contrário ao dos ponteiros do relógio':'no sentido dos ponteiros do relógio'} à volta do centro, e é por isso que nuvens, chuva e vento tendem a juntar-se à volta dela.${calm}`),
-   signals:[synLine(s).chip,T2(`Pressure ${Math.round(pMSL())} hPa (sea level)`,`Pressão ${Math.round(pMSL())} hPa (nível do mar)`),T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`)]
+    `The pressure map shows a closed low, the <i>B of ${pf(e.p)}</i>, ${synWhere(e)}: a ${synStr(e)} depression. Air converges and rises into a low and spirals ${north?'anticlockwise':'clockwise'} around its centre, which is why cloud, rain and wind tend to gather around it.${calm}`,
+    `O mapa de pressão mostra uma baixa fechada, o <i>B de ${pf(e.p)}</i>, ${synWhere(e)}: uma depressão ${synStr(e)}. O ar converge e sobe numa baixa e gira ${north?'no sentido contrário ao dos ponteiros do relógio':'no sentido dos ponteiros do relógio'} à volta do centro, e é por isso que nuvens, chuva e vento tendem a juntar-se à volta dela.${calm}`),
+   signals:[synLine(s).chip,T2(`Pressure ${pf(pMSL())} (sea level)`,`Pressão ${pf(pMSL())} (nível do mar)`),T2(`ΔP ${pdS(s.dP)}/3h`,`ΔP ${pdS(s.dP)}/3h`)]
   };
  },
  'ridge':s=>({
   title:T2('On a ridge of high pressure','Numa dorsal de pressão alta'),
   body:T2(
-   `Pressure here (${Math.round(pMSL())} hPa at sea level) is <i>${dec1(s.syn.rel)} hPa above</i> the surrounding area, but there is no closed high close by. That is a ridge: a tongue of higher pressure where air gently sinks, so the weather tends to be calmer than around it even though no single feature dominates.`,
-   `A pressão aqui (${Math.round(pMSL())} hPa ao nível do mar) está <i>${dec1(s.syn.rel)} hPa acima</i> da zona envolvente, mas não há nenhuma alta fechada por perto. É uma dorsal: uma língua de pressão mais alta onde o ar desce suavemente, por isso o tempo tende a ser mais calmo do que à volta, mesmo sem um único sistema a dominar.`),
-  signals:[T2(`+${dec1(s.syn.rel)} hPa vs surroundings`,`+${dec1(s.syn.rel)} hPa face à envolvente`),T2(`Pressure ${Math.round(pMSL())} hPa`,`Pressão ${Math.round(pMSL())} hPa`),T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`)]
+   `Pressure here (${pf(pMSL())} at sea level) is <i>${pdS(s.syn.rel)} above</i> the surrounding area, but there is no closed high close by. That is a ridge: a tongue of higher pressure where air gently sinks, so the weather tends to be calmer than around it even though no single feature dominates.`,
+   `A pressão aqui (${pf(pMSL())} ao nível do mar) está <i>${pdS(s.syn.rel)} acima</i> da zona envolvente, mas não há nenhuma alta fechada por perto. É uma dorsal: uma língua de pressão mais alta onde o ar desce suavemente, por isso o tempo tende a ser mais calmo do que à volta, mesmo sem um único sistema a dominar.`),
+  signals:[T2(`+${pdS(s.syn.rel)} vs surroundings`,`+${pdS(s.syn.rel)} face à envolvente`),T2(`Pressure ${pf(pMSL())}`,`Pressão ${pf(pMSL())}`),T2(`ΔP ${pdS(s.dP)}/3h`,`ΔP ${pdS(s.dP)}/3h`)]
  }),
  'trough':s=>({
   title:T2('In a trough of low pressure','Num cavado de baixa pressão'),
   body:T2(
-   `Pressure here (${Math.round(pMSL())} hPa at sea level) is <i>${dec1(-s.syn.rel)} hPa below</i> the surrounding area, but no closed low is nearby. That is a trough: a stretched-out zone of lower pressure where air tends to rise, so cloud and showers can develop even without a clear front.`,
-   `A pressão aqui (${Math.round(pMSL())} hPa ao nível do mar) está <i>${dec1(-s.syn.rel)} hPa abaixo</i> da zona envolvente, mas não há nenhuma baixa fechada por perto. É um cavado: uma zona alongada de pressão mais baixa onde o ar tende a subir, por isso podem surgir nuvens e aguaceiros mesmo sem uma frente clara.`),
-  signals:[T2(`${dec1(s.syn.rel)} hPa vs surroundings`,`${dec1(s.syn.rel)} hPa face à envolvente`),T2(`Pressure ${Math.round(pMSL())} hPa`,`Pressão ${Math.round(pMSL())} hPa`),T2(`ΔP ${dec1(s.dP)} hPa/3h`,`ΔP ${dec1(s.dP)} hPa/3h`)]
+   `Pressure here (${pf(pMSL())} at sea level) is <i>${pdS(-s.syn.rel)} below</i> the surrounding area, but no closed low is nearby. That is a trough: a stretched-out zone of lower pressure where air tends to rise, so cloud and showers can develop even without a clear front.`,
+   `A pressão aqui (${pf(pMSL())} ao nível do mar) está <i>${pdS(-s.syn.rel)} abaixo</i> da zona envolvente, mas não há nenhuma baixa fechada por perto. É um cavado: uma zona alongada de pressão mais baixa onde o ar tende a subir, por isso podem surgir nuvens e aguaceiros mesmo sem uma frente clara.`),
+  signals:[T2(`${pdS(s.syn.rel)} vs surroundings`,`${pdS(s.syn.rel)} face à envolvente`),T2(`Pressure ${pf(pMSL())}`,`Pressão ${pf(pMSL())}`),T2(`ΔP ${pdS(s.dP)}/3h`,`ΔP ${pdS(s.dP)}/3h`)]
  })
 });
 
@@ -1331,7 +1374,7 @@ function initSparkTooltip(){
  if(!wrap)return;
  const tip=wrap.querySelector('.sp-tooltip');
  const show=(pt,x,y)=>{
-  tip.textContent=`${pt.dataset.t} · ${pt.dataset.v} hPa`;
+  tip.textContent=`${pt.dataset.t} · ${unit=='c'?pt.dataset.v+' hPa':dcm(+pt.dataset.v*HPA_INHG,2)+' inHg'}`;
   tip.style.left=x+'px'; tip.style.top=y+'px';
   tip.classList.add('show');
  };
@@ -1364,7 +1407,7 @@ function expMetricsHTML(s){
  const dDewD = unit=='c'?dDew:dDew*9/5; // diferença: só escala, nunca +32
  const rows=[
  {label:T2('Pressure (3h)','Pressão (3h)'),
- value:`${dP>0?'+':''}${dP.toFixed(1)} hPa`, trend:dP},
+ value:`${dP>0?'+':''}${pdS(dP)}`, trend:dP},
  {label:T2('Dew point (3h)','Ponto de orvalho (3h)'),
  value:`${dDewD>0?'+':''}${dDewD.toFixed(1)}°`, trend:dDew},
  {label:T2('Wind now','Vento agora'),
@@ -1393,8 +1436,8 @@ function next6hText(){
   const rainMax=Math.max(...h.precipitation_probability.slice(i0,i6+1));
   const parts=[];
   if(Math.abs(dP)>=0.8) parts.push(T2(
-    `<i>Pressure ${dP>0?'rising':'falling'} by ${dec1(Math.abs(dP))} hPa</i> — ${dP>0?T2('settled weather is on the way','tempo estável a caminho'):T2('more active weather is likely','tempo mais ativo é provável')}.`,
-    `<i>Pressão ${dP>0?'a subir':'a descer'} ${dec1(Math.abs(dP))} hPa</i> — ${dP>0?'tempo mais estável a caminho':'tempo mais ativo é provável'}.`
+    `<i>Pressure ${dP>0?'rising':'falling'} by ${pdS(Math.abs(dP))}</i> — ${dP>0?T2('settled weather is on the way','tempo estável a caminho'):T2('more active weather is likely','tempo mais ativo é provável')}.`,
+    `<i>Pressão ${dP>0?'a subir':'a descer'} ${pdS(Math.abs(dP))}</i> — ${dP>0?'tempo mais estável a caminho':'tempo mais ativo é provável'}.`
   ));
   if(Math.abs(dDew)>=1) parts.push(T2(
     `<i>Dew point ${dDew>0?'rising':'falling'} by ${decDT(Math.abs(dDew))	}°</i> — the air is getting ${dDew>0?'more humid':'drier'}.`,
@@ -1608,7 +1651,7 @@ function heroHTML(){
  const local=new Date(c.time).toLocaleString('en',{weekday:'long',hour:'numeric',minute:'2-digit'});
  return`<section class="hero" id="hero">
 <div class="now">
- <div class="place"><h1>${escH(place.name)}</h1><button class="star" id="fav" aria-label="Save place"></button></div>
+ <div class="place"><h1>${escH(place.name)}</h1><button class="star" id="fav" aria-label="Save place"></button><button class="share" id="shareBtn" type="button" aria-label="${T2('Share this place','Partilhar este local')}" title="${T2('Share link','Partilhar ligação')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button></div>
  <div class="sub">${place.sub?escH(place.sub)+' · ':''}${local}</div>
  <div class="temp"><span id="tn">${T(c.temperature_2m)}</span><sup>°</sup></div>
  <div class="cond" id="cond"><span class="em">${emoji(c.weather_code,c.is_day)}</span>
@@ -1785,7 +1828,7 @@ function todayPane(){
    <div class="mini"><span>Wind</span><b><svg class="wind" style="--r:${(c.wind_direction_10m||0)+180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>${W(c.wind_speed_10m)}</b></div>
    <div class="mini"><span>Humidity</span><b>${c.relative_humidity_2m}%</b><div class="bar2"><i style="--w:${c.relative_humidity_2m}%"></i></div></div>
    <div class="mini"><span>UV · ${uvl}</span><b>${Math.round(uv)}</b><div class="bar2"><i style="--w:${Math.min(100,uv/11*100)}%"></i></div></div>
-   <div class="mini"><span>Pressure</span><b>${Math.round(c.surface_pressure)}<small>hPa</small></b><div class="bar2"><i style="--w:${Math.max(6,Math.min(100,(c.surface_pressure-970)/70*100))}%"></i></div></div>
+   <div class="mini"><span>Pressure</span><b>${pN(c.surface_pressure)}<small>${pU()}</small></b><div class="bar2"><i style="--w:${Math.max(6,Math.min(100,(c.surface_pressure-970)/70*100))}%"></i></div></div>
   </div>
   ${chartSVG()}
  </section>
@@ -2674,12 +2717,34 @@ main.addEventListener('click',e=>{
   const same=x=>x.name==place.name&&x.sub==place.sub;
   lsSet('favs',favs().some(same)?favs().filter(x=>!same(x)):[place,...favs()].slice(0,20));paintFav();
  }
+ if(e.target.closest('#shareBtn'))sharePlace();
 });
+
+/* ============ ligação partilhável: #p=lat,lon,nome,região ============ */
+function shareURL(){return location.origin+location.pathname+'#p='+[(+place.lat).toFixed(3),(+place.lon).toFixed(3),encodeURIComponent(place.name||''),encodeURIComponent(place.sub||'')].join(',')}
+async function sharePlace(){
+ if(!place)return;
+ const url=shareURL(),title='Skylab · '+place.name;
+ if(navigator.share){try{await navigator.share({title,text:T2(`Weather in ${place.name}`,`Tempo em ${place.name}`),url});return}catch(e){if(e&&e.name==='AbortError')return}}
+ try{await navigator.clipboard.writeText(url);toast(T2('Link copied','Ligação copiada'))}
+ catch(e){window.prompt(T2('Copy this link','Copia esta ligação'),url)}
+}
+function sharedPlace(){
+ const m=/^#p=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),([^,]*),([^,]*)$/.exec(location.hash);if(!m)return null;
+ const lat=+m[1],lon=+m[2];if(!(Math.abs(lat)<=90)||!(Math.abs(lon)<=180))return null;
+ const dec=t=>{try{return decodeURIComponent(t).replace(/[\u0000-\u001f<>]/g,'').trim().slice(0,80)}catch(e){return''}};
+ return{lat,lon,name:dec(m[3]),sub:dec(m[4])};
+}
+const clearHash=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}};
+addEventListener('hashchange',()=>{const p=sharedPlace();if(p){clearHash();show(p.lat,p.lon,p.name,p.sub)}});
+document.addEventListener('click',e=>{const r=e.target.closest('.msg [data-act="retry"]');if(r&&lastTry)show(lastTry.lat,lastTry.lon,lastTry.name,lastTry.sub)});
 $('#loc').onclick=locate;$('#sur').onclick=surprise;
 function setUnit(u,manual,skipRender){
  unit=u;if(manual)lsSet('unitPick',u);
  $$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.u==unit));
- if(data&&!skipRender)render();
+ if(skipRender)return;
+ if(data)render();
+ else if(!place&&$('#hero')&&$('#hero').classList.contains('land'))landing();   // landing: cidades/ticker usam T() — refaz com as novas unidades
 }
 $$('.seg button').forEach(b=>{
  b.setAttribute('aria-pressed',b.dataset.u==unit);
@@ -2724,7 +2789,7 @@ document.addEventListener('keydown',e=>{
  if(data&&'123456'.includes(e.key)&&e.key)setTab(TABS[+e.key-1][0]);
 });
 addEventListener('load',moveInd);
-setInterval(()=>{if(place&&!document.hidden&&tab!='radar')show(place.lat,place.lon,place.name,place.sub)},6e5);   // não reconstrói o radar a meio
+setInterval(()=>{if(place&&!document.hidden&&navigator.onLine&&tab!='radar')show(place.lat,place.lon,place.name,place.sub)},6e5);   // não reconstrói o radar a meio
 addEventListener('online',()=>{if(place)show(place.lat,place.lon,place.name,place.sub)});
 
 /* ============ silent severe-weather alerts (no UI) ============ */
@@ -3299,8 +3364,8 @@ async function nasaLegend(){
   if(nasaLeg.cols)bar.style.background=`linear-gradient(90deg,${nasaLeg.cols.map(c=>`rgb(${c})`).join(',')})`;
   const min=+nasaLeg.min||0,max=+nasaLeg.max||0;
   const fmt=v=>v<1?v.toFixed(2):v<10?v.toFixed(1):Math.round(v);
-  $('#rlmin').textContent=nasaLeg.min!=null?`${fmt(min)} mm/h`:'light';
-  $('#rlmax').textContent=nasaLeg.max!=null?`${fmt(max)} mm/h`:'heavy';
+  $('#rlmin').textContent=nasaLeg.min!=null?rateS(min):'light';
+  $('#rlmax').textContent=nasaLeg.max!=null?rateS(max):'heavy';
 }
 
 
@@ -3356,8 +3421,8 @@ async function loadRainPT(stale){
   radarFrames=sliced.map(f=>({time:f.time/1000,fc:false}));
   sl.disabled=false;pl.disabled=false;sl.max=radarFrames.length-1;
   note.textContent='IPMA radar · 5 min resolution · Portugal';
-  $('#rlmin').textContent='0.1 mm/h';
-  $('#rlmax').textContent='> 30 mm/h';
+  $('#rlmin').textContent=rateS(.1);
+  $('#rlmax').textContent='> '+rateS(30);
   $('#rlbar').style.background='linear-gradient(90deg,#c8e6c9,#81c784,#4caf50,#ffeb3b,#ff9800,#f44336,#9c27b0)';
   $('#rlsrc').textContent='IPMA · 5 min';
   radarShow(0);radarWarm();radarBtn();radarTick();
@@ -3379,8 +3444,8 @@ async function loadRainGlobal(stale){
   radarLayers=frames.map(f=>mkLayer(`${WORKER}/rv/${f.path.split('/').pop()}/256/{z}/{x}/{y}/2/0_0.png`,{maxNativeZoom:7,maxZoom:radarScope==='pt'?11:9}));
   sl.disabled=false;pl.disabled=false;sl.max=frames.length-1;
   note.textContent='RainViewer · 10 min · past 2 h'+(radarScope==='pt'?' · Portugal':' · Global');
-  $('#rlmin').textContent='0.1 mm/h';
-  $('#rlmax').textContent='> 50 mm/h';
+  $('#rlmin').textContent=rateS(.1);
+  $('#rlmax').textContent='> '+rateS(50);
   $('#rlbar').style.background='linear-gradient(90deg,#88ddee,#36bae5,#00a3e0,#007fb4,#005588,#c2b482,#cec087,#ffee00,#ffd200,#ffaa00,#ff8100,#ff4400)';
   $('#rlsrc').textContent='RainViewer · 10 min';
   radarShow(0);radarWarm();radarBtn();radarTick();
@@ -7277,7 +7342,9 @@ setInterval(() => { hurrGet(true).then(() => hurrBadge()).catch(() => {}); }, 10
   }
   progUI(); favUI();
   const saved=lsGet('place')||(isUserAuth()&&lsGet('homeCity'))||null;   // sem local guardado → cidade principal
-  if(saved)show(saved.lat,saved.lon,saved.name,saved.sub);else landing();
+  const sh=sharedPlace();                                                  // ligação partilhada (#p=…) tem prioridade
+  if(sh){clearHash();show(sh.lat,sh.lon,sh.name,sh.sub)}
+  else if(saved)show(saved.lat,saved.lon,saved.name,saved.sub);else{landing();if(!navigator.onLine)offlineBar(true,0)}
 })();
 
 /* ============ MOBILE v2 · "instrumento de bolso" (só corre com html.is-mobile) ============
@@ -7361,7 +7428,7 @@ if(IS_MOBILE)(function(){
   if(k==='wind'){const v=c.wind_speed_10m,g=c.wind_gusts_10m,b=beau(v),kt=unit!=='c';
    return{v:kt?Math.round(v*.539957):Math.round(v),u:kt?'kt':'km/h',tag:BFN[b][LANG==='pt'?1:0],sub:T2('From','De')+' '+card(c.wind_direction_10m)+(isFinite(g)?' · '+T2('gusts','rajadas')+' '+(kt?Math.round(g*.539957):Math.round(g)):''),s:ser('wind_speed_10m'),dir:c.wind_direction_10m,fmt:x=>Math.round(kt?x*.539957:x)}}
   if(k==='humidity'){const r=c.relative_humidity_2m;return{v:Math.round(r),u:'%',tag:rhCat(r),sub:rhCat(r),s:ser('relative_humidity_2m'),fmt:x=>Math.round(x)+'%'}}
-  if(k==='pressure'){const p=pMSL(),t=ptend();return{v:Math.round(p),u:'hPa',tag:t.t,sub:t.t+(t.d?' · '+(t.d>0?'+':'')+fN(t.d,1)+' hPa/3h':''),s:ser('pressure_msl'),fmt:x=>Math.round(x)}}
+  if(k==='pressure'){const p=pMSL(),t=ptend();const f=unit!=='c',q=f?HPA_INHG:1;return{v:f?+(p*q).toFixed(2):Math.round(p),u:pU(),tag:t.t,sub:t.t+(t.d?' · '+(t.d>0?'+':'')+pdS(t.d)+'/3h':''),s:ser('pressure_msl').map(x=>x==null?x:x*q),fmt:x=>f?x.toFixed(2):Math.round(x)}}
   if(k==='uv'){const u=d.uv_index_max[0];return{v:Math.round(u),u:'',tag:uvCat(u),sub:uvCat(u)+' · '+T2('peak today','máx. hoje'),uv:u}}
   if(k==='rain'){const s=ser('precipitation_probability'),m=Math.max(...s.filter(isFinite)),at=s.indexOf(m);
    return{v:Math.round(m),u:'%',tag:m<20?T2('Unlikely','Improvável'):m<50?T2('Possible','Possível'):m<80?T2('Likely','Provável'):T2('Very likely','Muito provável'),sub:m<20?T2('Dry next 24 h','Seco nas próximas 24 h'):T2('Peak around','Pico por volta das')+' '+h.time[idx0()+at].slice(11,13)+'h',s,bars:1,fmt:x=>Math.round(x)+'%'}}
