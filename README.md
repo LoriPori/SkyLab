@@ -6,7 +6,7 @@
 
 ### *The sky, explained to you.*
 
-Not just **the** weather. The whole science behind it. 🔬🌦️
+Not just *the* weather. The whole science behind it. 🔬🌦️
 
 <br>
 
@@ -56,22 +56,22 @@ Not just **the** weather. The whole science behind it. 🔬🌦️
 
 ## 🌤️ About
 
-SkyLab is a weather project that informs you about the current weather, and about the **science behind it**. And it's incredibly fun! 🎉
+SkyLab is a weather project that informs you about the current weather and the **science behind it**. And it's incredibly fun! 🎉
 
 Whether you're a regular citizen, a very dedicated student or just a weather enthusiast, SkyLab fits you. It fetches high-quality data from open platforms like OpenWeatherMap and RainViewer, and puts it all in one place.
 
 > [!NOTE]
-> This app was built entirely with **free tools** and with the help of **Claude**, as I'm not an experienced coder. The framework, the backend and the databases, though, were all designed and coordinated by me, the proud developer of what I believe is a good weather app. 💪
+> This app was built entirely with **free tools** and with the help of **Claude**, as I'm not an experienced coder. The framework, the backend, and the databases, though, were all designed and coordinated by me, the proud developer of what I believe is a good weather app. 
 
 Feel free to explore it. SkyLab has a whole world of features worth discovering, so don't forget to read the rest! 👇
 
 ## 💡 Why I built it
 
-A couple of months ago I opened my phone's built-in weather app. I checked the current weather, the next few hours, and decided what to wear for the day. Simple enough.
+A couple of months ago, I opened my phone's built-in weather app. I checked the current weather, the next few hours, and decided what to wear for the day. Simple enough.
 
-But the data was shallow. Little to no complex information, like **pressure variation**, was included. Then it hit me: I recognised an annoying pattern in *every single* weather app. They were all **too shallow**. 🫤
+But the data was shallow. Little to no complex information, like **pressure variation**, was included. Then it hit me: I recognised an annoying pattern in *every single* weather app. They were all **too shallow**. 
 
-SkyLab is the solution I found. By combining many kinds of data and patterns, it suits everyone: an all-in-one tool built for your daily needs. With SkyLab you don't just see the weather, you actually **get informed** about it.
+SkyLab is the solution I found. By combining many kinds of data and patterns, it suits everyone: an all-in-one tool built for your daily needs. With SkyLab you don't just see the weather; you actually **get informed** about it.
 
 > 🧪 **One app, many tools.** Check out the features!
 
@@ -82,17 +82,17 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 <td width="50%" valign="top">
 
 ### 🗺️ Maps and radars
-- 🌧️ Global rain radar (NASA IMERG) with animation
-- ☁️ Cloud, wind, temperature and pressure layers, with isobars and **H / L** markers
-- 🛰️ Satellite view
-- 🌀 Hurricane and tropical storm tracker
+- 🌧️ Global rain radar, provided by [RainViewer](https://www.rainviewer.com/)
+- ☁️ Cloud, wind, temperature with real-time isobars
+- 🛰️ Satellite view by [NASA](https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api)
+
 
 </td>
 <td width="50%" valign="top">
 
 ### 🔬 Forecast and science
-- 🕐 Hourly, weekly and monthly forecast
-- 🌼 Pollen data
+- 🕐 Hourly, weekly, and monthly forecast
+- 🌼 Detailed pollen data
 - 📖 "Sky Explained" tab that explains the current weather pattern
 - 🧠 Daily science facts and a *Myth or Fact* game
 
