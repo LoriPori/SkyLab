@@ -55,11 +55,9 @@ SkyLab is a project intended to inform you about the current weather. Not just "
 ## Why I built it
 
 <!-- This is the section people remember. Be personal and specific. -->
-*Write here: the intention behind the project. What problem or frustration started it? What did you want weather apps to do that they didn't?*
-
+A couple of months ago, I decided to check the weather on my phone's built-in weather app. I checked the current weather, the following hours, and finally decided what to wear for the day. However, the data in the weather app was fairly simple; little to no complex data, like the pressure variation, was included. Then, it hit me. I recognized an annoying pattern throughout every single weather app. The problem was that they were *too shallow*. SkyLab is the solution I found. Combining various data and patterns, SkyLab suits everyone. An all-in-one tool, built for your daily needs. With SkyLab, you actually get informed about the weather. One app, many tools. Check out the features!
 ## Features
 
-<!-- A bullet list: start a line with "-" or "*". Bold text uses **double asterisks**. -->
 
 **Maps and radars**
 - Global rain radar (NASA IMERG) with animation
