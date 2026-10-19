@@ -1903,3 +1903,24 @@ html.is-mobile .m-xt{order:7}
 /* ---------- esconder TODAS as barras de scroll (o scroll continua a funcionar) ---------- */
 *{scrollbar-width:none;-ms-overflow-style:none}
 *::-webkit-scrollbar{display:none;width:0;height:0}
+
+
+/* botão de partilhar (discreto, ao lado da estrela) */
+.share{flex:none;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;color:#fff;opacity:.45;transition:opacity .25s,background .25s}
+.share svg{width:17px;height:17px}
+.share:hover,.share:focus-visible{opacity:.95;background:rgba(255,255,255,.18)}
+html.is-mobile .share{width:40px;height:40px}
+html.is-mobile .share svg{width:18px;height:18px}
+
+/* faixa "sem ligação" */
+#offBar{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 10px);transform:translate(-50%,-160%);z-index:60;display:flex;align-items:center;gap:12px;
+ max-width:min(560px,calc(100vw - 24px));padding:10px 12px 10px 16px;border-radius:16px;background:var(--ink);color:#fff;font-size:14px;line-height:1.35;
+ box-shadow:0 14px 38px rgba(10,30,60,.35);opacity:0;pointer-events:none;transition:transform .4s cubic-bezier(.3,1.3,.5,1),opacity .3s;text-shadow:none}
+#offBar.on{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+#offBar .od{flex:none;width:9px;height:9px;border-radius:50%;background:#ffb547;box-shadow:0 0 0 4px rgba(255,181,71,.25)}
+#offBar b{font-weight:600}
+#offBar button{flex:none;padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.45);color:#fff;font-size:13px;font-weight:600;transition:background .2s}
+#offBar button:hover{background:rgba(255,255,255,.16)}
+#offBar button:disabled{opacity:.6;cursor:default}
+html.is-mobile #offBar{z-index:1300;top:calc(env(safe-area-inset-top,0px) + 8px)}
+@media (prefers-reduced-motion:reduce){#offBar{transition:opacity .2s}}
