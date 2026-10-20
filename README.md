@@ -58,7 +58,7 @@ Not just *the* weather. The whole science behind it. 🔬
 
 SkyLab is a weather project that informs you about the current weather and the **science behind it**. And it's incredibly fun! 🎉
 
-Whether you're a regular citizen, a very dedicated student or just a weather enthusiast, SkyLab fits you. It fetches high-quality data from open platforms like OpenWeatherMap and RainViewer, and puts it all in one place.
+Whether you're a regular citizen, a very dedicated student, or just a weather enthusiast, SkyLab fits you. It fetches high-quality data from open platforms like OpenWeatherMap and RainViewer, and puts it all in one place.
 
 > [!NOTE]
 > This app was built entirely with **free tools** and with the help of **Claude**, as I'm not an experienced coder. The framework, the backend, and the databases, though, were all designed and coordinated by me, the proud developer of what I believe is a good weather app. 
@@ -71,7 +71,7 @@ A couple of months ago, I opened my phone's built-in weather app. I checked the 
 
 But the data was shallow. Little to no complex information, like **pressure variation**, was included. Then it hit me: I recognised an annoying pattern in *every single* weather app. They were all **too shallow**. 
 
-SkyLab is the solution I found. By combining many kinds of data and patterns, it suits everyone: an all-in-one tool built for your daily needs. With SkyLab you don't just see the weather; you actually **get informed** about it.
+SkyLab is the solution I found. By combining many kinds of data and patterns, it suits everyone: an all-in-one tool built for your daily needs. With SkyLab, you don't just see the weather; you actually **get informed** about it.
 
 > 🧪 **One app, many tools.** Check out the features!
 
@@ -104,6 +104,7 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 ### 👤 Your account *(optional sign-in)*
 - ⭐ Favourite cities synced between devices
 - 🔔 Weather push notifications for your main city
+- ⌨️ Built-in terminal to analyse raw weather data. Check out the [Terminal](#-skylab-terminal)
 - 🗑️ Account deletion at any time
 
 </td>
@@ -111,13 +112,13 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 
 ### 🎁 Extras
 - 🌐 Portuguese / English, with units that follow the language
-- 📱 Mobile interface designed separately from the desktop one
-- 🌍 3D globe on the landing page
-- 👕 Clothing advisor orb
+- 👕 Clothing advisor orb (be careful with him!)
 
 </td>
 </tr>
 </table>
+
+### And much more!
 
 ## 📸 Screenshots
 
