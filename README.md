@@ -27,7 +27,7 @@ Not just *the* weather. The whole science behind it. 🔬
 
 <br>
 
-<img src="screenshots/desktop-landing-page.png" alt="SkyLab on desktop" width="760">
+<img src="screenshots/landing-page-desktop.png" alt="SkyLab on desktop" width="760">
 
 </div>
 
