@@ -130,7 +130,7 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 
 ## 💻 SkyLab Terminal
 
-A command line built into the app, for people who want **raw atmospheric data**. 🤓
+A command line built into the app, for people who want **raw atmospheric data**. Yeah, I recognize a weather nerd when I see one. 🤓
 
 ```text
 fetch -loc "Lisbon"          # current conditions
@@ -141,11 +141,23 @@ export --format csv          # also: cpp_struct
 ```
 
 <details>
-<summary><b>📖 Full command list (click to expand)</b></summary>
+<summary><b>Full command list (click to expand)</b></summary>
+    
+#### Data'nd state
 
-<br>
+&bull; fetch - Pull Open-Meteo data from where you're at or from any other location; just add the name as an argument!<br>
+&bull; clear - *POOF*, everything is gone!<br>
+&bull; history - List the command history<br>
+&bull; status - Show the active context, like the temperature or wind speed of a specific location
 
-*Write here: every command, one per line, with a short description.*
+#### Brita Filter (Community show reference!)
+
+&bull; view - A huge dump of information about the current weather for a specific location collapsed into a JSON block<br>
+&bull; filter - Instead of view, receive a table of the forecast for specific arguments<br>
+&bull; vars - Check out every single variable, with its own units<br>
+&bull; now - Get a glimpse of what is going on now, at the location you chose<br>
+&bull; daily - 7-day forecast for UV, temperature, wind speed, rain probability/amount, and the solar budget
+
 
 </details>
 
