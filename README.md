@@ -2,11 +2,11 @@
 
 <img src="icon-web.png" alt="SkyLab logo" width="110" height="110">
 
-# ☁️ SkyLab
+# SkyLab
 
 ### *The sky, explained to you.*
 
-Not just *the* weather. The whole science behind it. 🔬🌦️
+Not just *the* weather. The whole science behind it. 🔬
 
 <br>
 
