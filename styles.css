@@ -143,6 +143,7 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
  transform:translateX(100%);transition:transform .38s cubic-bezier(.16,1,.3,1);
  border-left:1px solid rgba(20,49,79,.14);position:relative;overflow:hidden;
  font-family:"Fira Code","SF Mono",Menlo,Consolas,monospace;
+ font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0;   /* sem ligaduras: "--" não pode parecer um só hífen */
 }
 .term-overlay.active .term-drawer{transform:translateX(0)}
 .term-drawer.fullscreen{width:100vw}
@@ -229,7 +230,14 @@ header.stuck{background:rgba(255,255,255,.2);backdrop-filter:blur(18px);box-shad
 .c-hd{color:var(--t-ink);font-weight:700}.c-spark{color:var(--t-acc);letter-spacing:.02em}.c-code{color:var(--t-ink)}
 .cli-prompt{display:flex;align-items:center;gap:8px;padding:2px 2px 0}
 .cli-prompt.busy{opacity:.5}
-#cliIn{flex:1;min-width:0;background:none;border:0;outline:0;font:inherit;color:var(--t-ink);caret-color:var(--t-acc);padding:4px 0}
+#cliIn{display:block;width:100%;position:relative;background:none;border:0;outline:0;font:inherit;font-variant-ligatures:none;color:transparent;-webkit-text-fill-color:transparent;text-shadow:none;caret-color:var(--t-acc);padding:4px 0}
+#cliIn::selection{background:color-mix(in srgb,var(--t-acc) 30%,transparent);-webkit-text-fill-color:transparent}
+.cli-inw{position:relative;flex:1;min-width:0}
+.cli-hl{position:absolute;inset:0;display:flex;align-items:center;overflow:hidden;pointer-events:none;white-space:pre;color:var(--t-ink)}
+.cli-hl>span{display:block;will-change:transform}
+.hl-cmd{color:var(--t-acc);font-weight:700}      /* comando inicial: o mais vivo */
+.hl-flag{color:var(--t-mut)}                     /* -x / --opção: esbatida */
+.hl-arg{color:var(--t-ink)}                      /* argumentos: cor normal */
 .jt summary{cursor:pointer;list-style:none}
 .jt summary::-webkit-details-marker{display:none}
 .jt summary::before{content:"▸ ";color:var(--t-mut)}
