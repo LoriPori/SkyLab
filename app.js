@@ -5213,6 +5213,12 @@ const SkyTerm = (() => {
 /* ---------- config & tiny helpers ---------- */
 const CFG = { mock:false, cacheMs:10*60*1000, histMax:200, version:'1.0' };
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+/* cores da linha de comandos (como o pip): 1.º termo = comando, -x / --xx = opção (esbatida), resto = argumentos */
+const hlCmd = line => { let first = true;
+ return String(line).replace(/("[^"]*"?|'[^']*'?|\s+|\S+)/g, t => {
+  if(/^\s+$/.test(t)) return t;
+  const cls = first ? 'hl-cmd' : /^--?[A-Za-z]/.test(t) ? 'hl-flag' : 'hl-arg'; first = false;
+  return `<span class="${cls}">${esc(t)}</span>`; }); };
 const num = x => typeof x === 'number' && isFinite(x);
 const fmt = (v,d=1) => num(v) ? v.toFixed(d) : '—';
 const sgn = (v,d=1) => { if(!num(v)) return '—'; const s = Math.abs(v).toFixed(d); return (v<0 && +s!==0 ? '-' : '+') + s; };
@@ -5791,6 +5797,14 @@ class Terminal{
   const HIST0 = (Array.isArray(lsGet('termHist')) ? lsGet('termHist') : []).filter(x => typeof x === 'string').slice(-CFG.histMax);
   Object.assign(this, { outEl, inEl, psEl, scrollEl, history:HIST0, hIdx:HIST0.length, draft:'', ctx:null, busy:false, lastText:'', theme:'modern' });
   this.inEl.addEventListener('keydown', e => this.onKey(e));
+  const hlSpan = inEl.parentElement && inEl.parentElement.querySelector('.cli-hl > span');
+  if(hlSpan){                                                   // camada colorida por baixo do <input> (texto do input é transparente)
+   const sync = () => { hlSpan.innerHTML = hlCmd(inEl.value); hlSpan.style.transform = `translateX(${-inEl.scrollLeft}px)`; };
+   const d = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+   Object.defineProperty(inEl, 'value', { configurable:true, get(){ return d.get.call(this); }, set(v){ d.set.call(this, v); sync(); } });   // apanha também histórico, Tab e limpeza após Enter
+   ['input','keydown','keyup','click','mouseup','focus','select','scroll'].forEach(ev => inEl.addEventListener(ev, () => requestAnimationFrame(sync)));
+   sync();
+  }
  }
  ps1(){ const slug = this.ctx ? this.ctx.place.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') : 'void'; return `skylab@${slug}:~$`; }
  paintPrompt(){ this.psEl.innerHTML = esc(this.ps1()).replace('@','<i>@</i>').replace(':~$','<i>:~$</i>'); }
@@ -5798,12 +5812,12 @@ class Terminal{
  reset(){ this.clear(); this.ctx = null; this.lastText = ''; this.paintPrompt(); }
  block(cmd){
   const b = document.createElement('div'); b.className = 'cli-block';
-  b.innerHTML = `<div class="cli-echo"><span class="cli-ps1">${esc(this.ps1())}</span> ${esc(cmd)}</div><div class="cli-res"></div>`;
+  b.innerHTML = `<div class="cli-echo"><span class="cli-ps1">${esc(this.ps1())}</span> ${hlCmd(cmd)}</div><div class="cli-res"></div>`;
   this.outEl.appendChild(b);
   return new Out(b.querySelector('.cli-res'));
  }
  scroll(){ this.scrollEl.scrollTop = this.scrollEl.scrollHeight; }
- setBusy(v){ this.busy = v; this.inEl.disabled = v; this.inEl.parentElement.classList.toggle('busy', v); if(!v) this.inEl.focus(); }
+ setBusy(v){ this.busy = v; this.inEl.disabled = v; this.inEl.closest('.cli-prompt').classList.toggle('busy', v); if(!v) this.inEl.focus(); }
 
  async exec(raw){
   let line = String(raw||'').trim();
@@ -6940,7 +6954,7 @@ function termShell(){
   <!-- Intentionally empty of data: output is written strictly after an authenticated open -->
   <div class="term-body cli" id="termBody">
    <div class="cli-out" id="cliOut" aria-live="polite"></div>
-   <div class="cli-prompt"><label class="cli-ps1" id="cliPs1" for="cliIn"></label><input id="cliIn" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Terminal command"></div>
+   <div class="cli-prompt"><label class="cli-ps1" id="cliPs1" for="cliIn"></label><div class="cli-inw"><div class="cli-hl" aria-hidden="true"><span></span></div><input id="cliIn" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Terminal command"></div></div>
   </div>
  </aside>`;
  document.body.appendChild(ov);
