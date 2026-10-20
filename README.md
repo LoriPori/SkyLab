@@ -27,7 +27,7 @@ Not just *the* weather. The whole science behind it. 🔬
 
 <br>
 
-<img src="screenshots/desktop-landing.png" alt="SkyLab on desktop" width="760">
+<img src="screenshots/desktop-landing-page.png" alt="SkyLab on desktop" width="760">
 
 </div>
 
@@ -75,7 +75,7 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 
 > 🧪 **One app, many tools.** Check out the features!
 
-## ✨ Features
+## Features
 
 <table>
 <tr>
@@ -91,9 +91,9 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 <td width="50%" valign="top">
 
 ### 🔬 Forecast and science
-- 🕐 Hourly, weekly, and monthly forecast
+- 🕐 Hourly, weekly, and monthly forecasts
 - 🌼 Detailed pollen data
-- 📖 "Sky Explained" tab that explains the current weather pattern
+- 📖 A pattern-based tool that tells you why the weather is like it is
 - 🧠 Daily science facts and a *Myth or Fact* game
 
 </td>
