@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://challenges.cloudflare.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://accounts.google.com; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https: ; frame-src https://challenges.cloudflare.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skylab — Weather & Science</title>
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" type="image/png" href="icon-web.png" sizes="512x512">
+<link rel="apple-touch-icon" href="icon-web.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#33b0ea">
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Skylab is an advanced, privacy-first weather forecasting and atmospheric science platform featuring live global radar, synoptic pattern analysis, and interactive telemetry.">
+<meta name="keywords" content="weather, forecast, radar, meteorology, atmospheric science, open-meteo, hurricane tracker, rain radar, wind particles, synoptic analysis">
+<meta name="author" content="Skylab">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://loripori.github.io/SkyLab/">
+<meta property="og:title" content="Skylab — Weather & Science">
+<meta property="og:description" content="Explore live global weather radars, synoptic analysis, atmospheric physics simulations, and hyper-local telemetry.">
+<meta property="og:image" content="https://loripori.github.io/SkyLab/icon-web.png">
+<meta property="og:site_name" content="Skylab">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://loripori.github.io/SkyLab/">
+<meta name="twitter:title" content="Skylab — Weather & Science">
+<meta name="twitter:description" content="Explore live global weather radars, synoptic analysis, atmospheric physics simulations, and hyper-local telemetry.">
+<meta name="twitter:image" content="https://loripori.github.io/SkyLab/icon-web.png">
+
+<link rel="preconnect" href="https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev" crossorigin>
+<link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
+<link rel="preload" href="fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+<script src="early.js"></script>
+<link rel="stylesheet" href="styles.css">
+<noscript><style>html body{visibility:visible!important}</style></noscript>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<div class="wrap">
+<header id="hd">
+ <div class="logo" id="logo"><span class="lg"></span>Skylab</div>
+ 
+<!-- THE MYTHICAL SEARCH BAR BABY-->
+<div class="search">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="7"/>
+    <path d="m20 20-3.5-3.5"/>
+  </svg>
+  <input id="q" type="search" placeholder="Search a city" autocomplete="off" aria-label="Search a city" aria-controls="sg" aria-expanded="false" aria-autocomplete="list" role="combobox">
+  <button type="button" class="search-clear" id="qClear" aria-label="Clear" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <kbd>/</kbd>
+  <div class="sugg" id="sg" role="listbox"></div>
+</div>
+
+ <!-- Clean, Uncrowded Action Group -->
+ <div class="header-actions">
+  <!-- New Stylized Quick Tools Menu ('...') -->
+  <div style="position:relative">
+   <button class="pill dots-btn" id="toolsBtn" title="Tools &amp; Preferences" aria-label="Tools" aria-haspopup="true" aria-expanded="false">•••</button>
+   <div class="tools-pop" id="toolsPop" role="menu">
+    <div class="tools-grid">
+     <div class="tool-item">
+      <span>Units</span>
+      <div class="seg" role="group" aria-label="Units"><button data-u="c">°C</button><button data-u="f">°F</button></div>
+     </div>
+     <div class="tool-item">
+      <span>Language</span>
+      <button class="pill lang" id="lng" style="padding:4px 10px;font-size:12px"><img id="lngi" alt="" width="18" height="18"><span id="lngt"></span></button>
+     </div>
+     <div class="tool-item">
+      <span>Sound</span>
+      <button class="pill sndb" id="snd" aria-pressed="false" style="padding:4px 10px;font-size:12px" title="Ambient weather sound">Sound</button>
+     </div>
+     <div class="tools-divider"></div>
+     <button class="tool-item-btn" id="loc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+      <span>Locate Me</span>
+     </button>
+     <button class="tool-item-btn" id="sur">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+      <span>Surprise Location</span>
+     </button>
+     <button class="tool-item-btn" id="inst" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Install App</span>
+     </button>
+    </div>
+   </div>
+  </div>
+
+ <!-- Terminal Button -->
+ <button class="pill term-btn" id="termBtn" title="Terminal" aria-label="Terminal View" hidden>
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+  <span class="term-lbl">Terminal</span>
+ </button>
+
+  <!-- Hurricane Tracker -->
+  <button class="pill hbtn" id="hbtn" aria-haspopup="dialog" aria-expanded="false" title="Hurricane tracker" aria-label="Hurricane tracker">
+   <img src="hurricane.png" alt="" width="26" height="26" data-fb="Hurr">
+  </button>
+
+  <!-- IPMA Alert Pill -->
+  <button class="pill warn" id="wrn" hidden aria-expanded="false" aria-controls="wpop"></button>
+
+  <!-- Account / Sign In / lET ME STEAL YOUR DATA-->
+  <button class="pill auth-btn" id="authBtn" aria-haspopup="dialog" aria-expanded="false" title="Account / Sign In">
+   <svg id="authIco" class="auth-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+   <span class="auth-av" id="authAv" aria-hidden="true"></span>
+   <span id="authTxt">Sign In</span>
+  </button>
+ </div>
+ 
+ <div class="wpop" id="wpop" hidden role="dialog" aria-label="IPMA warnings"></div>
+</header>
+<main id="main"></main>
+
+<footer>
+ Weather by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+ Places by <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a> ·
+ Pollen by <a href="https://atmospore.ai/" target="_blank" rel="noopener">Atmospore</a> ·
+ Portugal forecasts &amp; warnings by <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a> ·
+ <a href="mailto:skylab.support@gmail.com">Contact · Contacto</a> ·
+ <button type="button" class="priv-link" data-priv>Privacy · Privacidade</button>
+ <span class="db-badge">
+ <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+ <span>Data stored on <strong>Cloudflare D1</strong></span>
+ </span>
+</footer>
+</div>
+
+<script src="app.js" charset="utf-8"></script>
+</body>
+</html>
