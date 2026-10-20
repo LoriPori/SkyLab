@@ -33,7 +33,7 @@ Not just *the* weather. The whole science behind it. 🔬
 
 ---
 
-## 📑 Table of contents
+## Table of contents
 
 - [🌤️ About](#️-about)
 - [💡 Why I built it](#-why-i-built-it)
@@ -156,20 +156,52 @@ export --format csv          # also: cpp_struct
 &bull; filter - Instead of view, receive a table of the forecast for specific arguments<br>
 &bull; vars - Check out every single variable, with its own units<br>
 &bull; now - Get a glimpse of what is going on now, at the location you chose<br>
-&bull; daily - 7-day forecast for UV, temperature, wind speed, rain probability/amount, and the solar budget
+&bull; daily - 7-day forecast for UV, temperature, wind speed, rain probability/amount, and the solar budget<br>
+&bull; upper - Information and data about upper air layers<br>
+&bull; sun - Sun-related data, like day length, sunrise/sunset and next solar event<br>
+&bull; monthly - If you want to outline all your outfits for the month, just use this command
+
+#### Some simple Math
+
+&bull; calc - A command to calculate parameters, just type calc and see the metrics available<br>
+&bull; simulate - Run physics simulations, like a thermal inversion, the Gaussian plume dispersion and a parcel sounding
+
+#### Compare it!
+
+&bull; compare - Fetch two places and compare their metrics<br>
+&bull; delta - Compare the current values with past or future data
+
+#### Visualization
+
+&bull; plot - A very primitive graph of a certain metric over a certain amount of time<br>
+&bull; stats - Min / max / mean / median / σ / trend for a variable over a window
+
+#### Exporting the data
+
+&bull; export - A lonely command that accepts various arguments, like csv or even C++, if you are an Arduino maniac. Oh, forgot the JSON
+
+#### System
+&bull; help - List commands, or show the manual of one<br>
+&bull; copy - Copy the output of the previous command to the clipboard<br>
+&bull; theme - Switch look: modern (light), retro (green phosphor CRT), amber (amber CRT)<br>
+&bull; mock - Use offline synthetic data instead of the live API<br>
+&bull; echo - Print text<br>
+&bull; date - Current UTC time and local time at the context location
+
+### And some key combinations that trigger certain commands, all listed in the 'help' section in the terminal
 
 
 </details>
 
-## 🧱 Tech stack
+## Tech stack
 
 | Layer | What I used |
 |---|---|
-| 🎨 Front end | HTML, CSS and JavaScript, no frameworks |
-| ⚙️ Back end | Cloudflare Worker + D1 (SQLite) |
-| 🌐 Hosting | GitHub Pages (front end), Cloudflare (worker) |
-| 🔔 Notifications | Web Push (VAPID) |
-| 🔑 Sign-in | Email code verification + Google |
+| Front end | HTML, CSS and JavaScript, no frameworks |
+| Back end | Cloudflare Worker + D1 (SQLite) |
+| Hosting | GitHub Pages (front end), Cloudflare (worker) |
+| Notifications | Web Push (VAPID) |
+| Sign-in | Email code verification + Google |
 
 ## 🗺️ How it works
 
@@ -199,7 +231,7 @@ SkyLab/
 ├── 🔔 sw.js           # service worker (push notifications)
 ├── ⚙️ worker.js       # Cloudflare Worker (API, auth, proxies)
 ├── 🖼️ icon-web.png
-└── 📸 screenshots/
+└── 📸 screenshots/  
 ```
 
 ## 🚀 Run it locally
@@ -217,9 +249,9 @@ SkyLab/
 
 > [!IMPORTANT]
 > The worker needs its own setup (Cloudflare account, D1 database, secrets).
-> *Write here: link to a SETUP.md, or list the environment variables.*
+> [SETUP.md](SETUP.md)
 
-## 🛰️ Data sources and credits
+## Data sources and credits
 
 SkyLab stands on the shoulders of these open services. Thank you! 🙏
 
@@ -238,7 +270,7 @@ SkyLab stands on the shoulders of these open services. Thank you! 🙏
 *Write here: what data is stored (email, Google ID, location), what is not, how to delete an account, and where the full privacy page is.*
 
 > [!WARNING]
-> Found a vulnerability? Please email the address in [Contact](#-contact) instead of opening a public issue.
+> Found a vulnerability? Please email the address in [Contact](#-contact) instead of opening a public issue. Thanks!
 
 ## 🧭 Roadmap
 
@@ -249,11 +281,11 @@ SkyLab stands on the shoulders of these open services. Thank you! 🙏
 
 ## 🤝 Contributing
 
-SkyLab is a personal project, and I'm **not accepting code contributions** (pull requests). Any PR will be closed without review. 🙅
+SkyLab is a personal project, and I'm **not accepting code contributions** (pull requests). Any PR will be closed without review.
 
-- 🐛 Found a bug? Open an **issue** and tell me what happened.
-- 💡 Have an idea? Open an **issue** too, I'm happy to read it.
-- 🍴 Want to experiment? You can fork it, within the terms of the [license](#-license).
+- Found a bug? Open an **issue** and tell me what happened.
+- Have an idea? Open an **issue** too, I'm happy to read it.
+- Want to experiment? You can fork it, within the terms of the [license](#-license).
 
 ## 📜 License
 
@@ -266,17 +298,17 @@ Released under the **MIT License**. See the [`LICENSE`](LICENSE) file for detail
 
 *Write here: who you are, in your own words. Where you're from, what you do, what else you build.*
 
-## 📬 Contact
+## Contact me
 
 | | |
 |:-:|---|
-| 📧 | [skylab.support@gmail.com](mailto:skylab.support@gmail.com) |
-| 🐙 | [@loripori](https://github.com/loripori) |
+| [skylab.support@gmail.com](mailto:skylab.support@gmail.com) |
+| [@loripori](https://github.com/loripori) |
 
 ---
 
 <div align="center">
 
-<sub>Made with ☕ and curiosity in Lisbon 🇵🇹<br>If SkyLab helped you understand the sky a bit better, a ⭐ on the repo is the best thank-you.</sub>
+<sub>Made with love and curiosity in Lisbon (and some coffee aswell!) 🇵🇹<br>If SkyLab helped you understand the sky a bit better, a ⭐ on the repo is the best thank-you. Hope you enjoy the app, don't forget to share it with friends!</sub>
 
 </div>
