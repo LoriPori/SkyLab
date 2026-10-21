@@ -1827,6 +1827,13 @@ async function loadStation(){
  }catch(e){ /* sem estação disponível: não mostra nada */ }
 }
 
+/* tendência da pressão nas últimas 3 h (seta + variação), em vez de uma barra sem significado */
+function pressTrend(){
+ const h=data.hourly,c=data.current,p=h.surface_pressure,i=Math.max(0,idx0()-3);
+ if(!p||!isFinite(p[i])||!isFinite(c.surface_pressure))return'<div class="ptr">&nbsp;</div>';
+ const d=c.surface_pressure-p[i],ar=d>.4?'↗':d<-.4?'↘':'→',sg=Math.abs(d)<.05?'':d>0?'+':'−';
+ return`<div class="ptr" title="${T2('Change over the last 3 hours','Variação nas últimas 3 horas')}">${ar} ${sg}${pdS(Math.abs(d))}/3h</div>`
+}
 function todayPane(){
  const c=data.current,d=data.daily,m=moon(),uv=d.uv_index_max[0],ci=comfortInfo(),h=data.hourly;
  const uvl=uv<3?'Low':uv<6?'Moderate':uv<8?'High':uv<11?'Very high':'Extreme';
@@ -1837,7 +1844,7 @@ function todayPane(){
    <div class="mini"><span>Wind</span><b><svg class="wind" style="--r:${(c.wind_direction_10m||0)+180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>${W(c.wind_speed_10m)}</b></div>
    <div class="mini"><span>Humidity</span><b>${c.relative_humidity_2m}%</b><div class="bar2"><i style="--w:${c.relative_humidity_2m}%"></i></div></div>
    <div class="mini"><span>UV · ${uvl}</span><b>${Math.round(uv)}</b><div class="bar2"><i style="--w:${Math.min(100,uv/11*100)}%"></i></div></div>
-   <div class="mini"><span>Pressure</span><b>${pN(c.surface_pressure)}<small>${pU()}</small></b><div class="bar2"><i style="--w:${Math.max(6,Math.min(100,(c.surface_pressure-970)/70*100))}%"></i></div></div>
+   <div class="mini"><span>Pressure</span><b>${pN(c.surface_pressure)}<small>${pU()}</small></b>${pressTrend()}</div>
   </div>
   ${chartSVG()}
  </section>
@@ -7748,26 +7755,53 @@ function orbHTML(){return(typeof data!=='undefined'&&data&&window.SkyOrb)?SkyOrb
   for(let k=1;k<N;k++){const cur=segs[segs.length-1].l;if(L[k]!==cur&&(k+1>=N||L[k+1]===L[k]))segs.push({k,l:L[k]})}
   const out=segs.slice(0,3).map((s,j)=>j===0?(tom?(pt?`Amanhã, veste ${nm[s.l]}.`:`Tomorrow, wear ${nm[s.l]}.`):(pt?`Agora veste ${nm[s.l]}.`:`Right now, wear ${nm[s.l]}.`))
     :(pt?`A partir das ${H(ix[s.k])}, passa para ${nm[s.l]}.`:`From ${H(ix[s.k])}, switch to ${nm[s.l]}.`));
-  const ex=[],pp=k=>h.precipitation_probability[ix[k]]||0;
+  const ex=[],add=(pr,s)=>ex.push({pr,s}),pp=k=>h.precipitation_probability[ix[k]]||0,wc=k=>h.weather_code?(h.weather_code[ix[k]]||0):0;
+  const first=f=>{for(let k=0;k<N;k++)if(f(k))return k;return -1};
+  const dU=x=>Math.round(unit=='c'?Math.abs(x):Math.abs(x)*9/5);
+  // 0 · segurança
+  const th=first(k=>wc(k)>=95);
+  if(th>=0)add(0,pt?`Trovoada possível por volta das ${H(ix[th])}: fica abrigado e longe de zonas abertas.`:`Thunderstorms are possible around ${H(ix[th])}: stay sheltered and away from open ground.`);
+  let wi=-1;for(let k=0;k<N;k++){const g=h.wind_gusts_10m?h.wind_gusts_10m[ix[k]]:h.wind_speed_10m[ix[k]];if(g>=50){wi=k;break}}
+  if(wi>=0)add(1,pt?`Leva um corta-vento: rajadas fortes por volta das ${H(ix[wi])}.`:`Bring a windproof layer: strong gusts around ${H(ix[wi])}.`);
+  const sn=first(k=>(wc(k)>=71&&wc(k)<=77)||wc(k)==85||wc(k)==86);
+  if(sn>=0)add(1,pt?`Neve a partir das ${H(ix[sn])}: calçado impermeável e com boa aderência.`:`Snow from ${H(ix[sn])}: waterproof boots with good grip.`);
+  const tv=ix.map(i=>h.temperature_2m[i]);
+  if(Math.min(...tv)<=2)add(1,pt?'Cuidado com gelo no chão.':'Watch for ice underfoot.');
+  // 2 · chuva
   let a=-1,b=-1;for(let k=0;k<N;k++){if(pp(k)>=50){if(a<0)a=k;b=k}else if(a>=0)break}
-  if(a>=0){const e=H(ix[b]+1);ex.push(a===0&&!tom?(pt?`Leva guarda-chuva: deve chover até às ${e}.`:`Take an umbrella: rain is likely until ${e}.`)
-                       :(pt?`Leva guarda-chuva entre as ${H(ix[a])} e as ${e}.`:`Take an umbrella from ${H(ix[a])} to ${e}.`))}
+  if(a>=0&&sn<0){
+   const e=H(ix[b]+1),gm=Math.max(...ix.slice(a,b+1).map(i=>h.wind_gusts_10m?(h.wind_gusts_10m[i]||0):0)),heavy=ix.slice(a,b+1).some(i=>[65,67,82].includes(h.weather_code?h.weather_code[i]:0));
+   if(gm>=35)add(2,a===0&&!tom?(pt?`Com este vento o guarda-chuva não aguenta: leva um impermeável, deve chover até às ${e}.`:`The wind will beat an umbrella: take a waterproof jacket, rain is likely until ${e}.`)
+                              :(pt?`Com vento, melhor um impermeável do que guarda-chuva entre as ${H(ix[a])} e as ${e}.`:`With this wind, a waterproof jacket beats an umbrella from ${H(ix[a])} to ${e}.`));
+   else add(2,a===0&&!tom?(pt?`Leva guarda-chuva: deve chover até às ${e}.`:`Take an umbrella: rain is likely until ${e}.`)
+                         :(pt?`Leva guarda-chuva entre as ${H(ix[a])} e as ${e}.`:`Take an umbrella from ${H(ix[a])} to ${e}.`));
+   if(heavy)add(3,pt?'Chuva forte à vista: calçado que não se encharque faz toda a diferença.':'Heavy rain on the way: shoes that keep water out make all the difference.');
+  }
+  const fg=first(k=>wc(k)==45||wc(k)==48);
+  if(fg>=0&&fg<8)add(3,pt?`Nevoeiro por volta das ${H(ix[fg])}: roupa clara ou refletora se fores a pé ou de bicicleta.`:`Fog around ${H(ix[fg])}: wear bright or reflective clothing if you walk or cycle.`);
+  // 3 · sol
   const uv=data.daily.uv_index_max[tom?1:0]||0,sw=h.shortwave_radiation||[],day=dt(ix[0]);
   if(uv>=3&&sw.length){let mx=0;for(let i=0;i<h.time.length;i++)if(dt(i)===day)mx=Math.max(mx,sw[i]||0);
    let s=-1,e=-1;for(let i=0;i<h.time.length;i++){if(dt(i)!==day)continue;if((sw[i]||0)>=mx*.5&&h.is_day[i]){if(s<0)s=i;e=i}}
-   if(s>=0&&e>=ix[0])ex.push(pt?`Protetor solar e óculos das ${H(Math.max(s,ix[0]))} às ${H(e+1)}.`:`Sunscreen and sunglasses ${H(Math.max(s,ix[0]))}–${H(e+1)}.`)}
-  let wi=-1;for(let k=0;k<N;k++){const g=h.wind_gusts_10m?h.wind_gusts_10m[ix[k]]:h.wind_speed_10m[ix[k]];if(g>=50){wi=k;break}}
-  if(wi>=0)ex.push(pt?`Leva um corta-vento: rajadas fortes por volta das ${H(ix[wi])}.`:`Bring a windproof layer: strong gusts around ${H(ix[wi])}.`);
-  const tv=ix.map(i=>h.temperature_2m[i]);
-  if(Math.max(...tv)>=28)ex.push(pt?'Leva água contigo.':'Carry water with you.');
-  if(Math.min(...tv)<=2)ex.push(pt?'Cuidado com gelo no chão.':'Watch for ice underfoot.');
-  if(!ex.length&&L[0]<=2)ex.push(pt?'Boa altura para um passeio.':'A good time for a walk.');
-  return{text:out.concat(ex.slice(0,2)).join(' '),segs,ex}
+   if(s>=0&&e>=ix[0])add(3,pt?`Protetor solar e óculos das ${H(Math.max(s,ix[0]))} às ${H(e+1)}${uv>=6?', mais um chapéu e sombra ao meio-dia':''}.`:`Sunscreen and sunglasses ${H(Math.max(s,ix[0]))}–${H(e+1)}${uv>=6?', plus a hat and shade at midday':''}.`)}
+  // 4 · conforto
+  const tmax=Math.max(...tv),tk=tv.indexOf(tmax);
+  if(tmax>=30)add(3,pt?`A hora mais quente será por volta das ${H(ix[tk])}, com ${T(tmax)}°: procura sombra e bebe água.`:`The hottest hour is around ${H(ix[tk])} at ${T(tmax)}°: find shade and keep drinking water.`);
+  else if(tmax>=28)add(4,pt?'Leva água contigo.':'Carry water with you.');
+  const df0=c.temperature_2m-c.apparent_temperature;
+  if(!tom&&df0>=4)add(4,pt?`Sente-se ${dU(df0)}° mais frio do que o termómetro diz: protege o pescoço e as orelhas.`:`It feels ${dU(df0)}° colder than the thermometer says: cover your neck and ears.`);
+  if(segs.length<2&&tmax-Math.min(...tv)>=10)add(4,pt?'Grande amplitude térmica: veste em camadas.':'Big temperature swing: dress in layers.');
+  const td0=h.dew_point_2m?h.dew_point_2m[ix[0]]:c.dew_point_2m;
+  if(td0>=18&&tmax>=22)add(5,pt?'Ar húmido e abafado: tecidos respiráveis, como algodão ou linho, sabem melhor.':'Muggy air: breathable fabrics like cotton or linen feel better.');
+  if(c.relative_humidity_2m<30&&c.temperature_2m<=12)add(6,pt?'Ar seco: bálsamo para os lábios e creme hidratante ajudam.':'Dry air: lip balm and moisturiser help.');
+  if(!ex.length&&L[0]<=2)add(7,pt?'Boa altura para um passeio.':'A good time for a walk.');
+  ex.sort((p,q)=>p.pr-q.pr);
+  return{text:out.concat(ex.slice(0,out.length>=3?2:3).map(x=>x.s)).join(' '),segs,ex:ex.map(x=>x.s)}
  }
 
  /* ---------- o que o orbe diz quando lhe tocam ---------- */
- const CUR={en:['Octopuses have three hearts.','Honey found in ancient Egyptian tombs was still edible.','Bananas are berries, but strawberries are not.','Wombat droppings are cube-shaped.','Sharks are older than trees.','The Eiffel Tower grows by up to 15 cm in summer, because metal expands in the heat.','A day on Venus is longer than its year.','Sound travels about four times faster in water than in air.','A group of flamingos is called a flamboyance.','Hummingbirds are the only birds that can fly backwards.','The shortest war in history, in 1896, lasted around 40 minutes.','I am just a sphere with opinions about jackets.'],
-  pt:['Os polvos têm três corações.','O mel encontrado em túmulos do antigo Egito ainda estava comestível.','As bananas são bagas, mas os morangos não.','O cocó do wombat tem forma de cubo.','Os tubarões são mais antigos do que as árvores.','A Torre Eiffel cresce até 15 cm no verão, porque o metal dilata com o calor.','Em Vénus, um dia é mais longo do que um ano.','O som viaja cerca de quatro vezes mais depressa na água do que no ar.','Um grupo de flamingos chama-se «flamboyance».','Os colibris são as únicas aves que voam para trás.','A guerra mais curta da história, em 1896, durou cerca de 40 minutos.','Sou só uma esfera com opiniões sobre casacos.']};
+ const CUR={en:['Octopuses have three hearts.','Honey found in ancient Egyptian tombs was still edible.','Bananas are berries, but strawberries are not.','Wombat droppings are cube-shaped.','Sharks are older than trees.','The Eiffel Tower grows by up to 15 cm in summer, because metal expands in the heat.','A day on Venus is longer than its year.','Sound travels about four times faster in water than in air.','A group of flamingos is called a flamboyance.','Hummingbirds are the only birds that can fly backwards.','The shortest war in history, in 1896, lasted around 40 minutes.','I am just a sphere with opinions about jackets.','Lightning is about five times hotter than the surface of the Sun.','Thunder is the sound of air expanding explosively around a lightning bolt.','Raindrops are not tear-shaped: small ones are spheres and large ones flatten like burger buns.','A rainbow is really a full circle; from the ground you only see an arc of it.','Sunlight takes about eight minutes and twenty seconds to reach us.','The Earth is closest to the Sun in early January.','Antarctica is technically a desert: most of it gets very little precipitation.','Neptune has winds of more than 2,000 km/h, the fastest in the Solar System.','The Moon drifts about 3.8 cm further from Earth every year.','A west wind is named after where it comes from: it blows from the west.','Dolphins sleep with half of their brain awake.','A group of crows is called a murder.','Sea otters hold hands while they sleep so they do not drift apart.','Bananas are very slightly radioactive, thanks to their potassium.','Your heart beats around 100,000 times a day.','Venus spins backwards compared with most planets.','Water can boil and freeze at the same time, at its triple point.','Lisbon\'s Bertrand bookshop, open since 1732, is the oldest operating bookshop in the world.','Portugal\'s land border with Spain is one of the oldest in Europe, essentially unchanged since 1297.','A fair-weather cumulus cloud can weigh around 500 tonnes.'],
+  pt:['Os polvos têm três corações.','O mel encontrado em túmulos do antigo Egito ainda estava comestível.','As bananas são bagas, mas os morangos não.','O cocó do wombat tem forma de cubo.','Os tubarões são mais antigos do que as árvores.','A Torre Eiffel cresce até 15 cm no verão, porque o metal dilata com o calor.','Em Vénus, um dia é mais longo do que um ano.','O som viaja cerca de quatro vezes mais depressa na água do que no ar.','Um grupo de flamingos chama-se «flamboyance».','Os colibris são as únicas aves que voam para trás.','A guerra mais curta da história, em 1896, durou cerca de 40 minutos.','Sou só uma esfera com opiniões sobre casacos.','Um relâmpago é cerca de cinco vezes mais quente do que a superfície do Sol.','O trovão é o som do ar a expandir-se de forma explosiva à volta de um relâmpago.','As gotas de chuva não têm forma de lágrima: as pequenas são esferas e as grandes achatam-se como pães de hambúrguer.','Um arco-íris é na verdade um círculo completo; do chão só vês um arco.','A luz do Sol demora cerca de oito minutos e vinte segundos a chegar até nós.','A Terra está mais perto do Sol no início de janeiro.','A Antártida é tecnicamente um deserto: a maior parte recebe muito pouca precipitação.','Neptuno tem ventos de mais de 2000 km/h, os mais rápidos do Sistema Solar.','A Lua afasta-se da Terra cerca de 3,8 cm por ano.','O vento de oeste tem o nome de onde vem: sopra de oeste.','Os golfinhos dormem com metade do cérebro acordado.','Um grupo de corvos chama-se «murder», em inglês.','As lontras-marinhas dão as patas umas às outras enquanto dormem, para não se afastarem.','As bananas são ligeiramente radioativas, por causa do potássio.','O teu coração bate cerca de 100 000 vezes por dia.','Vénus roda ao contrário da maioria dos planetas.','A água pode ferver e congelar ao mesmo tempo, no seu ponto triplo.','A livraria Bertrand, em Lisboa, aberta desde 1732, é a livraria mais antiga do mundo ainda em funcionamento.','A fronteira de Portugal com Espanha é das mais antigas da Europa, praticamente inalterada desde 1297.','Uma nuvem cúmulo de bom tempo pode pesar cerca de 500 toneladas.']};
  const MAD={en:['Hey! Stop poking me!','I am getting red in the face here…','Last warning. I mean it.','GRRR! Hands off the orb!','Do I look like a button to you?!','That is it. I am boiling.'],
   pt:['Eh! Pára de me picar!','Estou a ficar vermelho…','Último aviso. Estou a falar a sério.','GRRR! Larga o orbe!','Parece-te que sou um botão?!','Já chega. Estou a ferver.']};
  const CALM={en:'Okay… I am calm now. Please do not push it.',pt:'Pronto… já passou. Mas não abuses.'};
@@ -7782,6 +7816,39 @@ function orbHTML(){return(typeof data!=='undefined'&&data&&window.SkyOrb)?SkyOrb
   else L.push(pt?`O sol nasce amanhã às ${d.sunrise[1].slice(11,16)}.`:`The Sun rises tomorrow at ${d.sunrise[1].slice(11,16)}.`);
   L.push(pt?`O índice UV máximo de hoje é ${Math.round(d.uv_index_max[0])}.`:`Today’s peak UV index is ${Math.round(d.uv_index_max[0])}.`);
   L.push(pt?`Vento a ${W(c.wind_speed_10m)}.`:`Wind at ${W(c.wind_speed_10m)}.`);
+  const dn=i=>new Date(d.time[i]+'T12:00').toLocaleDateString(LOC(),{weekday:'long'}),dU=x=>Math.round(unit=='c'?Math.abs(x):Math.abs(x)*9/5),wc0=c.weather_code,mo=moon();
+  const MN={'New moon':'lua nova','Waxing crescent':'crescente côncava','First quarter':'quarto crescente','Waxing gibbous':'crescente convexa','Full moon':'lua cheia','Waning gibbous':'minguante convexa','Last quarter':'quarto minguante','Waning crescent':'minguante côncava'};
+  L.push(pt?`Hoje: máxima de ${T(d.temperature_2m_max[0])}° e mínima de ${T(d.temperature_2m_min[0])}°.`:`Today’s range: high ${T(d.temperature_2m_max[0])}°, low ${T(d.temperature_2m_min[0])}°.`);
+  if(isFinite(h.temperature_2m[i0+3]))L.push(pt?`Daqui a 3 horas: ${T(h.temperature_2m[i0+3])}°.`:`In three hours: ${T(h.temperature_2m[i0+3])}°.`);
+  const dd=d.temperature_2m_max[1]-d.temperature_2m_max[0];
+  if(Math.abs(dd)>=2)L.push(pt?`Amanhã vai estar ${dU(dd)}° mais ${dd>0?'quente':'frio'} do que hoje.`:`Tomorrow will be ${dU(dd)}° ${dd>0?'warmer':'cooler'} than today.`);
+  const tdw=c.dew_point_2m,cf=tdw<10?['seco e confortável','dry and comfortable']:tdw<16?['agradável','pleasant']:tdw<18?['ligeiramente húmido','slightly humid']:tdw<21?['húmido','humid']:['abafado','oppressive'];
+  if(isFinite(tdw))L.push(pt?`O ponto de orvalho está nos ${T(tdw)}°: o ar está ${cf[0]}.`:`The dew point is ${T(tdw)}°, so the air feels ${cf[1]}.`);
+  const sp=h.surface_pressure,dp=sp&&isFinite(sp[Math.max(0,i0-3)])?c.surface_pressure-sp[Math.max(0,i0-3)]:null;
+  if(dp!==null)L.push(dp<=-.5?(pt?`A pressão está a descer (${pdS(Math.abs(dp))} em 3 h): tempo mais instável a caminho.`:`Pressure is falling (${pdS(Math.abs(dp))} in 3 h): more unsettled weather is likely.`)
+                  :dp>=.5?(pt?`A pressão está a subir (${pdS(Math.abs(dp))} em 3 h): tendência para tempo mais estável.`:`Pressure is rising (${pdS(Math.abs(dp))} in 3 h): the weather is tending to settle.`)
+                  :(pt?'A pressão está estável: sem grandes mudanças à vista.':'Pressure is steady: no big changes in sight.'));
+  if(c.wind_gusts_10m>=40)L.push(pt?`Há rajadas até ${W(c.wind_gusts_10m)}.`:`Gusts are reaching ${W(c.wind_gusts_10m)}.`);
+  const dlm=(new Date(d.sunset[0])-new Date(d.sunrise[0]))/6e4;
+  if(isFinite(dlm))L.push(pt?`Hoje há ${hm(dlm)} de luz solar.`:`Today has ${hm(dlm)} of daylight.`);
+  L.push(pt?`Fase da Lua: ${MN[mo.n]||mo.n}, ${mo.lit}% iluminada.`:`Moon phase: ${mo.n.toLowerCase()}, ${mo.lit}% illuminated.`);
+  const rn=d.precipitation_probability_max?d.precipitation_probability_max.findIndex((v,i)=>i>=1&&(v||0)>=50):-1;
+  if(rn>0)L.push(pt?`O próximo dia de chuva deve ser ${dn(rn)}.`:`The next rainy day looks like ${dn(rn)}.`);
+  else if(d.precipitation_probability_max&&d.precipitation_probability_max.slice(1).every(v=>(v||0)<40))L.push(pt?'Sem chuva à vista nos próximos dias.':'No rain in sight for the coming days.');
+  const hi7=d.temperature_2m_max.indexOf(Math.max(...d.temperature_2m_max));
+  if(hi7>0)L.push(pt?`O dia mais quente desta semana será ${dn(hi7)}, com ${T(d.temperature_2m_max[hi7])}°.`:`The warmest day this week looks like ${dn(hi7)}, at ${T(d.temperature_2m_max[hi7])}°.`);
+  if(d.temperature_2m_min[0]<=3)L.push(pt?`Pode haver geada de madrugada: mínima de ${T(d.temperature_2m_min[0])}°.`:`Frost is possible before dawn: the low is ${T(d.temperature_2m_min[0])}°.`);
+  const sound=Math.round((331.3+.606*c.temperature_2m)*3.6);
+  L.push(pt?`Com este ar, o som viaja a cerca de ${unit=='c'?sound+' km/h':Math.round(sound*.539957)+' kt'}.`:`In this air, sound travels at about ${unit=='c'?sound+' km/h':Math.round(sound*.539957)+' kt'}.`);
+  // curiosidades que dependem do tempo que está agora
+  const wet=(wc0>=51&&wc0<=67)||(wc0>=80&&wc0<=82);
+  if(wet)L.push(pt?'O cheiro da chuva tem nome: petricor.':'That smell of rain has a name: petrichor.');
+  if(wc0>=95)L.push(pt?'Conta os segundos entre o relâmpago e o trovão: cerca de 3 segundos por quilómetro.':'Count the seconds between flash and thunder: roughly 3 seconds per kilometre.');
+  if((wc0>=71&&wc0<=77)||wc0==85||wc0==86)L.push(pt?'A neve fresca reflete até 90% da luz do Sol, por isso os dias de neve parecem tão claros.':'Fresh snow reflects up to 90% of sunlight, which is why snowy days look so bright.');
+  if(wc0==45||wc0==48)L.push(pt?'O nevoeiro é só uma nuvem que toca no chão.':'Fog is just a cloud that touches the ground.');
+  if(wc0<=1&&!c.is_day)L.push(pt?'Noites limpas arrefecem mais: sem nuvens, o chão perde calor direto para o espaço.':'Clear nights get colder: with no clouds, the ground loses heat straight to space.');
+  if(wc0<=1&&c.is_day)L.push(pt?'O céu é azul porque o ar dispersa a luz azul mais do que a vermelha.':'The sky is blue because air scatters blue light more than red.');
+  if(c.temperature_2m>=30)L.push(pt?'O suor só te refresca quando se evapora, por isso o calor húmido custa mais.':'Sweat only cools you when it evaporates, which is why humid heat feels worse.');
   return L
  }
 

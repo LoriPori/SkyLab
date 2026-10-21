@@ -464,6 +464,7 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)
 .mini span{font-size:12px;color:var(--mut)}
 .mini b{display:flex;align-items:center;gap:6px;font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.2}
 .mini small{font-size:12px;color:var(--mut)}
+.mini .ptr{font-size:12px;color:var(--mut);margin-top:6px;line-height:1.2;white-space:nowrap;font-variant-numeric:tabular-nums}
 .bar2{height:5px;border-radius:9px;background:rgba(20,49,79,.12);margin-top:6px;overflow:hidden}
 .bar2 i{display:block;height:100%;width:var(--w);background:var(--acc);border-radius:9px;animation:gw 1.2s cubic-bezier(.2,.7,.2,1) both}
 .wind{width:22px;height:22px;transform:rotate(var(--r));animation:aim 1.6s cubic-bezier(.3,1.4,.4,1) both;color:var(--acc)}
