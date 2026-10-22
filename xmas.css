@@ -1,0 +1,97 @@
+/* Skylab · xmas.css — carregado só entre 1 de dezembro e 1 de janeiro (ver early.js). Tudo sob html.xmas. */
+@font-face{font-family:"Mountains of Christmas";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/mountains-of-christmas-700.woff2) format("woff2")}
+html.xmas{--xm-red:#b3202a;--xm-green:#1f7a4d;--xm-gold:#ffd86b;--xm-fest:"Mountains of Christmas","Instrument Serif",Georgia,serif;
+  --a:#1d5584!important;--b:#2f8a76!important;--acc:#b3202a!important}
+html.xmas body{background:linear-gradient(175deg,#1d5584 0%,#2a7a82 48%,#5fb59d 100%) fixed!important}
+html.xmas.is-mobile body::before{background:linear-gradient(180deg,#1d5584 0%,#2a7a82 50%,#5fb59d 100%)!important}
+html.xmas .aurora{opacity:.5;filter:hue-rotate(60deg)}
+
+/* ---- tipo de letra festivo: título, cabeçalhos ---- */
+html.xmas .logo{font-family:var(--xm-fest);font-weight:700;font-size:34px;letter-spacing:.01em;color:#fff4c2;text-shadow:0 2px 0 var(--xm-red),0 0 20px rgba(255,216,107,.65)}
+html.xmas .logo::after{content:"🎄";margin-left:6px;font-size:.78em}
+html.xmas.is-mobile .logo{font-size:29px}
+html.xmas .land h1,html.xmas .hero h1{font-family:var(--xm-fest);font-weight:700;font-size:clamp(44px,7.2vw,84px);line-height:1.02;color:#fff;text-shadow:0 3px 0 var(--xm-red),0 0 28px rgba(255,216,107,.5)}
+html.xmas.is-mobile .land h1{font-size:clamp(40px,12vw,56px)}
+html.xmas .m-h2,html.xmas .card h3{font-family:var(--xm-fest);font-weight:700;font-size:1.35em;color:var(--xm-red);letter-spacing:.01em}
+html.xmas .m-h2{color:#fff;text-shadow:0 2px 0 var(--xm-red)}
+
+/* ---- cartões: fita vermelha no topo ---- */
+html.xmas .card{box-shadow:inset 0 4px 0 var(--xm-red),0 22px 50px -28px rgba(5,25,45,.55)}
+html.xmas.is-mobile .card{box-shadow:inset 0 4px 0 var(--xm-red),0 10px 30px -14px rgba(5,25,45,.5)}
+html.xmas .card:nth-child(even){box-shadow:inset 0 4px 0 var(--xm-green),0 22px 50px -28px rgba(5,25,45,.55)}
+html.xmas.is-mobile .card:nth-child(even){box-shadow:inset 0 4px 0 var(--xm-green),0 10px 30px -14px rgba(5,25,45,.5)}
+
+/* ---- luzes no topo ---- */
+.xm-lights{position:fixed;left:0;right:0;top:0;height:16px;z-index:70;pointer-events:none;
+  background:radial-gradient(circle at 10px 6px,#ff4d4d 0 4px,transparent 5px) 0 0/44px 16px repeat-x,
+  radial-gradient(circle at 32px 6px,#ffd86b 0 4px,transparent 5px) 0 0/44px 16px repeat-x,
+  radial-gradient(circle at 21px 8px,#5be37d 0 4px,transparent 5px) 0 0/44px 16px repeat-x;
+  filter:drop-shadow(0 0 5px rgba(255,230,150,.8));animation:xmTw 2.4s ease-in-out infinite alternate;
+  -webkit-mask:linear-gradient(#000 60%,transparent);mask:linear-gradient(#000 60%,transparent)}
+@keyframes xmTw{0%{opacity:.55}100%{opacity:1}}
+
+/* ---- neve a cair ---- */
+#xm-snow{position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none}
+
+/* ---- faixa de frases ---- */
+.xm-bar{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 16px;border-radius:999px;color:#fff;font-size:14.5px;line-height:1.35;
+  background:repeating-linear-gradient(135deg,rgba(179,32,42,.92) 0 14px,rgba(255,255,255,.95) 14px 22px,rgba(31,122,77,.92) 22px 36px);position:relative;z-index:2;box-shadow:0 8px 20px -12px rgba(0,0,0,.5)}
+.xm-bar>span{flex:1;min-width:0;padding:6px 14px;border-radius:999px;background:rgba(10,40,35,.82);text-align:center;transition:opacity .5s}
+.xm-bar b{font-family:var(--xm-fest);font-size:1.25em;color:var(--xm-gold);margin-right:6px}
+.xm-bar.f>span{opacity:0}
+html.is-mobile .xm-bar{margin:6px var(--m-side,14px) 10px;font-size:13.5px;border-radius:22px}
+
+/* ---- botão do Pai Natal ---- */
+.xm-santa{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.xm-santa .xm-e{font-size:18px}
+html.is-mobile .xm-santa{display:none}
+.xm-fab{display:none}
+html.is-mobile .xm-fab{display:flex;align-items:center;gap:6px;position:fixed;right:14px;bottom:calc(var(--m-bar,86px) + 10px);z-index:80;padding:11px 16px;border:0;border-radius:999px;
+  background:linear-gradient(160deg,#d6303a,#9e1b25);color:#fff;font:700 14px var(--sans);box-shadow:0 10px 24px -8px rgba(120,10,20,.8);-webkit-tap-highlight-color:transparent}
+html.is-mobile .xm-fab .xm-e{font-size:20px}
+
+/* ---- modal ---- */
+.xm-modal{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,20,36,.72);animation:xmFade .25s both}
+.xm-modal[hidden]{display:none}
+@keyframes xmFade{from{opacity:0}}
+.xm-box{position:relative;width:min(420px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:20px 18px 18px;border-radius:26px;color:#14314f;text-align:center;
+  background:linear-gradient(180deg,#fff,#eaf5fb);box-shadow:inset 0 5px 0 var(--xm-red),0 30px 70px -20px rgba(0,0,0,.7)}
+.xm-box h2{font-family:var(--xm-fest);font-size:34px;color:var(--xm-red);margin:4px 0 8px}
+.xm-x{position:absolute;right:12px;top:12px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(20,49,79,.08);color:#14314f;font-size:20px;line-height:1;cursor:pointer}
+#xm-g{display:block;margin:0 auto;width:min(300px,76vw);height:min(300px,76vw);border-radius:50%;box-shadow:0 0 0 4px rgba(255,255,255,.9),0 0 40px rgba(60,140,220,.5)}
+.xm-st{margin:12px 0 4px;font-size:15px;line-height:1.5}
+.xm-st b{color:var(--xm-red)}
+.xm-n{font-family:var(--xm-fest);font-size:28px;color:var(--xm-green);line-height:1.1}
+.xm-note{font-size:12px;opacity:.7;margin-top:8px}
+.xm-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+.xm-btns a,.xm-btns button{padding:9px 14px;border-radius:999px;border:0;font:600 13.5px var(--sans);cursor:pointer;text-decoration:none;background:rgba(20,49,79,.1);color:#14314f}
+.xm-btns .pri{background:var(--xm-red);color:#fff}
+
+/* ---- neve no globo da página inicial ---- */
+#gwrap{position:relative}
+.xm-gs{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;pointer-events:none;z-index:2}
+
+/* ---- chão de neve + rodapé "enterrado" ---- */
+.xm-field{position:relative;margin-top:84px;padding-bottom:var(--m-bar,0px);isolation:isolate}
+.xm-bg{position:absolute;left:-50vw;right:-50vw;top:62px;bottom:0;z-index:0;background:linear-gradient(#e4f1fa,#cfe4f3)}
+.xm-bg::before{content:"";position:absolute;left:0;right:0;top:-26px;height:27px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 27' preserveAspectRatio='none'%3E%3Cpath d='M0 27V14C40 2 80 2 130 12s90 12 140 2 90-12 130-2 80 8 120 0v15z' fill='%23e4f1fa'/%3E%3C/svg%3E") repeat-x bottom/520px 27px}
+.xm-chars{position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-around;height:96px;margin:0 2% -22px;pointer-events:none}
+.xm-chars svg{height:88px;width:auto;overflow:visible;filter:drop-shadow(0 4px 3px rgba(10,40,70,.25))}
+.xm-chars .s2{height:68px}.xm-chars .r2{transform:scaleX(-1)}
+.xm-chars svg:nth-child(odd){animation:xmBob 4.6s ease-in-out infinite}.xm-chars svg:nth-child(even){animation:xmBob 5.4s ease-in-out -2s infinite}
+@keyframes xmBob{50%{transform:translateY(-2px) rotate(1deg)}}
+.xm-chars .r2{animation:none!important}
+@media (max-width:480px){.xm-chars svg:nth-child(n+5){display:none}}
+html.xmas footer{position:relative;z-index:2;margin:0!important;padding:16px 18px 54px!important;border-radius:20px!important;background:rgba(255,255,255,.96)!important;color:#35506f!important;text-shadow:none!important;transform:rotate(-1.3deg) translateY(12px);box-shadow:0 14px 26px -14px rgba(10,40,70,.55);line-height:1.7}
+html.xmas footer a,html.xmas footer .priv-link,html.xmas.is-mobile body footer .priv-link,html.xmas.is-mobile body:has(main.lnd) footer a,html.xmas.is-mobile body:has(main.lnd) footer .priv-link,html.xmas.is-mobile body:has(main.lnd) footer .priv-link:visited{color:var(--xm-red)!important;font-weight:700}
+html.xmas footer::before{content:"";position:absolute;left:8px;right:8px;top:-9px;height:14px;border-radius:14px 14px 4px 4px;pointer-events:none;
+  background:radial-gradient(circle at 12px 12px,#fff 0 9px,transparent 10px) 0 0/30px 14px repeat-x,#fff;box-shadow:0 -2px 0 #fff;-webkit-mask:linear-gradient(#000 60%,transparent);mask:linear-gradient(#000 60%,transparent)}
+.xm-front{position:absolute;left:-50vw;right:-50vw;bottom:0;height:calc(var(--m-bar,0px) + 46px);z-index:3;pointer-events:none;background:#fff}
+.xm-front::before{content:"";position:absolute;left:0;right:0;top:-24px;height:25px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 440 25' preserveAspectRatio='none'%3E%3Cpath d='M0 25V12C50 0 100 0 150 10s90 10 140 0 90-10 150 4v11z' fill='%23fff'/%3E%3C/svg%3E") repeat-x bottom/440px 25px}
+html.xmas .db-badge{color:#35506f}
+
+@media (prefers-reduced-motion:reduce){.xm-lights,.xm-chars svg{animation:none}}
+
+.xm-no{display:block;margin:10px 0 0;padding:12px 14px;border-radius:16px;background:linear-gradient(160deg,#d6303a,#9e1b25);color:#fff;text-decoration:none;box-shadow:0 8px 18px -10px rgba(120,10,20,.8)}
+.xm-no b{display:block;font-size:15px}.xm-no small{display:block;margin-top:2px;font-size:12px;opacity:.9}
+.xm-dbg{position:fixed;left:8px;bottom:8px;z-index:3000;margin:0;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.82);color:#9dffb0;font:11px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-width:min(94vw,520px);pointer-events:none}

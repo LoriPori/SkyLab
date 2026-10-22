@@ -464,7 +464,6 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)
 .mini span{font-size:12px;color:var(--mut)}
 .mini b{display:flex;align-items:center;gap:6px;font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.2}
 .mini small{font-size:12px;color:var(--mut)}
-.mini .ptr{font-size:12px;color:var(--mut);margin-top:6px;line-height:1.2;white-space:nowrap;font-variant-numeric:tabular-nums}
 .bar2{height:5px;border-radius:9px;background:rgba(20,49,79,.12);margin-top:6px;overflow:hidden}
 .bar2 i{display:block;height:100%;width:var(--w);background:var(--acc);border-radius:9px;animation:gw 1.2s cubic-bezier(.2,.7,.2,1) both}
 .wind{width:22px;height:22px;transform:rotate(var(--r));animation:aim 1.6s cubic-bezier(.3,1.4,.4,1) both;color:var(--acc)}
@@ -1960,3 +1959,16 @@ html.is-mobile #offBar{z-index:1300;top:calc(env(safe-area-inset-top,0px) + 8px)
 .ssr-temp sup{font-size:.4em;vertical-align:top}
 .ssr-cond{font-size:20px;font-weight:600}
 .ssr-feels{margin-top:6px;font-size:14px;opacity:.7}
+
+
+/* ---- Semana: "porquê" ---- */
+.why p{display:flex;gap:10px;margin:0 0 12px;font-size:14.5px;line-height:1.5}
+.why-i{flex:none;font-size:20px;line-height:1.3}
+.why-g{margin-top:8px;border-top:1px solid rgba(20,49,79,.12);padding-top:8px}
+.why-h{font-size:12px;opacity:.65;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.why-r{display:grid;grid-template-columns:42px 22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(20,49,79,.07);font-size:13.5px}
+.why-r b{text-transform:capitalize}
+.why-a{display:inline-block;width:20px;text-align:center;font-weight:700;color:var(--acc)}
+.why-s{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.why-n{font-variant-numeric:tabular-nums;opacity:.75;white-space:nowrap}
+.why .why-f{display:block;margin:10px 0 0;font-size:12px;opacity:.6}
