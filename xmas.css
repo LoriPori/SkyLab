@@ -33,13 +33,13 @@ html.xmas.is-mobile .card:nth-child(even){box-shadow:inset 0 4px 0 var(--xm-gree
 /* ---- neve a cair ---- */
 #xm-snow{position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none}
 
-/* ---- faixa de frases ---- */
-.xm-bar{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 16px;border-radius:999px;color:#fff;font-size:14.5px;line-height:1.35;
-  background:repeating-linear-gradient(135deg,rgba(179,32,42,.92) 0 14px,rgba(255,255,255,.95) 14px 22px,rgba(31,122,77,.92) 22px 36px);position:relative;z-index:2;box-shadow:0 8px 20px -12px rgba(0,0,0,.5)}
-.xm-bar>span{flex:1;min-width:0;padding:6px 14px;border-radius:999px;background:rgba(10,40,35,.82);text-align:center;transition:opacity .5s}
+/* ---- faixa de frases: uma só pílula (degradê vermelho→verde com borda de bengala de açúcar; o texto vai direto por cima) ---- */
+.xm-bar{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:9px 16px;border:3px solid transparent;border-radius:999px;color:#fff;font-size:14.5px;line-height:1.35;position:relative;z-index:2;
+  background:linear-gradient(90deg,#c0262f,#9c1d2b 48%,#1f7a4d) padding-box,repeating-linear-gradient(135deg,#b3202a 0 12px,#fff 12px 20px,#1f7a4d 20px 32px) border-box;box-shadow:0 8px 20px -12px rgba(0,0,0,.5)}
+.xm-bar>span{flex:1;min-width:0;padding:0 4px;background:none;text-align:center;text-shadow:0 1px 2px rgba(60,0,10,.45);transition:opacity .5s}
 .xm-bar b{font-family:var(--xm-fest);font-size:1.25em;color:var(--xm-gold);margin-right:6px}
 .xm-bar.f>span{opacity:0}
-html.is-mobile .xm-bar{margin:6px var(--m-side,14px) 10px;font-size:13.5px;border-radius:22px}
+html.is-mobile .xm-bar{margin:6px var(--m-side,14px) 10px;font-size:13.5px;border-radius:22px;padding:8px 14px}
 
 /* ---- botão do Pai Natal ---- */
 .xm-santa{display:inline-flex;align-items:center;gap:6px;font-weight:700}
@@ -106,10 +106,9 @@ html.is-mobile .xm-fab .xm-ic{width:24px;height:24px}
 .xm-bar b.xm-gift{font-size:inherit}
 
 /* ---- cabeçalho no telemóvel / janelas estreitas ---- */
-/* telemóvel (html.is-mobile): o logótipo é um círculo de 44 px só com o ícone (font-size:0). O tema não pode mexer no tamanho da letra; põe um gorro no canto. */
+/* telemóvel (html.is-mobile): o logótipo é um círculo de 44 px só com o ícone (font-size:0). O tema não pode mexer no tamanho da letra; o gorro vai em cima do orbe (.lg), ver xmas.js */
 html.xmas.is-mobile .logo{font-size:0!important;text-shadow:none;position:relative}
-html.xmas.is-mobile .logo::after{content:"";position:absolute;display:block;width:26px;height:26px;margin:0;top:-10px;right:-8px;transform:rotate(14deg);pointer-events:none;
-  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 23C5 13 11 5 22 5c-1 3 0 6 3 8l2 10z' fill='%23d6303a'/%3E%3Cpath d='M5 22h22a3 3 0 0 1 0 6H5a3 3 0 0 1 0-6z' fill='%23fff' stroke='%23c9d8e6'/%3E%3Ccircle cx='24.500' cy='6' r='3.800' fill='%23fff' stroke='%23c9d8e6'/%3E%3C/svg%3E") center/contain no-repeat}
+html.xmas.is-mobile .logo::after{display:none}   /* a árvore é só do computador; no telemóvel o enfeite é o gorro no orbe */
 /* janelas estreitas com o layout de computador (≤720 px): logótipo mais pequeno, sem cortar, e o botão do Pai Natal só com o ícone, como os outros */
 @media (max-width:720px){
  html.xmas:not(.is-mobile) .logo{font-size:25px;white-space:nowrap;flex:1 1 auto;min-width:max-content}
@@ -117,4 +116,34 @@ html.xmas.is-mobile .logo::after{content:"";position:absolute;display:block;widt
  html.xmas:not(.is-mobile) .header-actions{flex-wrap:nowrap}
  html.xmas .pill.xm-santa{width:36px;height:36px;padding:0;justify-content:center;flex:none}
  html.xmas .pill.xm-santa .xm-l{display:none}
+}
+
+/* ---- gorro de Pai Natal animado nos orbes (injetado por xmas.js: .xm-lh no orbe do logótipo, .xm-oh no orbe 3D do conselheiro) ---- */
+.xm-oh,.xm-lh{position:absolute;inset:0;z-index:2;pointer-events:none;display:block}
+.xm-oh svg,.xm-lh svg{display:block;width:100%;height:100%;overflow:visible}
+.xm-oh svg{filter:drop-shadow(0 4px 3px rgba(5,25,55,.32))}
+.xm-lh svg{filter:drop-shadow(0 1px 1px rgba(5,25,55,.35))}
+.xm-hh{transform-origin:56px 30px;animation:xmRock 5.2s ease-in-out -.9s infinite}                 /* mesma duração do balanço do orbe (orbBob), com atraso: o gorro "arrasta" */
+.xm-pp{transform-origin:108px -4px;animation:xmPp 2.6s ease-in-out infinite alternate}             /* borla a balançar */
+@keyframes xmRock{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2.6deg)}}
+@keyframes xmPp{from{transform:rotate(-18deg)}to{transform:rotate(14deg)}}
+/* orbe do logótipo: respira e leva o gorro consigo */
+html.xmas .lg{position:relative;background:radial-gradient(circle at 36% 30%,#fffef2,#fff3b0 46%,#f1c65a);animation:ping2 2.6s infinite,xmBeat 2.6s ease-in-out infinite}
+html.xmas:not(.is-mobile) .lg{width:16px;height:16px}
+html.xmas.is-mobile .lg{width:20px;height:20px}
+@keyframes xmBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+/* orbe 3D: o gorro reage a tudo o que o orbe faz */
+.orb.squish .xm-oh{animation:xmHop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes xmHop{0%{transform:none}25%{transform:translateY(-11px) scale(.97,1.05)}55%{transform:translateY(1px) scale(1.05,.95)}100%{transform:none}}
+.orb.angry .xm-oh{animation:orbShake .38s linear infinite}
+.orb.angry .xm-pp{animation-duration:.22s}
+.orb.swell .xm-oh{animation:orbSwell .9s cubic-bezier(.5,0,.8,.4) forwards}
+.orb.swell .xm-pp{animation-duration:.2s}
+.orb.boom .xm-oh{animation:xmHatFly 1.15s cubic-bezier(.15,.7,.3,1) forwards}                       /* rebenta: o gorro voa */
+@keyframes xmHatFly{0%{transform:scale(1.32);opacity:1}100%{transform:translate(70px,-170px) rotate(540deg) scale(1.05);opacity:0}}
+.orb.respawn .xm-oh{animation:xmHatDrop .62s cubic-bezier(.3,1.2,.5,1) .36s both}                     /* renasce: o gorro cai em cima */
+@keyframes xmHatDrop{0%{transform:translateY(-130px) rotate(-50deg);opacity:0}12%{opacity:1}70%{transform:translateY(3px) rotate(4deg)}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){
+ .xm-hh,.xm-pp,.xm-oh,.xm-lh,html.xmas .lg{animation:none!important}
+ .orb.boom .xm-oh{opacity:0}
 }

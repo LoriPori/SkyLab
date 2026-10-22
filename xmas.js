@@ -25,7 +25,10 @@
   var k2=Math.round((new Date(y,11,25)-new Date(y,m,d))/864e5);return pt?'Faltam '+k2+' dias para o Natal':k2+' days until Christmas';
  }
  var li=Math.floor(Math.random()*11);
- function lines(l){return LINES[l||lang()].slice()}
+ /* frases na "voz" do orbe (o orbe 3D do conselheiro de roupa) */
+ var ORBL={en:['Ho ho ho! Do you like my hat?','I am a very round elf today.','Dress warm, and keep a spare mitten for the reindeer.','Santa asked me for tonight’s forecast. I told him: festive.','I wished for snow. Check the forecast to see if it worked.','Tap me again. I have more jingles than jackets.','Merry Christmas! I would hug you, but I am a sphere.','This hat is 100% wool and 0% real. Do not tell the elves.'],
+  pt:['Ho ho ho! Gostas do meu gorro?','Hoje sou um duende muito redondo.','Veste-te bem, e guarda uma luva a mais para as renas.','O Pai Natal pediu-me a previsão desta noite. Disse-lhe: festiva.','Pedi neve. Vê a previsão para ver se resultou.','Toca outra vez. Tenho mais guizos do que casacos.','Feliz Natal! Dava-te um abraço, mas sou uma esfera.','Este gorro é 100% lã e 0% verdade. Não contes aos duendes.']};
+ function lines(l){l=l||lang();return LINES[l].concat(ORBL[l])}
 
  /* ---------- neve (ecrã inteiro + globo da página inicial) ---------- */
  var cv,cx,flakes=[],W=0,H=0,gcv=null,gfl=[],last=0;
@@ -152,6 +155,45 @@
  }
  function closeSanta(){if(!modal)return;modal.hidden=true;preview=null;html.classList.remove('m-lock');cancelAnimationFrame(raf);clearInterval(tick)}
 
+/* ---------- gorro animado nos orbes ---------- */
+ /* Não é uma imagem colada: é um SVG vivo (copa, aba e borla são partes separadas) dentro do próprio orbe. Desenhado no mesmo quadrado 112×112 do orbe,
+    por isso herda o balanço, o "aperto" ao tocar, a tremedeira, o inchaço e a explosão (ver xmas.css). */
+ var hatN=0;
+ function hatSVG(){
+  var i=++hatN,r='xr'+i,p='xp'+i;
+  return'<svg viewBox="0 0 112 112" aria-hidden="true" focusable="false"><defs><linearGradient id="'+r+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ee4a54"/><stop offset="1" stop-color="#a3121d"/></linearGradient>'
+   +'<radialGradient id="'+p+'" cx=".38" cy=".34" r=".75"><stop offset="0" stop-color="#fff"/><stop offset=".7" stop-color="#f2f7fc"/><stop offset="1" stop-color="#c9d8e6"/></radialGradient></defs>'
+   +'<g transform="rotate(8 56 28)"><g class="xm-hh">'
+   +'<path d="M11 26C11 6 22-20 46-36C64-48 92-46 106-26C111-18 112-8 109 2C107 8 104 14 102 20L98 27Q56 52 11 26Z" fill="url(#'+r+')"/>'
+   +'<path d="M70-44C92-42 106-30 109 0C109 8 105 16 102 21L98 27C100 6 92-24 70-44Z" fill="#6e0710" opacity=".3"/>'
+   +'<path d="M18 10C24-8 36-22 52-32" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" opacity=".38"/>'
+   +'<path d="M9 25A47 13 0 0 0 103 25" fill="none" stroke="#c4d3e2" stroke-width="15.500" stroke-linecap="round"/>'
+   +'<path d="M9 25A47 13 0 0 0 103 25" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"/>'
+   +'<path d="M13 21A44 11 0 0 0 99 21" fill="none" stroke="#eef4fa" stroke-width="3" stroke-linecap="round" opacity=".9"/>'
+   +'<g class="xm-pp"><circle cx="108" cy="6" r="10.500" fill="url(#'+p+')"/></g>'
+   +'</g></g></svg>';
+ }
+ var dressQ=0;
+ function dress(){
+  dressQ=0;
+  var o=doc.getElementById('orb');if(o&&!o.querySelector('.xm-oh'))o.appendChild(el('i','xm-oh',hatSVG()));
+  var l=doc.querySelector('#logo .lg');if(l&&!l.querySelector('.xm-lh'))l.appendChild(el('i','xm-lh',hatSVG()));
+ }
+ function dressSoon(){if(!dressQ)dressQ=requestAnimationFrame(dress)}   // a app volta a desenhar o orbe quando muda de separador/lugar: agrupa os pedidos
+
+ /* O orbe diz, de vez em quando, uma frase de Natal (mostra-a ~8 s e devolve o conselho de roupa que lá estava). Não interrompe toques nem raiva. */
+ var quipT=0,quipR=0,lastQ='';
+ function quip(){
+  var o=doc.getElementById('orb'),p=doc.getElementById('orbT'),b=doc.getElementById('orbB');
+  if(!o||!p||!b||doc.hidden||still)return;
+  var r=o.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;
+  if(/(^|\s)(angry|swell|boom|respawn|squish|ping)(\s|$)/.test(o.className)||p.querySelector('.orb-dots')||b.classList.contains('mad'))return;
+  var L=ORBL[lang()==='pt'?'pt':'en'],t;do{t=L[Math.floor(Math.random()*L.length)]}while(t===lastQ&&L.length>1);lastQ=t;
+  var prev=p.textContent,pop=function(){b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')};
+  p.textContent=t;pop();o.classList.add('squish');setTimeout(function(){o.classList.remove('squish')},520);
+  clearTimeout(quipR);quipR=setTimeout(function(){if(p.textContent===t){p.textContent=prev;pop()}},8000);
+ }
+
  /* ---------- botões ---------- */
  function addButtons(){
   var ha=doc.querySelector('.header-actions');
@@ -164,7 +206,8 @@
   html.classList.add('xmas');
   doc.body.appendChild(el('div','xm-lights'));
   startSnow();buildField();addButtons();ensureBar();
-  var m=doc.getElementById('main');if(m)new MutationObserver(ensureBar).observe(m,{childList:true});
+  var m=doc.getElementById('main');if(m){new MutationObserver(ensureBar).observe(m,{childList:true});new MutationObserver(dressSoon).observe(m,{childList:true,subtree:true})}
+  dress();setTimeout(quip,14000);quipT=setInterval(quip,45000);
   new MutationObserver(relabel).observe(html,{attributes:true,attributeFilter:['lang']});
  }
  /* ---------- depuração: ?xmasdebug=1 (ou SkyXmas.debug() na consola) ---------- */
