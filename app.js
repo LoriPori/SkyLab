@@ -2095,10 +2095,23 @@ function normalize(list){
   return{n:x.n,label,lvl,pct:Math.max(pct,5)};
  }).sort((a,b)=>b.lvl-a.lvl||b.pct-a.pct);
 }
-async function fetchJSON(url,headers){
- const ac=new AbortController(),t=setTimeout(()=>ac.abort(),6000);
- try{const r=await fetch(url,{headers,signal:ac.signal});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
- finally{clearTimeout(t)}
+async function fetchJSON(url, headers, timeoutMs = 12000) {
+    const ac = new AbortController();
+    const t = setTimeout(() => {
+        try {
+            ac.abort(new DOMException('Timeout', 'TimeoutError'));
+        } catch (_) {
+            ac.abort();
+        }
+    }, timeoutMs);
+
+    try {
+        const r = await fetch(url, { headers, signal: ac.signal });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return await r.json();
+    } finally {
+        clearTimeout(t);
+    }
 }
 let speciesMeta=lsGet('speciesMeta');
 const RISK={low:0,moderate:1,high:2,'very high':3};
@@ -2127,7 +2140,7 @@ async function pollenAtmospore(){
    fetchJSON(`${ATMO.base}/pollen?lat=${place.lat}&lon=${place.lon}&dt=${dt}&forecast_days=5`),
    getSpeciesMeta()
   ]);
-  console.info('[Atmospore]',j);
+  //console.info('[Atmospore]',j);
   const days=j.data||[],day=days[0];
   if(!day||!day.species)return null;
   const limsOf=id=>(meta[id]&&meta[id].risk_thresholds)||[];
@@ -2153,7 +2166,7 @@ async function pollenAtmospore(){
   sig.pollen={risk:String(day.overall_risk||'low').toLowerCase(),top:rows[0]&&rows[0].n};
   return rows;
  }catch(e){
-  console.warn('[Atmospore] failed:',e.message);
+  //console.warn('[Atmospore] failed:',e.message);
   atmoDead=true;
   return null;
  }
@@ -4266,21 +4279,41 @@ function hClean(s){
  if(!s||!isFinite(+s.lat)||!isFinite(+s.lon)||Math.abs(+s.lat)>90)return null;
  return{id:String(s.id||s.name),name:s.name?String(s.name):hT('Unnamed','Sem nome'),lat:+s.lat,lon:+s.lon,windKt:hNum(s.windKt),pressure:hNum(s.pressure),moveDir:hNum(s.moveDir),moveMph:hNum(s.moveMph),src:String(s.src||''),url:hSafe(s.url),updated:s.updated||null};
 }
-async function hurrFetch(){
- try{
-  const j=await fetchJSON(WORKER+'/storms');
-  if(j&&Array.isArray(j.storms))return{storms:j.storms.map(hClean).filter(Boolean),at:Date.parse(j.updated)||Date.now()};
- }catch(e){console.info('[Hurricanes] rota /storms indisponível no worker ('+e.message+'); a tentar o GDACS diretamente')}
- const j=await fetchJSON('https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP');
- const by=new Map();
- for(const f of(j&&j.features)||[]){
-  const p=f.properties||{},g=f.geometry&&f.geometry.coordinates;
-  if(p.eventtype!=='TC'||String(p.iscurrent)!=='true'||!g)continue;
-  const old=by.get(p.eventid);if(old&&old.ep>=p.episodeid)continue;
-  const sv=p.severitydata||{};
-  by.set(p.eventid,{ep:p.episodeid,s:{id:'gdacs'+p.eventid,name:hName(p.eventname||p.name),lat:g[1],lon:g[0],windKt:hNum(sv.severity)==null?null:sv.severity/1.852,src:'GDACS',url:p.url&&p.url.report,updated:p.datemodified?p.datemodified+'Z':null}});
- }
- return{storms:[...by.values()].map(x=>hClean(x.s)).filter(Boolean).sort((a,b)=>(b.windKt||0)-(a.windKt||0)),at:Date.now()};
+async function hurrFetch() {
+    // 1. Try Worker with 8s timeout
+    try {
+        const j = await fetchJSON(WORKER + '/storms', undefined, 8000);
+        if (j && Array.isArray(j.storms)) {
+            return { storms: j.storms.map(hClean).filter(Boolean), at: Date.parse(j.updated) || Date.now() };
+        }
+    } catch (e) {
+        console.info('[Hurricanes] rota /storms indisponível no worker (' + (e.name === 'AbortError' || e.name === 'TimeoutError' ? 'timeout' : e.message) + '); a tentar o GDACS diretamente');
+    }
+
+    // 2. Fallback to GDACS with 15s timeout
+    try {
+        const j = await fetchJSON('https://www.gdacs.org/gdacsapi/api/Events/geteventlist/EVENTS4APP', undefined, 15000);
+        const by = new Map();
+        for (const f of (j && j.features) || []) {
+            const p = f.properties || {}, g = f.geometry && f.geometry.coordinates;
+            if (p.eventtype !== 'TC' || String(p.iscurrent) !== 'true' || !g) continue;
+            const old = by.get(p.eventid); if (old && old.ep >= p.episodeid) continue;
+            const sv = p.severitydata || {};
+            by.set(p.eventid, {
+                ep: p.episodeid, s: {
+                    id: 'gdacs' + p.eventid, name: hName(p.eventname || p.name), lat: g[1], lon: g[0],
+                    windKt: hNum(sv.severity) == null ? null : sv.severity / 1.852,
+                    src: 'GDACS', url: p.url && p.url.report,
+                    updated: p.datemodified ? p.datemodified + 'Z' : null
+                }
+            });
+        }
+        return { storms: [...by.values()].map(x => hClean(x.s)).filter(Boolean).sort((a, b) => (b.windKt || 0) - (a.windKt || 0)), at: Date.now() };
+    } catch (err) {
+        // Return existing cache or empty dataset instead of crashing AutoStorms
+        if (hurrD) return hurrD;
+        return { storms: [], at: Date.now() };
+    }
 }
 function hurrGet(force){
  if(!force&&hurrD&&Date.now()-hurrAt<6e5)return Promise.resolve(hurrD);
@@ -7456,9 +7489,13 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
 }
 /* ============ Carregamento Automático de Tempestades ============ */
 function initAutoStorms(){
-  hurrGet().then(() => {
-    hurrBadge();
-  }).catch(e => console.warn('[AutoStorms]', e));
+ hurrGet().then(() => {
+   hurrBadge();
+ }).catch(e => {
+   if (e.name !== 'AbortError' && e.name !== 'TimeoutError') {
+     console.warn('[AutoStorms]', e);
+   }
+ });
   // Atualiza automaticamente a cada 10 minutos
   setInterval(() => {
     hurrGet(true).then(() => hurrBadge()).catch(() => {});
