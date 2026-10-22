@@ -8,7 +8,7 @@ html.xmas .aurora{opacity:.5;filter:hue-rotate(60deg)}
 
 /* ---- tipo de letra festivo: título, cabeçalhos ---- */
 html.xmas .logo{font-family:var(--xm-fest);font-weight:700;font-size:34px;letter-spacing:.01em;color:#fff4c2;text-shadow:0 2px 0 var(--xm-red),0 0 20px rgba(255,216,107,.65)}
-html.xmas .logo::after{content:"🎄";margin-left:6px;font-size:.78em}
+html.xmas .logo::after{content:"";display:inline-block;width:.75em;height:.85em;margin-left:7px;vertical-align:-.08em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'%3E%3Cpath d='M12 2l2 4.2 4.6.6-3.4 3.2.9 4.6L12 12.2 7.9 14.6l.9-4.6L5.400 6.800 10 6.200z' fill='%23ffd86b'/%3E%3Cpath d='M12 8l6 7h-3.500l5 6H4.500l5-6H6z' fill='%231f7a4d'/%3E%3Crect x='10.500' y='21' width='3' height='5' rx='1' fill='%236b4a2b'/%3E%3C/svg%3E") center/contain no-repeat}
 html.xmas.is-mobile .logo{font-size:29px}
 html.xmas .land h1,html.xmas .hero h1{font-family:var(--xm-fest);font-weight:700;font-size:clamp(44px,7.2vw,84px);line-height:1.02;color:#fff;text-shadow:0 3px 0 var(--xm-red),0 0 28px rgba(255,216,107,.5)}
 html.xmas.is-mobile .land h1{font-size:clamp(40px,12vw,56px)}
@@ -72,8 +72,9 @@ html.is-mobile .xm-fab .xm-e{font-size:20px}
 .xm-gs{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;pointer-events:none;z-index:2}
 
 /* ---- chão de neve + rodapé "enterrado" ---- */
-.xm-field{position:relative;margin-top:84px;padding-bottom:var(--m-bar,0px);isolation:isolate}
-.xm-bg{position:absolute;left:-50vw;right:-50vw;top:62px;bottom:0;z-index:0;background:linear-gradient(#e4f1fa,#cfe4f3)}
+html.xmas .wrap{padding-bottom:0!important}
+.xm-field{position:relative;margin-top:84px;padding-bottom:calc(26px + var(--m-bar,0px) + env(safe-area-inset-bottom,0px));isolation:isolate;overflow-y:clip}
+.xm-bg{position:absolute;left:-50vw;right:-50vw;top:62px;bottom:0;z-index:0;background:linear-gradient(#e4f1fa,#fff 70%)}
 .xm-bg::before{content:"";position:absolute;left:0;right:0;top:-26px;height:27px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 27' preserveAspectRatio='none'%3E%3Cpath d='M0 27V14C40 2 80 2 130 12s90 12 140 2 90-12 130-2 80 8 120 0v15z' fill='%23e4f1fa'/%3E%3C/svg%3E") repeat-x bottom/520px 27px}
 .xm-chars{position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-around;height:96px;margin:0 2% -22px;pointer-events:none}
 .xm-chars svg{height:88px;width:auto;overflow:visible;filter:drop-shadow(0 4px 3px rgba(10,40,70,.25))}
@@ -82,12 +83,12 @@ html.is-mobile .xm-fab .xm-e{font-size:20px}
 @keyframes xmBob{50%{transform:translateY(-2px) rotate(1deg)}}
 .xm-chars .r2{animation:none!important}
 @media (max-width:480px){.xm-chars svg:nth-child(n+5){display:none}}
-html.xmas footer{position:relative;z-index:2;margin:0!important;padding:16px 18px 54px!important;border-radius:20px!important;background:rgba(255,255,255,.96)!important;color:#35506f!important;text-shadow:none!important;transform:rotate(-1.3deg) translateY(12px);box-shadow:0 14px 26px -14px rgba(10,40,70,.55);line-height:1.7}
+html.xmas footer{position:relative;z-index:2;margin:0!important;padding:16px 18px 66px!important;border-radius:20px!important;background:rgba(255,255,255,.96)!important;color:#35506f!important;text-shadow:none!important;transform:rotate(-1deg) translateY(12px);box-shadow:0 14px 26px -14px rgba(10,40,70,.55);line-height:1.7}
 html.xmas footer a,html.xmas footer .priv-link,html.xmas.is-mobile body footer .priv-link,html.xmas.is-mobile body:has(main.lnd) footer a,html.xmas.is-mobile body:has(main.lnd) footer .priv-link,html.xmas.is-mobile body:has(main.lnd) footer .priv-link:visited{color:var(--xm-red)!important;font-weight:700}
 html.xmas footer::before{content:"";position:absolute;left:8px;right:8px;top:-9px;height:14px;border-radius:14px 14px 4px 4px;pointer-events:none;
   background:radial-gradient(circle at 12px 12px,#fff 0 9px,transparent 10px) 0 0/30px 14px repeat-x,#fff;box-shadow:0 -2px 0 #fff;-webkit-mask:linear-gradient(#000 60%,transparent);mask:linear-gradient(#000 60%,transparent)}
-.xm-front{position:absolute;left:-50vw;right:-50vw;bottom:0;height:calc(var(--m-bar,0px) + 46px);z-index:3;pointer-events:none;background:#fff}
-.xm-front::before{content:"";position:absolute;left:0;right:0;top:-24px;height:25px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 440 25' preserveAspectRatio='none'%3E%3Cpath d='M0 25V12C50 0 100 0 150 10s90 10 140 0 90-10 150 4v11z' fill='%23fff'/%3E%3C/svg%3E") repeat-x bottom/440px 25px}
+html.xmas footer::after{content:"";position:absolute;left:-60vw;right:-60vw;bottom:-90px;height:134px;z-index:5;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 440 25' preserveAspectRatio='none'%3E%3Cpath d='M0 25V12C50 0 100 0 150 10s90 10 140 0 90-10 150 4v11z' fill='%23fff'/%3E%3C/svg%3E") repeat-x top/440px 25px,linear-gradient(#fff,#fff) 0 24px/100% 100% no-repeat}
 html.xmas .db-badge{color:#35506f}
 
 @media (prefers-reduced-motion:reduce){.xm-lights,.xm-chars svg{animation:none}}
@@ -95,3 +96,25 @@ html.xmas .db-badge{color:#35506f}
 .xm-no{display:block;margin:10px 0 0;padding:12px 14px;border-radius:16px;background:linear-gradient(160deg,#d6303a,#9e1b25);color:#fff;text-decoration:none;box-shadow:0 8px 18px -10px rgba(120,10,20,.8)}
 .xm-no b{display:block;font-size:15px}.xm-no small{display:block;margin-top:2px;font-size:12px;opacity:.9}
 .xm-dbg{position:fixed;left:8px;bottom:8px;z-index:3000;margin:0;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.82);color:#9dffb0;font:11px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-width:min(94vw,520px);pointer-events:none}
+
+/* ícones SVG próprios (chapéu de Pai Natal, prenda) */
+.xm-ic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.25em;flex:none}
+.xm-santa .xm-ic{width:22px;height:22px}
+html.is-mobile .xm-fab .xm-ic{width:24px;height:24px}
+.xm-box h2 .xm-ic{width:.9em;height:.9em;margin-left:6px;vertical-align:-.08em}
+.xm-gift{flex:none;display:inline-block;width:1.3em;height:1.3em;margin-right:6px;vertical-align:-.25em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='9' width='18' height='12' rx='1.500' fill='%23d6303a'/%3E%3Crect x='2' y='6.500' width='20' height='4.500' rx='1.500' fill='%23ef4b55'/%3E%3Crect x='10.500' y='6.500' width='3' height='14.500' fill='%23ffd86b'/%3E%3Cpath d='M12 6.500C10 2 5.500 3 7 5.500c.8 1.300 3 1 5 1zM12 6.500c2-4.500 6.500-3.500 5 -1-.8 1.300-3 1-5 1z' fill='none' stroke='%23ffd86b' stroke-width='1.800' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.xm-bar b.xm-gift{font-size:inherit}
+
+/* ---- cabeçalho no telemóvel / janelas estreitas ---- */
+/* telemóvel (html.is-mobile): o logótipo é um círculo de 44 px só com o ícone (font-size:0). O tema não pode mexer no tamanho da letra; põe um gorro no canto. */
+html.xmas.is-mobile .logo{font-size:0!important;text-shadow:none;position:relative}
+html.xmas.is-mobile .logo::after{content:"";position:absolute;display:block;width:26px;height:26px;margin:0;top:-10px;right:-8px;transform:rotate(14deg);pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 23C5 13 11 5 22 5c-1 3 0 6 3 8l2 10z' fill='%23d6303a'/%3E%3Cpath d='M5 22h22a3 3 0 0 1 0 6H5a3 3 0 0 1 0-6z' fill='%23fff' stroke='%23c9d8e6'/%3E%3Ccircle cx='24.500' cy='6' r='3.800' fill='%23fff' stroke='%23c9d8e6'/%3E%3C/svg%3E") center/contain no-repeat}
+/* janelas estreitas com o layout de computador (≤720 px): logótipo mais pequeno, sem cortar, e o botão do Pai Natal só com o ícone, como os outros */
+@media (max-width:720px){
+ html.xmas:not(.is-mobile) .logo{font-size:25px;white-space:nowrap;flex:1 1 auto;min-width:max-content}
+ html.xmas:not(.is-mobile) .logo::after{margin-left:4px}
+ html.xmas:not(.is-mobile) .header-actions{flex-wrap:nowrap}
+ html.xmas .pill.xm-santa{width:36px;height:36px;padding:0;justify-content:center;flex:none}
+ html.xmas .pill.xm-santa .xm-l{display:none}
+}

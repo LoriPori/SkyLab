@@ -9,6 +9,7 @@
  var still=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
  function lang(){try{if(typeof LANG!=='undefined')return LANG}catch(e){}try{var l=JSON.parse(localStorage.getItem('lang'));if(l)return l}catch(e){}return(navigator.language||'').toLowerCase().indexOf('pt')===0?'pt':'en'}
  var T2=function(en,pt){return lang()==='pt'?pt:en};
+ var HAT='<svg class="xm-ic" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 23C5 13 11 5 22 5c-1 3 0 6 3 8l2 10z" fill="#d6303a"/><path d="M5 22h22a3 3 0 0 1 0 6H5a3 3 0 0 1 0-6z" fill="#fff" stroke="#c9d8e6" stroke-width="1"/><circle cx="24.500" cy="6" r="3.800" fill="#fff" stroke="#c9d8e6" stroke-width="1"/></svg>';
  function el(tag,cls,h){var e=doc.createElement(tag);if(cls)e.className=cls;if(h!=null)e.innerHTML=h;return e}
 
  /* ---------- frases ---------- */
@@ -70,12 +71,12 @@
   var f=el('div','xm-field');ft.parentNode.insertBefore(f,ft);
   f.appendChild(el('div','xm-bg'));
   f.appendChild(el('div','xm-chars',sm('s1','#c0392b')+dr('r1','#ff2a2a')+sm('s2','#1f7a4d')+dr('r2','#c0392b')+sm('s1','#2457c5')+dr('r1','#c0392b')));
-  f.appendChild(ft);f.appendChild(el('div','xm-front'));
+  f.appendChild(ft);
  }
 
  /* ---------- faixa de frases (no topo do <main>, volta sempre que a app re-renderiza) ---------- */
  var bar=null,barT=0;
- function barText(){return'<b>🎁</b>'+(li%3===0?countdown():LINES[lang()][li%LINES[lang()].length])}
+ function barText(){return'<b class="xm-gift"></b>'+(li%3===0?countdown():LINES[lang()][li%LINES[lang()].length])}
  function ensureBar(){
   var m=doc.getElementById('main');if(!m||(bar&&m.firstChild===bar))return;
   if(!bar){bar=el('div','xm-bar','<span></span>');bar.setAttribute('role','status');bar.firstChild.innerHTML=barText();
@@ -115,7 +116,10 @@
   var sx=R,sy=R;
   if(th<0){sx=R;sy=R*.28}
   var gl=g.createRadialGradient(sx,sy,0,sx,sy,34*dpr);gl.addColorStop(0,'rgba(255,230,140,.9)');gl.addColorStop(1,'rgba(255,230,140,0)');g.fillStyle=gl;g.beginPath();g.arc(sx,sy,34*dpr,0,6.283);g.fill();
-  g.font=(30*dpr)+'px system-ui,"Apple Color Emoji","Segoe UI Emoji",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('🎅',sx,sy);
+  var k=1.1*dpr;g.save();g.translate(sx-16*k,sy-16*k);g.scale(k,k);
+  g.fillStyle='#d6303a';g.fill(new Path2D('M5 23C5 13 11 5 22 5c-1 3 0 6 3 8l2 10z'));
+  g.fillStyle='#fff';g.strokeStyle='#9fb6cc';g.lineWidth=1;var br=new Path2D('M5 22h22a3 3 0 0 1 0 6H5a3 3 0 0 1 0-6z');g.fill(br);g.stroke(br);
+  g.beginPath();g.arc(24.5,6,3.8,0,6.283);g.fill();g.stroke();g.restore();
   if(preview!==null){preview+=.045;if(preview>26){preview=null;status()}}
  }
  function status(){
@@ -123,7 +127,7 @@
   var tl=T2('your location','a tua localização'),where=me.name||tl;
   if(preview!==null){var q=pos(preview);html='<div class="xm-n">'+T2('Route preview','Pré-visualização da rota')+'</div>'+T2('Santa is over','O Pai Natal está sobre')+' <b>'+q.lat.toFixed(1)+'°, '+q.lon.toFixed(1)+'°</b>';}
   else if(th<0){html='<div class="xm-n">'+T2('Santa is at the North Pole','O Pai Natal está no Polo Norte')+'</div>'+T2('Take-off in','Descola daqui a')+' <b>'+fmtDur(startMs()-now)+'</b><br>'+T2('He reaches','Chega a')+' '+where+' '+T2('in','daqui a')+' <b>'+fmtDur(eta-now)+'</b>'}
-  else if(th<=26){var q2=pos(th),n=Math.floor(th/26*2.4e9);html='<div class="xm-n">'+T2('Santa is on his way!','O Pai Natal vai a caminho!')+'</div>'+T2('Now over','Agora sobre')+' <b>'+q2.lat.toFixed(1)+'°, '+q2.lon.toFixed(1)+'°</b><br>'+T2('Presents delivered (estimate)','Prendas entregues (estimativa)')+': <b>'+n.toLocaleString(pt?'pt-PT':'en')+'</b><br>'+(eta>now?T2('Reaches','Chega a')+' '+where+' '+T2('in','daqui a')+' <b>'+fmtDur(eta-now)+'</b>':T2('He already visited','Já passou por')+' '+where+' 🎁')}
+  else if(th<=26){var q2=pos(th),n=Math.floor(th/26*2.4e9);html='<div class="xm-n">'+T2('Santa is on his way!','O Pai Natal vai a caminho!')+'</div>'+T2('Now over','Agora sobre')+' <b>'+q2.lat.toFixed(1)+'°, '+q2.lon.toFixed(1)+'°</b><br>'+T2('Presents delivered (estimate)','Prendas entregues (estimativa)')+': <b>'+n.toLocaleString(pt?'pt-PT':'en')+'</b><br>'+(eta>now?T2('Reaches','Chega a')+' '+where+' '+T2('in','daqui a')+' <b>'+fmtDur(eta-now)+'</b>':T2('He already visited','Já passou por')+' '+where+' ')}
   else html='<div class="xm-n">'+T2('Santa is back home!','O Pai Natal já voltou a casa!')+'</div>'+T2('All the presents are delivered. See you next year!','Todas as prendas foram entregues. Até para o ano!');
   s.innerHTML=html;
  }
@@ -137,7 +141,7 @@
    modal.querySelector('#xm-pv').onclick=function(){preview=0;status();if(still)draw()};
    addEventListener('keydown',function(e){if(e.key==='Escape'&&modal&&!modal.hidden)closeSanta()});
   }
-  modal.querySelector('h2').textContent=T2('Track Santa 🎅','Segue o Pai Natal 🎅');
+  modal.querySelector('h2').innerHTML=T2('Track Santa','Segue o Pai Natal')+HAT;
   modal.querySelector('#xm-pv').textContent=T2('Preview the route','Ver a rota');
   modal.querySelector('#xm-no').innerHTML='<b>'+T2('Live Santa tracker (NORAD) ↗','Rastreio ao vivo do Pai Natal (NORAD) ↗')+'</b><small>'+T2('The real thing: live map, Santa Cams and a phone hotline on Dec 24','O oficial: mapa ao vivo, Santa Cams e linha telefónica no dia 24 de dezembro')+'</small>';
   modal.querySelector('#xm-nt').textContent=T2('The globe above is our own playful simulation (Santa follows midnight around the world on Dec 24–25). It is not real tracking data: for that, use NORAD Tracks Santa.','O globo acima é uma simulação nossa, para brincar (o Pai Natal segue a meia-noite à volta do mundo nos dias 24 e 25 de dezembro). Não são dados reais: para isso, usa o NORAD Tracks Santa.');
@@ -151,8 +155,8 @@
  /* ---------- botões ---------- */
  function addButtons(){
   var ha=doc.querySelector('.header-actions');
-  if(ha&&!doc.getElementById('xmSanta')){var b=el('button','pill xm-santa','<span class="xm-e">🎅</span><span class="xm-l"></span>');b.id='xmSanta';b.type='button';b.querySelector('.xm-l').textContent=T2('Track Santa','Pai Natal');b.onclick=openSanta;ha.insertBefore(b,doc.getElementById('hbtn')||ha.firstChild)}
-  if(!doc.getElementById('xmFab')){var f=el('button','xm-fab','<span class="xm-e">🎅</span><span></span>');f.id='xmFab';f.type='button';f.lastChild.textContent=T2('Track Santa','Pai Natal');f.onclick=openSanta;doc.body.appendChild(f)}
+  if(ha&&!doc.getElementById('xmSanta')){var b=el('button','pill xm-santa',HAT+'<span class="xm-l"></span>');b.id='xmSanta';b.type='button';b.querySelector('.xm-l').textContent=T2('Track Santa','Pai Natal');b.onclick=openSanta;ha.insertBefore(b,doc.getElementById('hbtn')||ha.firstChild)}
+  if(!doc.getElementById('xmFab')){var f=el('button','xm-fab',HAT+'<span></span>');f.id='xmFab';f.type='button';f.lastChild.textContent=T2('Track Santa','Pai Natal');f.onclick=openSanta;doc.body.appendChild(f)}
  }
  function relabel(){var a=doc.querySelector('#xmSanta .xm-l'),b=doc.querySelector('#xmFab span:last-child');if(a)a.textContent=T2('Track Santa','Pai Natal');if(b)b.textContent=T2('Track Santa','Pai Natal');if(bar)bar.firstChild.innerHTML=barText()}
 
