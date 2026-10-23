@@ -28,7 +28,7 @@
  /* frases na "voz" do orbe (o orbe 3D do conselheiro de roupa) */
  var ORBL={en:['Ho ho ho! Do you like my hat?','I am a very round elf today.','Dress warm, and keep a spare mitten for the reindeer.','Santa asked me for tonight’s forecast. I told him: festive.','I wished for snow. Check the forecast to see if it worked.','Tap me again. I have more jingles than jackets.','Merry Christmas! I would hug you, but I am a sphere.','This hat is 100% wool and 0% real. Do not tell the elves.'],
   pt:['Ho ho ho! Gostas do meu gorro?','Hoje sou um duende muito redondo.','Veste-te bem, e guarda uma luva a mais para as renas.','O Pai Natal pediu-me a previsão desta noite. Disse-lhe: festiva.','Pedi neve. Vê a previsão para ver se resultou.','Toca outra vez. Tenho mais guizos do que casacos.','Feliz Natal! Dava-te um abraço, mas sou uma esfera.','Este gorro é 100% lã e 0% verdade. Não contes aos duendes.']};
- function lines(l){l=l||lang();return LINES[l].concat(ORBL[l])}
+ function lines(l){l=l||lang();return LINES[l].concat(ORBL[l],[countdown()])}
 
  /* ---------- neve (ecrã inteiro + globo da página inicial) ---------- */
  var cv,cx,flakes=[],W=0,H=0,gcv=null,gfl=[],last=0;
@@ -77,17 +77,21 @@
   f.appendChild(ft);
  }
 
- /* ---------- faixa de frases (no topo do <main>, volta sempre que a app re-renderiza) ---------- */
- var bar=null,barT=0;
- function barText(){return'<b class="xm-gift"></b>'+(li%3===0?countdown():LINES[lang()][li%LINES[lang()].length])}
- function ensureBar(){
-  var m=doc.getElementById('main');if(!m||(bar&&m.firstChild===bar))return;
-  if(!bar){bar=el('div','xm-bar','<span></span>');bar.setAttribute('role','status');bar.firstChild.innerHTML=barText();
-   barT=setInterval(function(){bar.classList.add('f');setTimeout(function(){li++;bar.firstChild.innerHTML=barText();bar.classList.remove('f')},500)},9000)}
-  m.insertBefore(bar,m.firstChild);
+/* ---------- cartão de Natal (só a 25 de dezembro): flutua por cima da página, não ocupa espaço nem empurra nada ---------- */
+ function greet(){
+  var n=new Date(NOW());if(!(n.getMonth()===11&&n.getDate()===25))return;
+  var key='xmGreet'+n.getFullYear(),store=SKEW?sessionStorage:localStorage;   // com data falsa (teste) usa a sessão, para poderes ver outra vez
+  try{if(store.getItem(key))return;store.setItem(key,'1')}catch(e){}
+  var g=el('div','xm-greet','<button type="button" class="xm-gx" aria-label="Close · Fechar">×</button>'
+   +'<div class="xm-gt"><b>Feliz Natal!</b><span>O criador do SkyLab deseja a ti e aos teus um Feliz Natal.</span></div>'
+   +'<div class="xm-gt en"><b>Merry Christmas!</b><span>The SkyLab dev wishes you and yours a Merry Christmas.</span></div>');
+  g.setAttribute('role','status');
+  var close=function(){g.classList.add('out');setTimeout(function(){g.remove()},500)};
+  g.querySelector('.xm-gx').onclick=close;
+  setTimeout(function(){doc.body.appendChild(g);requestAnimationFrame(function(){g.classList.add('in')});setTimeout(close,20000)},1800);
  }
 
- /* ---------- Pai Natal: simulação (a rota segue a meia-noite local de dia 24 para 25) ---------- */
+  /* ---------- Pai Natal: simulação (a rota segue a meia-noite local de dia 24 para 25) ---------- */
  var modal=null,raf=0,preview=null,tick=0;
  function xmasYear(){var n=new Date(NOW());return n.getMonth()===0?n.getFullYear()-1:n.getFullYear()}
  function startMs(){return Date.UTC(xmasYear(),11,24,10,0,0)}
@@ -200,13 +204,13 @@
   if(ha&&!doc.getElementById('xmSanta')){var b=el('button','pill xm-santa',HAT+'<span class="xm-l"></span>');b.id='xmSanta';b.type='button';b.querySelector('.xm-l').textContent=T2('Track Santa','Pai Natal');b.onclick=openSanta;ha.insertBefore(b,doc.getElementById('hbtn')||ha.firstChild)}
   if(!doc.getElementById('xmFab')){var f=el('button','xm-fab',HAT+'<span></span>');f.id='xmFab';f.type='button';f.lastChild.textContent=T2('Track Santa','Pai Natal');f.onclick=openSanta;doc.body.appendChild(f)}
  }
- function relabel(){var a=doc.querySelector('#xmSanta .xm-l'),b=doc.querySelector('#xmFab span:last-child');if(a)a.textContent=T2('Track Santa','Pai Natal');if(b)b.textContent=T2('Track Santa','Pai Natal');if(bar)bar.firstChild.innerHTML=barText()}
+ function relabel(){var a=doc.querySelector('#xmSanta .xm-l'),b=doc.querySelector('#xmFab span:last-child');if(a)a.textContent=T2('Track Santa','Pai Natal');if(b)b.textContent=T2('Track Santa','Pai Natal');}
 
  function init(){
   html.classList.add('xmas');
   doc.body.appendChild(el('div','xm-lights'));
-  startSnow();buildField();addButtons();ensureBar();
-  var m=doc.getElementById('main');if(m){new MutationObserver(ensureBar).observe(m,{childList:true});new MutationObserver(dressSoon).observe(m,{childList:true,subtree:true})}
+  startSnow();buildField();addButtons();greet();
+  var m=doc.getElementById('main');if(m){new MutationObserver(dressSoon).observe(m,{childList:true,subtree:true})}
   dress();setTimeout(quip,14000);quipT=setInterval(quip,45000);
   new MutationObserver(relabel).observe(html,{attributes:true,attributeFilter:['lang']});
  }
@@ -219,7 +223,7 @@
   (function c(){f++;var t=performance.now();if(t-t0>=1000){fps=Math.round(f*1000/(t-t0));f=0;t0=t}if(dbg)requestAnimationFrame(c)})();
   function upd(){var q=function(s){return doc.querySelector(s)?'✔':'✘'},tm=new Date(NOW());
    dbg.textContent=['xmas.js activo · '+(mobile()?'mobile':'desktop')+' · lang '+lang(),'data usada: '+tm.toISOString().slice(0,16)+'Z'+(SKEW?' (FALSA)':' (real)'),'sessionStorage xmas='+(sessionStorage.getItem('xmas')||'-')+' xmasdate='+(sessionStorage.getItem('xmasdate')||'-'),
-    'neve '+q('#xm-snow')+' · luzes '+q('.xm-lights')+' · faixa '+q('.xm-bar')+' · botão '+q('#xmSanta')+'/'+q('#xmFab'),'rodapé enterrado '+q('.xm-field footer')+' · neve no globo '+q('.xm-gs')+' · fonte '+(document.fonts&&document.fonts.check('700 20px "Mountains of Christmas"')?'✔':'✘'),
+    'neve '+q('#xm-snow')+' · luzes '+q('.xm-lights')+' · botão '+q('#xmSanta')+'/'+q('#xmFab'),'rodapé enterrado '+q('.xm-field footer')+' · neve no globo '+q('.xm-gs')+' · fonte '+(document.fonts&&document.fonts.check('700 20px "Mountains of Christmas"')?'✔':'✘'),
     'fps '+fps+' · flocos '+flakes.length,'erros: '+(errs.length?errs.join(' | '):'nenhum')].join('\n')}
   upd();dbgT=setInterval(upd,1000);
  }
