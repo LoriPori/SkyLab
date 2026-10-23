@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://loripori.github.io/SkyLab/sitemap.xml
