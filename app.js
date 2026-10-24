@@ -1853,7 +1853,7 @@ function todayPane(){
 
  <p class="best">${best}</p>
  <div id="station">${stationHTML()}</div>
-</section></div>`;
+</section></div>${xtraHTML()}`;
 }
 function scrub(){
  const svg=$('.chartbox svg');if(!svg)return;
@@ -2034,6 +2034,120 @@ function weekPane(){
 
   // Match the min-height to a typical full week layout (e.g. 500px instead of 260px)
   return `<div class="pane sk" style="min-height:520px"></div>`;
+}
+
+/* --- Sea & surf + "Is today unusual?" (cartões da aba Hoje, iguais no PC e no telemóvel) ---
+   Tudo passa pelo worker, com cache:  /marine → Open-Meteo Marine API  ·  /normals → Open-Meteo Historical Weather API (ERA5, 1991–2020).
+   XT.sea / XT.norm:  undefined = a carregar · false = sem dados neste local (ex.: interior) · null = erro (tenta de novo passados 5 min) · objeto = dados. */
+let XT={key:'',normMd:'',sea:undefined,norm:undefined,t:{},busy:{}};
+const xtKey=()=>place?(+place.lat).toFixed(3)+','+(+place.lon).toFixed(3):'';
+const xtGet=f=>XT.key===xtKey()?XT[f]:undefined;
+const xtCompass=d=>(LANG==='pt'?['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO']:['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'])[Math.round((((d%360)+360)%360)/22.5)%16];
+
+function loadXtra(){
+ if(!data||!place)return;
+ const key=xtKey(),md=data.current.time.slice(5,10),now=Date.now();
+ if(XT.key!==key)XT={key,normMd:md,sea:undefined,norm:undefined,t:{},busy:{}};
+ if(XT.normMd!==md){XT.normMd=md;XT.norm=undefined;XT.busy.norm=false}   // passou a meia-noite: outra data
+ const q=`lat=${(+place.lat).toFixed(3)}&lon=${(+place.lon).toFixed(3)}`;
+ const run=(f,url,fix)=>{
+  const v=XT[f];
+  if(XT.busy[f]||(v!==undefined&&!(v===null&&now-(XT.t[f]||0)>3e5)))return;
+  XT.busy[f]=true;
+  fetchJSON(url,undefined,22000).then(fix).catch(e=>{console.info('['+f+']',e.message);return null}).then(v=>{
+   if(XT.key!==key||(f==='norm'&&XT.normMd!==md))return;
+   XT.busy[f]=false;XT[f]=v;XT.t[f]=Date.now();paintXtra();
+  });
+ };
+ run('sea',`${WORKER}/marine?${q}`,j=>j&&j.available?seaPrep(j):false);
+ run('norm',`${WORKER}/normals?${q}&md=${md}`+(isFinite(data.elevation)?`&elev=${Math.round(data.elevation)}`:''),j=>j&&j.available&&Array.isArray(j.q)&&j.q.length===21?j:false);
+}
+
+/* próximas 24 h (a partir da hora actual) das séries do mar */
+function seaPrep(j){
+ const h=j.hourly,from=data.current.time.slice(0,13)+':00';
+ let i0=h.time.findIndex(t=>t>=from);if(i0<0)i0=0;
+ const cut=k=>(h[k]||[]).slice(i0,i0+25).map(v=>v==null?null:+v);
+ const o={t:h.time.slice(i0,i0+25),wh:cut('wave_height'),wp:cut('wave_period'),wd:cut('wave_direction'),sh:cut('swell_wave_height'),sp:cut('swell_wave_period'),sd:cut('swell_wave_direction'),ww:cut('wind_wave_height'),sst:cut('sea_surface_temperature')};
+ return o.wh.some(v=>v!=null)?o:false;
+}
+const xtFirst=a=>{const v=a.find(x=>x!=null&&isFinite(x));return v==null?null:v};
+
+/* altura: metros (°C) ou pés (°F), como o resto da app liga as unidades */
+const xtLen=m=>unit=='c'?dcm(m,1)+' m':(m*3.28084<10?dcm(m*3.28084,1):String(Math.round(m*3.28084)))+' ft';
+const SEA_STATE=[[.1,'Calm','Calmo'],[.5,'Smooth','Chão'],[1.25,'Slight','Pouco agitado'],[2.5,'Moderate','Agitado'],[4,'Rough','Muito agitado'],[6,'Very rough','Alteroso'],[9,'High','Montanhoso'],[14,'Very high','Enorme'],[1e9,'Phenomenal','Fenomenal']];   // escala Douglas / OMM
+const seaState=h=>{const r=SEA_STATE.find(x=>h<x[0]);return T2(r[1],r[2])};
+const swellType=p=>p>=12?T2('Long-period groundswell','Mar de fundo de longo período'):p>=9?T2('Groundswell','Mar de fundo'):p>=6?T2('Wind swell','Ondulação de vento'):T2('Wind chop','Mar picado');
+const xtArrow=d=>`<svg class="xt-arr" style="--r:${Math.round(d)+180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>`;
+
+function seaInner(){
+ const s=xtGet('sea');if(!s)return'';
+ const H=xtFirst(s.wh);if(H==null)return'';
+ const Tm=xtFirst(s.wp),Hs=s.sh[0]!=null?s.sh[0]:xtFirst(s.sh),Ts=s.sp[0]!=null?s.sp[0]:xtFirst(s.sp),Ds=s.sd[0]!=null?s.sd[0]:xtFirst(s.sd),sst=xtFirst(s.sst);
+ // período que descreve o mar: o da ondulação, se ela domina; senão o das ondas de vento
+ const swellRules=Hs!=null&&Ts!=null&&Hs>=.6*H,Tk=swellRules?Ts:Tm;
+ const P=Tm!=null?.49*H*H*Tm:null;                     // fluxo de energia das ondas em águas profundas: P ≈ ρg²/(64π)·H²·T ≈ 0,49·H²·T  [kW/m]
+ const mx=Math.max(...s.wh.filter(v=>v!=null)),iMx=s.wh.indexOf(mx);
+ const bars=s.wh.map((v,i)=>{const hh=v==null?0:Math.max(2,v/Math.max(mx,.5)*44);return`<rect x="${i*10+1}" y="${(48-hh).toFixed(1)}" width="8" height="${hh.toFixed(1)}" rx="2"${i===iMx?' class="pk"':''}/>`}).join('');
+ const tile=(l,v,sub)=>`<div class="xt-m"><span>${l}</span><b>${v}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+ return`<h3>${T2('Sea & surf','Mar e surf')}</h3>
+ <div class="xt-head"><b class="xt-big">${xtLen(H)}</b><span class="xt-tag t-sea">${seaState(H)}</span></div>
+ <div class="xt-grid">
+  ${Tk!=null?tile(T2('Period','Período'),dcm(Tk,0)+' s',swellType(Tk)):''}
+  ${Ds!=null?tile(T2('Swell from','Ondulação de'),xtArrow(Ds)+xtCompass(Ds)+' <small class="xt-deg">'+Math.round(Ds)+'°</small>',Hs!=null&&Ts!=null?xtLen(Hs)+' · '+dcm(Ts,0)+' s':''):''}
+  ${sst!=null?tile(T2('Sea temperature','Temp. do mar'),T(sst)+'°'):''}
+  ${P!=null?tile(T2('Wave power','Energia das ondas'),'≈ '+(P<10?dcm(P,1):String(Math.round(P)))+' <small>kW/m</small>'):''}
+ </div>
+ <div class="xt-bars"><svg viewBox="0 0 250 48" preserveAspectRatio="none" role="img" aria-label="${T2('Wave height, next 24 hours','Altura das ondas, próximas 24 horas')}">${bars}</svg>
+  <div class="xt-ax"><span>${T2('Now','Agora')}</span><span>+12 h</span><span>+24 h</span></div></div>
+ <p class="note">${T2('Biggest','Maior')}: ${xtLen(mx)} ${iMx?T2('around','por volta das')+' '+s.t[iMx].slice(11,13)+'h':T2('right now','agora')}. ${T2('Direction is where the swell comes from.','A direção indica de onde vem a ondulação.')}</p>
+ <p class="xt-src">${T2('Sea data: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM).','Dados do mar: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM).')}</p>`;
+}
+
+/* temperatura média de hoje (24 h locais) comparada com a normal 1991–2020 */
+function anomInner(){
+ const n=xtGet('norm'),ttl=`<h3>${T2('Is today unusual?','Hoje é invulgar?')}</h3>`;
+ if(n===undefined)return ttl+'<p class="note sk">'+T2('Loading…','A carregar…')+'</p>';
+ const day=data.current.time.slice(0,10),h=data.hourly;let sum=0,k=0;
+ for(let i=0;i<h.time.length&&k<24;i++)if(h.time[i].startsWith(day)&&h.temperature_2m[i]!=null){sum+=h.temperature_2m[i];k++}
+ if(!n||k<20)return ttl+`<p class="note">${T2('Not available for this place right now.','Indisponível para este local de momento.')}</p>`;
+ const tm=sum/k,q=n.q,d=tm-n.mean;
+ let p;                                               // percentil de hoje na distribuição da data (interpolado entre os 21 quantis)
+ if(tm<=q[0])p=0;else if(tm>=q[20])p=100;else{let j=0;while(q[j+1]<tm)j++;p=(j+(q[j+1]>q[j]?(tm-q[j])/(q[j+1]-q[j]):0))*5}
+ const lv=p>=98?[3,'Exceptionally warm','Excecionalmente quente']:p>=90?[2,'Much warmer than usual','Muito mais quente do que o normal']:p>=70?[1,'Warmer than usual','Mais quente do que o normal']
+  :p>30?[0,'Typical for this date','Típico para esta data']:p>10?[-1,'Cooler than usual','Mais fresco do que o normal']:p>2?[-2,'Much cooler than usual','Muito mais frio do que o normal']:[-3,'Exceptionally cold','Excecionalmente frio'];
+ const sg=d>=0?'+':'−',pc=Math.round(p>=50?p:100-p);
+ const rank=tm>q[20]?T2('Warmer than any day around this date in 1991–2020.','Mais quente do que qualquer dia desta época em 1991–2020.')
+  :tm<q[0]?T2('Colder than any day around this date in 1991–2020.','Mais frio do que qualquer dia desta época em 1991–2020.')
+  :p>=50?T2(`Warmer than about ${pc}% of days around this date in 1991–2020.`,`Mais quente do que cerca de ${pc}% dos dias desta época em 1991–2020.`)
+  :T2(`Cooler than about ${pc}% of days around this date in 1991–2020.`,`Mais fresco do que cerca de ${pc}% dos dias desta época em 1991–2020.`);
+ const lo=Math.min(q[0],tm)-1.5,hi=Math.max(q[20],tm)+1.5,X=v=>((v-lo)/(hi-lo)*100).toFixed(1);
+ const dt=new Date(day+'T12:00:00').toLocaleDateString(LOC(),{day:'numeric',month:'long'});
+ return ttl+`<div class="xt-head"><b class="xt-big">${sg}${decDT(Math.abs(d))}°</b><span class="xt-tag t-${lv[0]>0?'hot':lv[0]<0?'cold':'mid'}${Math.abs(lv[0])}">${T2(lv[1],lv[2])}</span></div>
+ <p class="note">${T2(`Today averages ${decT(tm)}°. The 1991–2020 normal for ${dt} is ${decT(n.mean)}°.`,`Hoje a média é ${decT(tm)}°. A normal de 1991–2020 para ${dt} é ${decT(n.mean)}°.`)} ${rank}</p>
+ <div class="xt-rng" role="img" aria-label="${T2('Today compared with the usual range','Hoje comparado com o intervalo habitual')}">
+  <i class="xt-rec" style="left:${X(q[0])}%;width:${(X(q[20])-X(q[0])).toFixed(1)}%"></i>
+  <i class="xt-b90" style="left:${X(q[2])}%;width:${(X(q[18])-X(q[2])).toFixed(1)}%"></i>
+  <i class="xt-b50" style="left:${X(q[5])}%;width:${(X(q[15])-X(q[5])).toFixed(1)}%"></i>
+  <i class="xt-med" style="left:${X(q[10])}%"></i>
+  <i class="xt-now" style="left:${X(tm)}%"></i>
+ </div>
+ <div class="xt-leg"><span><i class="l1"></i>${T2('Usual (80% of days)','Habitual (80% dos dias)')}: ${T(q[2])}° – ${T(q[18])}°</span><span><i class="l2"></i>${T2('Today','Hoje')}</span></div>
+ <p class="xt-src">${T2('Normal = 1991–2020 daily mean, ±7 days around the date. ERA5 reanalysis (Copernicus / ECMWF) via Open-Meteo Historical Weather API.','Normal = média diária de 1991–2020, ±7 dias em torno da data. Reanálise ERA5 (Copernicus / ECMWF) via Open-Meteo Historical Weather API.')}</p>`;
+}
+
+const xtSea=()=>{const i=seaInner();return i?`<section class="card xt" id="sea">${i}</section>`:''};
+function xtraHTML(){
+ if(!data||!place)return'';
+ return`<div class="pane xtra" id="xtra"><section class="card xt" id="anom">${anomInner()}</section>${xtSea()}</div>`;
+}
+function paintXtra(){
+ const box=$('#xtra');if(!box||!data)return;
+ const a=$('#anom');if(a)a.innerHTML=anomInner();
+ const i=seaInner(),sc=$('#sea');
+ if(!i){if(sc)sc.remove()}
+ else if(sc)sc.innerHTML=i;
+ else box.insertAdjacentHTML('beforeend',`<section class="card xt" id="sea">${i}</section>`);
 }
 
 /* --- Air & pollen --- */
@@ -2391,7 +2505,7 @@ function render(){
  theme(c.temperature_2m,k);if(mode!==k)fxSet(k);
  paintFav();timeTravel();startTicker();
  countUp($('#tn'),T(c.temperature_2m));
- setTab(tab);loadExtras();
+ setTab(tab);loadExtras();loadXtra();
  checkAlerts();
  document.title=`${T(c.temperature_2m)}° ${place.name} — Skylab`;
   if(fresh){
@@ -7694,7 +7808,7 @@ ${k==='uv'?`<div class="m-uvbar" style="margin:14px 0 8px" aria-hidden="true"><i
 <div class="m-pref"><span>${T2('Units','Unidades')}</span><div class="m-seg" role="group"><button type="button" data-u="c" aria-pressed="${unit==='c'}">°C</button><button type="button" data-u="f" aria-pressed="${unit==='f'}">°F</button></div></div>
 <div class="m-pref"><span>${T2('Language','Idioma')}</span><div class="m-seg" role="group"><button type="button" data-l="pt" aria-pressed="${LANG==='pt'}">PT</button><button type="button" data-l="en" aria-pressed="${LANG==='en'}">EN</button></div></div>
 <div class="m-pref"><span>${T2('Ambient sound','Som ambiente')}<small>${T2('Weather sounds that follow the sky','Sons do tempo que acompanham o céu')}</small></span><button type="button" class="m-sw" data-act="snd" role="switch" aria-pressed="${!!sOn}" aria-label="${T2('Ambient sound','Som ambiente')}"></button></div>
-<p class="m-credits">${T2('Weather by','Tempo por')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · ${T2('Places by','Locais por')} <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a> · ${T2('Pollen by','Pólen por')} <a href="https://atmospore.ai/" target="_blank" rel="noopener">Atmospore</a> · ${T2('Portugal forecasts and warnings by','Previsões e avisos de Portugal pelo')} <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a> · <a href="mailto:${CONTACT_EMAIL}">${T2('Contact','Contacto')}</a> · <button type="button" class="priv-link" data-priv>${T2('Privacy','Privacidade')}</button></p>`}
+<p class="m-credits">${T2('Weather by','Tempo por')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · ${T2('Places by','Locais por')} <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a> · ${T2('Pollen by','Pólen por')} <a href="https://atmospore.ai/" target="_blank" rel="noopener">Atmospore</a> · ${T2('Waves & climate normals by','Ondas e normais climatológicas por')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (<a href="https://climate.copernicus.eu/climate-reanalysis" target="_blank" rel="noopener">ERA5</a>) · ${T2('Portugal forecasts and warnings by','Previsões e avisos de Portugal pelo')} <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a> · <a href="mailto:${CONTACT_EMAIL}">${T2('Contact','Contacto')}</a> · <button type="button" class="priv-link" data-priv>${T2('Privacy','Privacidade')}</button></p>`}
  function menuOpen(){$('#mMenuB').innerHTML=menuHTML();openSheet('mMenu')}
  const PROXY={auth:'#authBtn',fav:'#favBtn',hur:'#hbtn',term:'#termBtn',inst:'#inst'};
  function menuClick(e){
