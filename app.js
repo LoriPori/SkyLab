@@ -2059,7 +2059,7 @@ function loadXtra(){
    XT.busy[f]=false;XT[f]=v;XT.t[f]=Date.now();paintXtra();
   });
  };
- run('sea',`${WORKER}/marine?${q}`,j=>j&&j.available?seaPrep(j):false);
+ run('sea',`${WORKER}/marine?${q}`,j=>{if(j&&j.available)return seaPrep(j);console.info('[sea] sem dados do mar para este local:',j&&j.why);return false});
  run('norm',`${WORKER}/normals?${q}&md=${md}`+(isFinite(data.elevation)?`&elev=${Math.round(data.elevation)}`:''),j=>j&&j.available&&Array.isArray(j.q)&&j.q.length===21?j:false);
 }
 
@@ -2068,9 +2068,10 @@ function seaPrep(j){
  const h=j.hourly,from=data.current.time.slice(0,13)+':00';
  let i0=h.time.findIndex(t=>t>=from);if(i0<0)i0=0;
  const cut=k=>(h[k]||[]).slice(i0,i0+25).map(v=>v==null?null:+v);
- const o={t:h.time.slice(i0,i0+25),wh:cut('wave_height'),wp:cut('wave_period'),wd:cut('wave_direction'),sh:cut('swell_wave_height'),sp:cut('swell_wave_period'),sd:cut('swell_wave_direction'),ww:cut('wind_wave_height'),sst:cut('sea_surface_temperature')};
+ const o={km:+j.km||0,t:h.time.slice(i0,i0+25),wh:cut('wave_height'),wp:cut('wave_period'),wd:cut('wave_direction'),sh:cut('swell_wave_height'),sp:cut('swell_wave_period'),sd:cut('swell_wave_direction'),ww:cut('wind_wave_height'),sst:cut('sea_surface_temperature')};
  return o.wh.some(v=>v!=null)?o:false;
 }
+const xtDist=km=>unit=='c'?Math.round(km)+' km':Math.round(km*.621371)+' mi';
 const xtFirst=a=>{const v=a.find(x=>x!=null&&isFinite(x));return v==null?null:v};
 
 /* altura: metros (°C) ou pés (°F), como o resto da app liga as unidades */
@@ -2100,7 +2101,7 @@ function seaInner(){
  </div>
  <div class="xt-bars"><svg viewBox="0 0 250 48" preserveAspectRatio="none" role="img" aria-label="${T2('Wave height, next 24 hours','Altura das ondas, próximas 24 horas')}">${bars}</svg>
   <div class="xt-ax"><span>${T2('Now','Agora')}</span><span>+12 h</span><span>+24 h</span></div></div>
- <p class="note">${T2('Biggest','Maior')}: ${xtLen(mx)} ${iMx?T2('around','por volta das')+' '+s.t[iMx].slice(11,13)+'h':T2('right now','agora')}. ${T2('Direction is where the swell comes from.','A direção indica de onde vem a ondulação.')}</p>
+ <p class="note">${T2('Biggest','Maior')}: ${xtLen(mx)} ${iMx?T2('around','por volta das')+' '+s.t[iMx].slice(11,13)+'h':T2('right now','agora')}. ${T2('Direction is where the swell comes from.','A direção indica de onde vem a ondulação.')}${s.km>=3?' '+T2(`Nearest open-sea point, about ${xtDist(s.km)} away.`,`Ponto de mar aberto mais próximo, a cerca de ${xtDist(s.km)}.`):''}</p>
  <p class="xt-src">${T2('Sea data: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM).','Dados do mar: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM).')}</p>`;
 }
 
