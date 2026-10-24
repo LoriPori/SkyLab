@@ -276,8 +276,8 @@ SkyLab stands on the shoulders of these open services. Thank you!
 
 - [x] Radars, forecast, accounts, push notifications
 - [x] Terminal with real commands
-- [] *Next idea*
-- [] *Another idea*
+- [x] A Christmas-themed mode?
+- [x] Marine information?
 
 ## Contributing
 
@@ -296,12 +296,12 @@ Released under the **MIT License**. See the [`LICENSE`](LICENSE) file for detail
 
 ## About me
 
-*Write here: who you are, in your own words. Where you're from, what you do, what else you build.*
+I am an indie developer based in Portugal, where I work on several projects from robotics to websites. If you want to know what else I do, check out my other repositories. And if you liked this project, leaving a star is the best you can do.
 
 ## Contact me
 
-| | |
-|:-:|---|
+| |
+| ------- |
 | [skylab.support@gmail.com](mailto:skylab.support@gmail.com) |
 | [@loripori](https://github.com/loripori) |
 
