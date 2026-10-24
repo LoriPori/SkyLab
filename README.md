@@ -6,11 +6,11 @@
 
 ### *The sky, explained to you.*
 
-Not just *the* weather. The whole science behind it. 🔬
+Not just *the* weather. The whole science behind it.
 
 <br>
 
-[![Live app](https://img.shields.io/badge/🌍_Open_the_live_app-loripori.github.io/SkyLab-2d8cff?style=for-the-badge)](https://loripori.github.io/SkyLab/)
+[![Live app](https://img.shields.io/badge/Open_the_live_app-loripori.github.io/SkyLab-2d8cff?style=for-the-badge)](https://loripori.github.io/SkyLab/)
 
 <br>
 
@@ -35,37 +35,37 @@ Not just *the* weather. The whole science behind it. 🔬
 
 ## Table of contents
 
-- [🌤️ About](#️-about)
-- [💡 Why I built it](#-why-i-built-it)
-- [✨ Features](#-features)
-- [📸 Screenshots](#-screenshots)
-- [💻 SkyLab Terminal](#-skylab-terminal)
-- [🧱 Tech stack](#-tech-stack)
-- [🗺️ How it works](#️-how-it-works)
-- [📁 Project structure](#-project-structure)
-- [🚀 Run it locally](#-run-it-locally)
-- [🛰️ Data sources and credits](#️-data-sources-and-credits)
-- [🔐 Privacy and security](#-privacy-and-security)
-- [🧭 Roadmap](#-roadmap)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
-- [👋 About me](#-about-me)
-- [📬 Contact](#-contact)
+- [About](#about)
+- [Why I built it](#why-i-built-it)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [SkyLab Terminal](#skylab-terminal)
+- [Tech stack](#tech-stack)
+- [How it works](#how-it-works)
+- [Project structure](#project-structure)
+- [Run it locally](#run-it-locally)
+- [Data sources and credits](#data-sources-and-credits)
+- [Privacy and security](#privacy-and-security)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+- [About me](#about-me)
+- [Contact](#contact-me)
 
 ---
 
-## 🌤️ About
+## About
 
-SkyLab is a weather project that informs you about the current weather and the **science behind it**. And it's incredibly fun! 🎉
+SkyLab is a weather project that informs you about the current weather and the **science behind it**. And it's incredibly fun!
 
 Whether you're a regular citizen, a very dedicated student, or just a weather enthusiast, SkyLab fits you. It fetches high-quality data from open platforms like OpenWeatherMap and RainViewer, and puts it all in one place.
 
 > [!NOTE]
 > This app was built entirely with **free tools** and with the help of **Claude**, as I'm not an experienced coder. The framework, the backend, and the databases, though, were all designed and coordinated by me, the proud developer of what I believe is a good weather app. 
 
-Feel free to explore it. SkyLab has a whole world of features worth discovering, so don't forget to read the rest! 👇
+Feel free to explore it. SkyLab has a whole world of features worth discovering, so don't forget to read the rest!
 
-## 💡 Why I built it
+## Why I built it
 
 A couple of months ago, I opened my phone's built-in weather app. I checked the current weather, the next few hours, and decided what to wear for the day. Simple enough.
 
@@ -73,7 +73,7 @@ But the data was shallow. Little to no complex information, like **pressure vari
 
 SkyLab is the solution I found. By combining many kinds of data and patterns, it suits everyone: an all-in-one tool built for your daily needs. With SkyLab, you don't just see the weather; you actually **get informed** about it.
 
-> 🧪 **One app, many tools.** Check out the features!
+> **One app, many tools.** Check out the features!
 
 ## Features
 
@@ -82,19 +82,19 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 <td width="50%" valign="top">
 
 ### 🗺️ Maps and radars
-- 🌧️ Global rain radar, provided by [RainViewer](https://www.rainviewer.com/)
-- ☁️ Cloud, wind, temperature with real-time isobars
-- 🛰️ Satellite view by [NASA](https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api)
+- Global rain radar, provided by [RainViewer](https://www.rainviewer.com/)
+- Cloud, wind, temperature with real-time isobars
+- Satellite view by [NASA](https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api)
 
 
 </td>
 <td width="50%" valign="top">
 
 ### 🔬 Forecast and science
-- 🕐 Hourly, weekly, and monthly forecasts
-- 🌼 Detailed pollen data
-- 📖 A pattern-based tool that tells you why the weather is like it is
-- 🧠 Daily science facts and a *Myth or Fact* game
+- Hourly, weekly, and monthly forecasts
+- Detailed pollen data
+- A pattern-based tool that tells you why the weather is like it is
+- Daily science facts and a *Myth or Fact* game
 
 </td>
 </tr>
@@ -102,17 +102,17 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 <td width="50%" valign="top">
 
 ### 👤 Your account *(optional sign-in)*
-- ⭐ Favourite cities synced between devices
-- 🔔 Weather push notifications for your main city
-- ⌨️ Built-in terminal to analyse raw weather data. Check out the [Terminal](#-skylab-terminal)
-- 🗑️ Account deletion at any time
+- Favourite cities synced between devices
+- Weather push notifications for your main city
+- Built-in terminal to analyse raw weather data. Check out the [Terminal](#skylab-terminal)
+- Account deletion at any time
 
 </td>
 <td width="50%" valign="top">
 
 ### 🎁 Extras
-- 🌐 Portuguese / English, with units that follow the language
-- 👕 Clothing advisor orb (be careful with him!)
+- Portuguese / English, with units that follow the language
+- Clothing advisor orb (be careful with him!)
 
 </td>
 </tr>
@@ -120,17 +120,17 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 
 ### And much more!
 
-## 📸 Screenshots
+## Screenshots
 
-| 🖥️ Desktop | 📱 Mobile |
+| Desktop | Mobile |
 |:---:|:---:|
 | <img src="screenshots/desktop-city.png" alt="Desktop city view"> | <img src="screenshots/mobile-city.png" alt="Mobile city view" width="260"> |
-| **🌧️ Radar** | **💻 Terminal** |
+| ** Radar** | ** Terminal** |
 | <img src="screenshots/radar.png" alt="Radar"> | <img src="screenshots/terminal.png" alt="Terminal"> |
 
-## 💻 SkyLab Terminal
+## SkyLab Terminal
 
-A command line built into the app, for people who want **raw atmospheric data**. Yeah, I recognize a weather nerd when I see one. 🤓
+A command line built into the app, for people who want **raw atmospheric data**. Yeah, I recognize a weather nerd when I see one.
 
 ```text
 fetch -loc "Lisbon"          # current conditions
@@ -203,13 +203,13 @@ export --format csv          # also: cpp_struct
 | Notifications | Web Push (VAPID) |
 | Sign-in | Email code verification + Google |
 
-## 🗺️ How it works
+## How it works
 
 ```mermaid
 flowchart LR
-    U["🧑 You<br/>(browser / phone)"] -->|static files| GH["GitHub Pages"]
-    U -->|API calls| W["⚙️ Cloudflare Worker"]
-    W <--> D[("🗄️ D1<br/>accounts, prefs, push")]
+   U[" You<br/>(browser / phone)"] -->|static files| GH["GitHub Pages"]
+   U -->|API calls| W[" Cloudflare Worker"]
+   W <--> D[(" D1<br/>accounts, prefs, push")]
     W --> OM["Open-Meteo"]
     W --> NASA["NASA GIBS"]
     W --> RV["RainViewer"]
@@ -221,31 +221,31 @@ flowchart LR
 
 The worker sits between the app and every data provider. That keeps API keys private, caches responses, and protects the free quotas.
 
-## 📁 Project structure
+## Project structure
 
 ```text
 SkyLab/
-├── 📄 index.html      # page structure
-├── 🎨 styles.css      # all styling
-├── 🧠 app.js          # all front-end logic
-├── 🔔 sw.js           # service worker (push notifications)
-├── ⚙️ worker.js       # Cloudflare Worker (API, auth, proxies)
-├── 🖼️ icon-web.png
-└── 📸 screenshots/  
+├── index.html # page structure
+├── styles.css # all styling
+├── app.js # all front-end logic
+├── sw.js # service worker (push notifications)
+├── worker.js # Cloudflare Worker (API, auth, proxies)
+├── icon-web.png
+└── screenshots/
 ```
 
-## 🚀 Run it locally
+## Run it locally
 
-1. 📥 Clone the repository:
+1. Clone the repository:
    ```bash
    git clone https://github.com/loripori/SkyLab.git
    cd SkyLab
    ```
-2. 🖥️ Serve the folder with any static server:
+2. Serve the folder with any static server:
    ```bash
    python -m http.server 8000
    ```
-3. 🌍 Open `http://localhost:8000`.
+3. Open `http://localhost:8000`.
 
 > [!IMPORTANT]
 > The worker needs its own setup (Cloudflare account, D1 database, secrets).
@@ -253,7 +253,7 @@ SkyLab/
 
 ## Data sources and credits
 
-SkyLab stands on the shoulders of these open services. Thank you! 🙏
+SkyLab stands on the shoulders of these open services. Thank you!
 
 | | Source | Used for |
 |:-:|---|---|
@@ -265,36 +265,36 @@ SkyLab stands on the shoulders of these open services. Thank you! 🙏
 | 🌀 | [NHC](https://www.nhc.noaa.gov/) and [GDACS](https://www.gdacs.org/) | Tropical storms |
 | 🌼 | [Atmospore / PollenAPI](https://pollenapi.com/) | Pollen data |
 
-## 🔐 Privacy and security
+## Privacy and security
 
 *Write here: what data is stored (email, Google ID, location), what is not, how to delete an account, and where the full privacy page is.*
 
 > [!WARNING]
-> Found a vulnerability? Please email the address in [Contact](#-contact) instead of opening a public issue. Thanks!
+> Found a vulnerability? Please email the address in [Contact](#contact-me) instead of opening a public issue. Thanks!
 
-## 🧭 Roadmap
+## Roadmap
 
-- [x] 🌧️ Radars, forecast, accounts, push notifications
-- [x] 💻 Terminal with real commands
-- [ ] 💭 *Next idea*
-- [ ] 💭 *Another idea*
+- [x] Radars, forecast, accounts, push notifications
+- [x] Terminal with real commands
+- [] *Next idea*
+- [] *Another idea*
 
-## 🤝 Contributing
+## Contributing
 
 SkyLab is a personal project, and I'm **not accepting code contributions** (pull requests). Any PR will be closed without review.
 
 - Found a bug? Open an **issue** and tell me what happened.
 - Have an idea? Open an **issue** too, I'm happy to read it.
-- Want to experiment? You can fork it, within the terms of the [license](#-license).
+- Want to experiment? You can fork it, within the terms of the [license](#license).
 
-## 📜 License
+## License
 
 Released under the **MIT License**. See the [`LICENSE`](LICENSE) file for details.
 
 > [!NOTE]
-> The license covers SkyLab's own code. The data comes from the third-party services listed in [credits](#️-data-sources-and-credits), and each has its own terms.
+> The license covers SkyLab's own code. The data comes from the third-party services listed in [credits](#data-sources-and-credits), and each has its own terms.
 
-## 👋 About me
+## About me
 
 *Write here: who you are, in your own words. Where you're from, what you do, what else you build.*
 
