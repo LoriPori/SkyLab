@@ -1998,20 +1998,20 @@ html.is-mobile #offBar{z-index:1300;top:calc(env(safe-area-inset-top,0px) + 8px)
 .xt-bars svg .pk{opacity:1;fill:var(--acc)}
 .xt-ax{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut);margin-top:3px}
 .xt-src{margin-top:10px;font-size:11.5px;line-height:1.45;color:var(--mut)}
-/* barra "hoje vs normal": claro = intervalo de registo, médio = 10–90 %, escuro = 25–75 % */
-.xt-rng{position:relative;height:16px;margin:18px 0 8px}
-.xt-rng i{position:absolute;top:50%;height:8px;margin-top:-4px;border-radius:99px}
-.xt-rec{background:rgba(20,49,79,.1)}
+/* barra "hoje vs normal": faixa total da escala, registo 1991–2020, 10–90 %, 25–75 %, mediana e marcador de hoje (tudo centrado na mesma linha) */
+.xt-rng{position:relative;height:24px;margin:14px 0 8px}
+.xt-rng::before{content:"";position:absolute;left:0;right:0;top:50%;height:8px;margin-top:-4px;border-radius:99px;background:rgba(20,49,79,.06)}
+.xt-rng i{position:absolute;top:50%;height:8px;margin-top:-4px;border-radius:99px;box-sizing:border-box}
+.xt-rec{background:rgba(20,49,79,.12)}
 .xt-b90{background:rgba(47,141,240,.28)}
 .xt-b50{background:rgba(47,141,240,.5)}
-.xt-med{width:2px;height:16px!important;margin-top:-8px!important;margin-left:-1px;border-radius:0!important;background:rgba(20,49,79,.55)}
-.xt-now{width:16px;height:16px!important;margin:-8px 0 0 -8px;border:3px solid #fff;background:#e5652e;box-shadow:0 2px 8px rgba(10,40,90,.4)}
+.xt-med{width:2px;height:16px!important;margin-top:-8px!important;border-radius:1px!important;background:rgba(20,49,79,.55);transform:translateX(-50%)}
+.xt-now{width:5px;height:24px!important;margin-top:-12px!important;border-radius:3px!important;background:#e5652e;transform:translateX(-50%)}
 .xt-leg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--mut)}
 .xt-leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
-.xt-leg .l1{background:rgba(47,141,240,.4)}.xt-leg .l2{background:#e5652e}
+.xt-leg .l1{background:rgba(47,141,240,.4)}.xt-leg .l2{background:#e5652e;width:4px;height:12px;border-radius:2px;margin:0 7px 0 3px;vertical-align:-2px}
 html.is-mobile .xtra{margin-top:var(--m-gap);grid-template-columns:1fr}
 html.is-mobile .xt-big{font-size:36px}
 html.is-mobile .xt-m{background:rgba(16,41,74,.05)}
 html.is-mobile .xt-m span,html.is-mobile .xt-m b small,html.is-mobile .xt-deg,html.is-mobile .xt-m>small,html.is-mobile .xt-ax,html.is-mobile .xt-src,html.is-mobile .xt-leg{color:var(--m-mut)}
 html.is-mobile .xt-grid{grid-template-columns:1fr 1fr}
-@media (prefers-reduced-motion:reduce){.xt-now{transition:none}}

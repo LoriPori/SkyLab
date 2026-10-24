@@ -2117,14 +2117,14 @@ function anomInner(){
  if(tm<=q[0])p=0;else if(tm>=q[20])p=100;else{let j=0;while(q[j+1]<tm)j++;p=(j+(q[j+1]>q[j]?(tm-q[j])/(q[j+1]-q[j]):0))*5}
  const lv=p>=98?[3,'Exceptionally warm','Excecionalmente quente']:p>=90?[2,'Much warmer than usual','Muito mais quente do que o normal']:p>=70?[1,'Warmer than usual','Mais quente do que o normal']
   :p>30?[0,'Typical for this date','Típico para esta data']:p>10?[-1,'Cooler than usual','Mais fresco do que o normal']:p>2?[-2,'Much cooler than usual','Muito mais frio do que o normal']:[-3,'Exceptionally cold','Excecionalmente frio'];
- const sg=d>=0?'+':'−',pc=Math.round(p>=50?p:100-p);
+ const r1=v=>Math.round(v*10)/10,dd=r1(Traw(tm))-r1(Traw(n.mean)),sg=Math.abs(dd)<.05?'±':dd>0?'+':'−',pc=Math.round(p>=50?p:100-p);   // a diferença sai dos números que o cartão mostra (22,4 − 19,3 = 3,1)
  const rank=tm>q[20]?T2('Warmer than any day around this date in 1991–2020.','Mais quente do que qualquer dia desta época em 1991–2020.')
   :tm<q[0]?T2('Colder than any day around this date in 1991–2020.','Mais frio do que qualquer dia desta época em 1991–2020.')
   :p>=50?T2(`Warmer than about ${pc}% of days around this date in 1991–2020.`,`Mais quente do que cerca de ${pc}% dos dias desta época em 1991–2020.`)
   :T2(`Cooler than about ${pc}% of days around this date in 1991–2020.`,`Mais fresco do que cerca de ${pc}% dos dias desta época em 1991–2020.`);
- const lo=Math.min(q[0],tm)-1.5,hi=Math.max(q[20],tm)+1.5,X=v=>((v-lo)/(hi-lo)*100).toFixed(1);
+ const mn=Math.min(q[0],tm),mx=Math.max(q[20],tm),pd=Math.max(.6,(mx-mn)*.1),lo=mn-pd,hi=mx+pd,X=v=>((v-lo)/(hi-lo)*100).toFixed(1);
  const dt=new Date(day+'T12:00:00').toLocaleDateString(LOC(),{day:'numeric',month:'long'});
- return ttl+`<div class="xt-head"><b class="xt-big">${sg}${decDT(Math.abs(d))}°</b><span class="xt-tag t-${lv[0]>0?'hot':lv[0]<0?'cold':'mid'}${Math.abs(lv[0])}">${T2(lv[1],lv[2])}</span></div>
+ return ttl+`<div class="xt-head"><b class="xt-big">${sg}${dec1(Math.abs(dd))}°</b><span class="xt-tag t-${lv[0]>0?'hot':lv[0]<0?'cold':'mid'}${Math.abs(lv[0])}">${T2(lv[1],lv[2])}</span></div>
  <p class="note">${T2(`Today averages ${decT(tm)}°. The 1991–2020 normal for ${dt} is ${decT(n.mean)}°.`,`Hoje a média é ${decT(tm)}°. A normal de 1991–2020 para ${dt} é ${decT(n.mean)}°.`)} ${rank}</p>
  <div class="xt-rng" role="img" aria-label="${T2('Today compared with the usual range','Hoje comparado com o intervalo habitual')}">
   <i class="xt-rec" style="left:${X(q[0])}%;width:${(X(q[20])-X(q[0])).toFixed(1)}%"></i>
@@ -2133,7 +2133,7 @@ function anomInner(){
   <i class="xt-med" style="left:${X(q[10])}%"></i>
   <i class="xt-now" style="left:${X(tm)}%"></i>
  </div>
- <div class="xt-leg"><span><i class="l1"></i>${T2('Usual (80% of days)','Habitual (80% dos dias)')}: ${T(q[2])}° – ${T(q[18])}°</span><span><i class="l2"></i>${T2('Today','Hoje')}</span></div>
+ <div class="xt-leg"><span><i class="l1"></i>${T2('Usual (80% of days)','Habitual (80% dos dias)')}: ${T(q[2])}° – ${T(q[18])}°</span><span><i class="l2"></i>${T2('Today','Hoje')}${tm>q[20]?' ('+T2('above the 1991–2020 range','acima do intervalo de 1991–2020')+')':tm<q[0]?' ('+T2('below the 1991–2020 range','abaixo do intervalo de 1991–2020')+')':''}</span></div>
  <p class="xt-src">${T2('Normal = 1991–2020 daily mean, ±7 days around the date. ERA5 reanalysis (Copernicus / ECMWF) via Open-Meteo Historical Weather API.','Normal = média diária de 1991–2020, ±7 dias em torno da data. Reanálise ERA5 (Copernicus / ECMWF) via Open-Meteo Historical Weather API.')}</p>`;
 }
 
