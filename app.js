@@ -4765,6 +4765,7 @@ function renderEyeIcon(isOpen){
 let authMode = 'signup';
 let currentUser = lsGet('skylab_auth_user');
 let currentToken = lsGet('skylab_auth_token');
+if(typeof currentToken==='string'&&currentToken.indexOf('dcy.')===0){currentToken=null;currentUser=null;try{localStorage.removeItem('skylab_auth_token');localStorage.removeItem('skylab_auth_user')}catch(e){}}   // token-isco (recebido quando o IP está banido): descartar, senão apresentá-lo volta a banir 7 dias
 let authModalOpen = false;
 
 function updateAuthUI(){
