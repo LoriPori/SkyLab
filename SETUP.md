@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS sec_state (
   updated_at INTEGER NOT NULL
 );
 ```
+Then, in your terminal, execute:
 
 ```bash
 wrangler d1 execute skylab-db --remote --file=schema.sql
