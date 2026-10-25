@@ -2068,7 +2068,7 @@ function seaPrep(j){
  const h=j.hourly,from=data.current.time.slice(0,13)+':00';
  let i0=h.time.findIndex(t=>t>=from);if(i0<0)i0=0;
  const cut=k=>(h[k]||[]).slice(i0,i0+25).map(v=>v==null?null:+v);
- const o={km:+j.km||0,t:h.time.slice(i0,i0+25),wh:cut('wave_height'),wp:cut('wave_period'),wd:cut('wave_direction'),sh:cut('swell_wave_height'),sp:cut('swell_wave_period'),sd:cut('swell_wave_direction'),ww:cut('wind_wave_height'),sst:cut('sea_surface_temperature')};
+ const a0=Math.max(0,i0-3),o={km:+j.km||0,tl:{t:h.time.slice(a0,i0+50),v:(h.sea_level_height_msl||[]).slice(a0,i0+50).map(v=>v==null?null:+v)},t:h.time.slice(i0,i0+25),wh:cut('wave_height'),wp:cut('wave_period'),wd:cut('wave_direction'),sh:cut('swell_wave_height'),sp:cut('swell_wave_period'),sd:cut('swell_wave_direction'),ww:cut('wind_wave_height'),sst:cut('sea_surface_temperature')};
  return o.wh.some(v=>v!=null)?o:false;
 }
 const xtDist=km=>unit=='c'?Math.round(km)+' km':Math.round(km*.621371)+' mi';
@@ -2080,6 +2080,41 @@ const SEA_STATE=[[.1,'Calm','Calmo'],[.5,'Smooth','Chão'],[1.25,'Slight','Pouco
 const seaState=h=>{const r=SEA_STATE.find(x=>h<x[0]);return T2(r[1],r[2])};
 const swellType=p=>p>=12?T2('Long-period groundswell','Mar de fundo de longo período'):p>=9?T2('Groundswell','Mar de fundo'):p>=6?T2('Wind swell','Ondulação de vento'):T2('Wind chop','Mar picado');
 const xtArrow=d=>`<svg class="xt-arr" style="--r:${Math.round(d)+180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>`;
+
+
+/* Marés a partir do nível do mar horário (Open-Meteo: sea_level_height_msl). Preia-mar/baixa-mar = máximos/mínimos locais,
+   com o instante refinado por uma parábola nos 3 pontos à volta (precisão de minutos, não de horas). Modelo global: orientativo, não serve para navegação. */
+function tideInfo(s){
+ const L=s.tl;if(!L||!L.v||L.v.filter(v=>v!=null).length<12)return null;
+ const v=L.v,ms=L.t.map(t=>Date.parse(t+':00Z')),now=Date.parse(data.current.time.slice(0,16)+':00Z'),ok=v.filter(x=>x!=null);
+ if(Math.max(...ok)-Math.min(...ok)<.15)return null;             // sem maré apreciável (mar quase sem amplitude)
+ const ex=[];
+ for(let k=1;k<v.length-1;k++){
+  const a=v[k-1],b=v[k],c=v[k+1];if(a==null||b==null||c==null)continue;
+  const hi=b>a&&b>=c,lo=b<a&&b<=c;if(!hi&&!lo)continue;
+  const den=a-2*b+c,x=den?Math.max(-.5,Math.min(.5,(a-c)/(2*den))):0;   // vértice da parábola
+  ex.push({hi,t:ms[k]+x*36e5,h:den?b-(a-c)*(a-c)/(8*den):b});
+ }
+ const nxt=ex.filter(e=>e.t>now),h=nxt.find(e=>e.hi),l=nxt.find(e=>!e.hi);
+ if(!nxt.length||(!h&&!l))return null;
+ return{rising:nxt[0].hi,high:h||null,low:l||null,now};
+}
+const xtSigned=m=>(m<0?'−':'+')+xtLen(Math.abs(m));
+function xtWhen(t,now){                                         // "hoje 14:32" / "amanhã 02:14" (hora local do ponto)
+ const iso=new Date(t).toISOString(),dd=Math.floor(t/864e5)-Math.floor(now/864e5);   // ambos em "hora local escrita como UTC"
+ const day=dd<=0?T2('today','hoje'):dd===1?T2('tomorrow','amanhã'):new Date(iso.slice(0,10)+'T12:00:00').toLocaleDateString(LOC(),{weekday:'short',day:'numeric'});
+ return{hm:iso.slice(11,16),day};
+}
+function tideTiles(s){
+ const td=tideInfo(s);if(!td)return'';
+ const arrow=`<svg class="xt-arr" style="--r:${td.rising?0:180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>`;
+ const tile=(l,v,sub,cls)=>`<div class="xt-m ${cls||''}"><span>${l}</span><b>${v}</b><small>${sub}</small></div>`;
+ const ev=(e,l)=>{if(!e)return'';const w=xtWhen(e.t,td.now);return tile(l,w.hm,w.day+' · '+xtSigned(e.h))};
+ return`<div class="xt-grid xt-tide">
+  ${tile(T2('Tide','Maré'),arrow+(td.rising?T2('Rising','A encher'):T2('Falling','A vazar')),td.rising?T2('flood tide','enchente'):T2('ebb tide','vazante'),td.rising?'up':'dn')}
+  ${ev(td.high,T2('High tide','Maré cheia'))}${ev(td.low,T2('Low tide','Maré baixa'))}
+ </div>`;
+}
 
 function seaInner(){
  const s=xtGet('sea');if(!s)return'';
@@ -2099,10 +2134,11 @@ function seaInner(){
   ${sst!=null?tile(T2('Sea temperature','Temp. do mar'),T(sst)+'°'):''}
   ${P!=null?tile(T2('Wave power','Energia das ondas'),'≈ '+(P<10?dcm(P,1):String(Math.round(P)))+' <small>kW/m</small>'):''}
  </div>
+ ${tideTiles(s)}
  <div class="xt-bars"><svg viewBox="0 0 250 48" preserveAspectRatio="none" role="img" aria-label="${T2('Wave height, next 24 hours','Altura das ondas, próximas 24 horas')}">${bars}</svg>
   <div class="xt-ax"><span>${T2('Now','Agora')}</span><span>+12 h</span><span>+24 h</span></div></div>
  <p class="note">${T2('Biggest','Maior')}: ${xtLen(mx)} ${iMx?T2('around','por volta das')+' '+s.t[iMx].slice(11,13)+'h':T2('right now','agora')}. ${T2('Direction is where the swell comes from.','A direção indica de onde vem a ondulação.')}${s.km>=3?' '+T2(`Nearest open-sea point, about ${xtDist(s.km)} away.`,`Ponto de mar aberto mais próximo, a cerca de ${xtDist(s.km)}.`):''}</p>
- <p class="xt-src">${T2('Sea data: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM).','Dados do mar: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM).')}</p>`;
+ <p class="xt-src">${T2('Sea data: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM). Tides are modelled, heights are relative to mean sea level; indicative only, not for navigation.','Dados do mar: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM). As marés são modeladas, com alturas relativas ao nível médio do mar; apenas indicativo, não serve para navegação.')}</p>`;
 }
 
 /* temperatura média de hoje (24 h locais) comparada com a normal 1991–2020 */
@@ -2117,7 +2153,7 @@ function anomInner(){
  if(tm<=q[0])p=0;else if(tm>=q[20])p=100;else{let j=0;while(q[j+1]<tm)j++;p=(j+(q[j+1]>q[j]?(tm-q[j])/(q[j+1]-q[j]):0))*5}
  const lv=p>=98?[3,'Exceptionally warm','Excecionalmente quente']:p>=90?[2,'Much warmer than usual','Muito mais quente do que o normal']:p>=70?[1,'Warmer than usual','Mais quente do que o normal']
   :p>30?[0,'Typical for this date','Típico para esta data']:p>10?[-1,'Cooler than usual','Mais fresco do que o normal']:p>2?[-2,'Much cooler than usual','Muito mais frio do que o normal']:[-3,'Exceptionally cold','Excecionalmente frio'];
- const r1=v=>Math.round(v*10)/10,dd=r1(Traw(tm))-r1(Traw(n.mean)),sg=Math.abs(dd)<.05?'±':dd>0?'+':'−',pc=Math.round(p>=50?p:100-p);   // a diferença sai dos números que o cartão mostra (22,4 − 19,3 = 3,1)
+ const num=x=>parseFloat(x.replace(',','.')),sT=decT(tm),sN=decT(n.mean),dd=Math.round((num(sT)-num(sN))*10)/10,sg=dd===0?'±':dd>0?'+':'−',pc=Math.round(p>=50?p:100-p);   // a diferença sai dos números que o cartão mostra (22,4 − 19,3 = 3,1)
  const rank=tm>q[20]?T2('Warmer than any day around this date in 1991–2020.','Mais quente do que qualquer dia desta época em 1991–2020.')
   :tm<q[0]?T2('Colder than any day around this date in 1991–2020.','Mais frio do que qualquer dia desta época em 1991–2020.')
   :p>=50?T2(`Warmer than about ${pc}% of days around this date in 1991–2020.`,`Mais quente do que cerca de ${pc}% dos dias desta época em 1991–2020.`)
@@ -2125,7 +2161,7 @@ function anomInner(){
  const mn=Math.min(q[0],tm),mx=Math.max(q[20],tm),pd=Math.max(.6,(mx-mn)*.1),lo=mn-pd,hi=mx+pd,X=v=>((v-lo)/(hi-lo)*100).toFixed(1);
  const dt=new Date(day+'T12:00:00').toLocaleDateString(LOC(),{day:'numeric',month:'long'});
  return ttl+`<div class="xt-head"><b class="xt-big">${sg}${dec1(Math.abs(dd))}°</b><span class="xt-tag t-${lv[0]>0?'hot':lv[0]<0?'cold':'mid'}${Math.abs(lv[0])}">${T2(lv[1],lv[2])}</span></div>
- <p class="note">${T2(`Today averages ${decT(tm)}°. The 1991–2020 normal for ${dt} is ${decT(n.mean)}°.`,`Hoje a média é ${decT(tm)}°. A normal de 1991–2020 para ${dt} é ${decT(n.mean)}°.`)} ${rank}</p>
+ <p class="note">${T2(`Today averages ${sT}°. The 1991–2020 normal for ${dt} is ${sN}°.`,`Hoje a média é ${sT}°. A normal de 1991–2020 para ${dt} é ${sN}°.`)} ${rank}</p>
  <div class="xt-rng" role="img" aria-label="${T2('Today compared with the usual range','Hoje comparado com o intervalo habitual')}">
   <i class="xt-rec" style="left:${X(q[0])}%;width:${(X(q[20])-X(q[0])).toFixed(1)}%"></i>
   <i class="xt-b90" style="left:${X(q[2])}%;width:${(X(q[18])-X(q[2])).toFixed(1)}%"></i>
