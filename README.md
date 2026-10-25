@@ -125,7 +125,7 @@ SkyLab is the solution I found. By combining many kinds of data and patterns, it
 | Desktop | Mobile |
 |:---:|:---:|
 | <img src="screenshots/desktop-city.png" alt="Desktop city view"> | <img src="screenshots/mobile-city.png" alt="Mobile city view" width="260"> |
-| ** Radar** | ** Terminal** |
+| **Radar** | **Terminal** |
 | <img src="screenshots/radar.png" alt="Radar"> | <img src="screenshots/terminal.png" alt="Terminal"> |
 
 ## SkyLab Terminal
@@ -267,10 +267,11 @@ SkyLab stands on the shoulders of these open services. Thank you!
 
 ## Privacy and security
 
-*Write here: what data is stored (email, Google ID, location), what is not, how to delete an account, and where the full privacy page is.*
+*All the information about your own privacy is in the website's [privacy page](https://loripori.github.io/SkyLab/#privacy).*
 
 > [!WARNING]
 > Found a vulnerability? Please email the address in [Contact](#contact-me) instead of opening a public issue. Thanks!
+> For more details, check out [SECURITY.md](#SECURITY.md)
 
 ## Roadmap
 
