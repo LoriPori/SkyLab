@@ -2016,8 +2016,10 @@ html.is-mobile .xt-m{background:rgba(16,41,74,.05)}
 html.is-mobile .xt-m span,html.is-mobile .xt-m b small,html.is-mobile .xt-deg,html.is-mobile .xt-m>small,html.is-mobile .xt-ax,html.is-mobile .xt-src,html.is-mobile .xt-leg{color:var(--m-mut)}
 html.is-mobile .xt-grid{grid-template-columns:1fr 1fr}
 
-.xt-tide{margin:8px 0 4px}
-.xt-m.up b{color:#1b6fb8}.xt-m.dn b{color:#7650c8}
-.xt-m.up .xt-arr,.xt-m.dn .xt-arr{color:inherit}
-html.is-mobile .xt-tide{grid-template-columns:1fr 1fr}
-html.is-mobile .xt-tide .xt-m:first-child{grid-column:1/-1}
+.xt-state{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;margin-top:12px;padding:10px 14px;border-radius:16px;background:rgba(20,49,79,.05)}
+.xt-state span{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.xt-state b{display:flex;align-items:center;gap:6px;font-size:18px}
+.xt-state small{font-size:12.5px;color:var(--mut)}
+.xt-state.up b{color:#1b6fb8}.xt-state.dn b{color:#7650c8}
+.xt-state .xt-arr{color:inherit}
+html.is-mobile .xt-state span,html.is-mobile .xt-state small{color:var(--m-mut)}

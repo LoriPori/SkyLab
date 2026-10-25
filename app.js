@@ -2105,15 +2105,15 @@ function xtWhen(t,now){                                         // "hoje 14:32" 
  const day=dd<=0?T2('today','hoje'):dd===1?T2('tomorrow','amanhã'):new Date(iso.slice(0,10)+'T12:00:00').toLocaleDateString(LOC(),{weekday:'short',day:'numeric'});
  return{hm:iso.slice(11,16),day};
 }
-function tideTiles(s){
- const td=tideInfo(s);if(!td)return'';
- const arrow=`<svg class="xt-arr" style="--r:${td.rising?0:180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>`;
- const tile=(l,v,sub,cls)=>`<div class="xt-m ${cls||''}"><span>${l}</span><b>${v}</b><small>${sub}</small></div>`;
+function tideEv(td,tile){                                        // maré cheia + maré baixa: entram na grelha principal
+ if(!td)return'';
  const ev=(e,l)=>{if(!e)return'';const w=xtWhen(e.t,td.now);return tile(l,w.hm,w.day+' · '+xtSigned(e.h))};
- return`<div class="xt-grid xt-tide">
-  ${tile(T2('Tide','Maré'),arrow+(td.rising?T2('Rising','A encher'):T2('Falling','A vazar')),td.rising?T2('flood tide','enchente'):T2('ebb tide','vazante'),td.rising?'up':'dn')}
-  ${ev(td.high,T2('High tide','Maré cheia'))}${ev(td.low,T2('Low tide','Maré baixa'))}
- </div>`;
+ return ev(td.high,T2('High tide','Maré cheia'))+ev(td.low,T2('Low tide','Maré baixa'));
+}
+function tideState(td){                                          // estado actual: por baixo do gráfico das ondas
+ if(!td)return'';
+ const arrow=`<svg class="xt-arr" style="--r:${td.rising?0:180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>`;
+ return`<div class="xt-state ${td.rising?'up':'dn'}"><span>${T2('Tide','Maré')}</span><b>${arrow}${td.rising?T2('Rising','A encher'):T2('Falling','A vazar')}</b><small>${td.rising?T2('flood tide','enchente'):T2('ebb tide','vazante')}</small></div>`;
 }
 
 function seaInner(){
@@ -2125,6 +2125,7 @@ function seaInner(){
  const P=Tm!=null?.49*H*H*Tm:null;                     // fluxo de energia das ondas em águas profundas: P ≈ ρg²/(64π)·H²·T ≈ 0,49·H²·T  [kW/m]
  const mx=Math.max(...s.wh.filter(v=>v!=null)),iMx=s.wh.indexOf(mx);
  const bars=s.wh.map((v,i)=>{const hh=v==null?0:Math.max(2,v/Math.max(mx,.5)*44);return`<rect x="${i*10+1}" y="${(48-hh).toFixed(1)}" width="8" height="${hh.toFixed(1)}" rx="2"${i===iMx?' class="pk"':''}/>`}).join('');
+ const td=tideInfo(s);
  const tile=(l,v,sub)=>`<div class="xt-m"><span>${l}</span><b>${v}</b>${sub?`<small>${sub}</small>`:''}</div>`;
  return`<h3>${T2('Sea & surf','Mar e surf')}</h3>
  <div class="xt-head"><b class="xt-big">${xtLen(H)}</b><span class="xt-tag t-sea">${seaState(H)}</span></div>
@@ -2133,10 +2134,11 @@ function seaInner(){
   ${Ds!=null?tile(T2('Swell from','Ondulação de'),xtArrow(Ds)+xtCompass(Ds)+' <small class="xt-deg">'+Math.round(Ds)+'°</small>',Hs!=null&&Ts!=null?xtLen(Hs)+' · '+dcm(Ts,0)+' s':''):''}
   ${sst!=null?tile(T2('Sea temperature','Temp. do mar'),T(sst)+'°'):''}
   ${P!=null?tile(T2('Wave power','Energia das ondas'),'≈ '+(P<10?dcm(P,1):String(Math.round(P)))+' <small>kW/m</small>'):''}
+  ${tideEv(td,tile)}
  </div>
- ${tideTiles(s)}
  <div class="xt-bars"><svg viewBox="0 0 250 48" preserveAspectRatio="none" role="img" aria-label="${T2('Wave height, next 24 hours','Altura das ondas, próximas 24 horas')}">${bars}</svg>
   <div class="xt-ax"><span>${T2('Now','Agora')}</span><span>+12 h</span><span>+24 h</span></div></div>
+ ${tideState(td)}
  <p class="note">${T2('Biggest','Maior')}: ${xtLen(mx)} ${iMx?T2('around','por volta das')+' '+s.t[iMx].slice(11,13)+'h':T2('right now','agora')}. ${T2('Direction is where the swell comes from.','A direção indica de onde vem a ondulação.')}${s.km>=3?' '+T2(`Nearest open-sea point, about ${xtDist(s.km)} away.`,`Ponto de mar aberto mais próximo, a cerca de ${xtDist(s.km)}.`):''}</p>
  <p class="xt-src">${T2('Sea data: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM). Tides are modelled, heights are relative to mean sea level; indicative only, not for navigation.','Dados do mar: Open-Meteo Marine API (MFWAM, ECMWF WAM, GFS Wave, EWAM). As marés são modeladas, com alturas relativas ao nível médio do mar; apenas indicativo, não serve para navegação.')}</p>`;
 }
