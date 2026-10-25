@@ -271,7 +271,7 @@ SkyLab stands on the shoulders of these open services. Thank you!
 
 > [!WARNING]
 > Found a vulnerability? Please email the address in [Contact](#contact-me) instead of opening a public issue. Thanks!
-> For more details, check out [SECURITY.md](#SECURITY.md)
+> For more details, check out [SECURITY.md](SECURITY.md)
 
 ## Roadmap
 
