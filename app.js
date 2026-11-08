@@ -44,7 +44,7 @@
 
 const ATMO={ base:'https://aged-mountain-a883.lourencoalvesfonseca2011.workers.dev/v1' };
 let atmoDead=false;
-const SYNC_KEYS = ['favs','unitPick','lang','place','homeCity','progMode','termHist','termTheme','tabPick','recent'];// declared first so lsSet can reference it safely
+const SYNC_KEYS = ['favs','unitPick','lang','place','homeCity','progMode','termHist','termTheme','tabPick','recent','skyInterests','skyStreak','skyBest'];// declared first so lsSet can reference it safely
 /* ============ basics ============ */
 const IS_MOBILE=document.documentElement.classList.contains('is-mobile');
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -89,23 +89,23 @@ function cat(code,day){
 }
 const LABEL={0:'Clear sky',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Rain showers',81:'Rain showers',82:'Violent showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorm',96:'Thunderstorm with hail',99:'Thunderstorm with hail'};
 const IC={
-sun:'<circle cx="12" cy="12" r="4.2"/><path d="M19.4 12L21.7 12M17.23 17.23L18.86 18.86M12 19.4L12 21.7M6.77 17.23L5.14 18.86M4.6 12L2.3 12M6.77 6.77L5.14 5.14M12 4.6L12 2.3M17.23 6.77L18.86 5.14"/>',
-partly:'<path d="M10.68 6.64A2.9 2.9 0 1 0 7.8 11.16"/><path d="M4.62 11.98L3.42 13.18M3.1 8.3L1.4 8.3M4.62 4.62L3.42 3.42M8.3 3.1L8.3 1.4M11.98 4.62L13.18 3.42"/><path d="M10 20h7.6a3.6 3.6 0 0 0 .5-7.17 5.1 5.1 0 0 0-9.7 1.1A3.1 3.1 0 0 0 10 20z"/>',
-moon:'<path d="M20.4 14.6A8.6 8.6 0 1 1 9.4 3.6a6.8 6.8 0 0 0 11 11z"/>',
-cloud:'<path d="M7.4 18.5h9.4a4.1 4.1 0 0 0 .5-8.17 5.7 5.7 0 0 0-10.9 1.3A3.5 3.5 0 0 0 7.4 18.5z"/>',
-fog:'<path d="M5 8.5h14M3 12.5h18M6 16.5h12M9 20.5h6"/>',
-drizzle:'<path d="M7.2 14.6h9.3a3.7 3.7 0 0 0 .5-7.37 5.2 5.2 0 0 0-9.9 1.2 3.2 3.2 0 0 0 .1 6.17z"/><path d="M8.4 17.6l-.7 1.7M12.2 17.6l-.7 1.7M16 17.6l-.7 1.7M10.3 20.6l-.6 1.4M14.1 20.6l-.6 1.4"/>',
-rain:'<path d="M7.2 14.6h9.3a3.7 3.7 0 0 0 .5-7.37 5.2 5.2 0 0 0-9.9 1.2 3.2 3.2 0 0 0 .1 6.17z"/><path d="M8.2 17.4l-1.4 3.8M12.2 17.4l-1.4 3.8M16.2 17.4l-1.4 3.8"/>',
-snow:'<path d="M7.2 14.6h9.3a3.7 3.7 0 0 0 .5-7.37 5.2 5.2 0 0 0-9.9 1.2 3.2 3.2 0 0 0 .1 6.17z"/><circle cx="8.4" cy="18.2" r=".9" fill="currentColor" stroke="none"/><circle cx="12.2" cy="17.8" r=".9" fill="currentColor" stroke="none"/><circle cx="16" cy="18.2" r=".9" fill="currentColor" stroke="none"/><circle cx="10.3" cy="21" r=".9" fill="currentColor" stroke="none"/><circle cx="14.1" cy="20.8" r=".9" fill="currentColor" stroke="none"/>',
-storm:'<path d="M7.2 14.6h9.3a3.7 3.7 0 0 0 .5-7.37 5.2 5.2 0 0 0-9.9 1.2 3.2 3.2 0 0 0 .1 6.17z"/><path d="M12.9 14.6 10.3 18.4h3.6l-1.8 3.6"/>',
-drop:'<path d="M12 21.5a6.6 6.6 0 0 0 6.6-6.6c0-2-1-3.8-2.9-5.4C14 8 12.7 6 12 3.2 11.3 6 10 8 8.3 9.5 6.4 11.1 5.4 12.9 5.4 14.9A6.6 6.6 0 0 0 12 21.5z"/>',
-flake:'<path d="M12 12L21.6 12M18.4 12L20.63 9.99M18.4 12L20.63 14.01M12 12L16.8 20.31M15.2 17.54L18.05 18.47M15.2 17.54L14.58 20.48M12 12L7.2 20.31M8.8 17.54L9.42 20.48M8.8 17.54L5.95 18.47M12 12L2.4 12M5.6 12L3.37 14.01M5.6 12L3.37 9.99M12 12L7.2 3.69M8.8 6.46L5.95 5.53M8.8 6.46L9.42 3.52M12 12L16.8 3.69M15.2 6.46L14.58 3.52M15.2 6.46L18.05 5.53"/>',
-wind:'<path d="M17.6 7.6a2.6 2.6 0 1 1 1.9 4.4H2.5M9.6 4.6A2.2 2.2 0 1 1 11.2 8.4H2.5M12.6 19.4a2.2 2.2 0 1 0 1.6-3.8H2.5"/>',
-umbrella:'<path d="M3 12.5a9 9 0 0 1 18 0 3 3 0 0 0-3-1.5 3 3 0 0 0-3 1.5 3 3 0 0 0-3-1.5 3 3 0 0 0-3 1.5 3 3 0 0 0-3-1.5 3 3 0 0 0-3 1.5z"/><path d="M12 11v7.2a2 2 0 0 0 4 0M12 3.5V2.5"/>',
-tshirt:'<path d="M8.6 3.2 3.4 5.4a1 1 0 0 0-.55 1.2l.9 3a1 1 0 0 0 1 .7H7V20a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-9.7h2.25a1 1 0 0 0 1-.7l.9-3a1 1 0 0 0-.55-1.2l-5.2-2.2a3.6 3.6 0 0 1-6.8 0z"/>',
-layers:'<path d="M12 3 3 7.7l9 4.7 9-4.7L12 3z"/><path d="m3 12 9 4.7 9-4.7"/><path d="m3 16.3 9 4.7 9-4.7"/>',
-jacket:'<path d="M8.6 3 3.6 5.6 2.6 11.2l3.2 1V21h12.4v-8.8l3.2-1-1-5.6-5-2.6L12 6.8 8.6 3z"/><path d="M12 6.8V21"/>',
-walk:'<circle cx="12" cy="12" r="9"/><path d="m15.6 8.4-1.8 5.4-5.4 1.8 1.8-5.4z"/>'};
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+cloud:'<path d="M17.5 19H9a5 5 0 1 1 4.8-6.4h3.7a3.2 3.2 0 0 1 0 6.4z"/>',
+partly:'<circle cx="8" cy="8" r="2.6"/><path d="M8 2.5v1.2M2.5 8h1.2M4.1 4.1l.9.9M11.9 4.1l-.9.9M18 20H10.5a4.2 4.2 0 1 1 4-5.5H18a2.9 2.9 0 0 1 0 5.5z"/>',
+fog:'<path d="M4 8h16M2 12h20M5 16h14M8 20h8"/>',
+drizzle:'<path d="M17 13H8.5a4.6 4.6 0 1 1 4.4-5.9H17a3 3 0 0 1 0 5.9z"/><path d="M8 17v.01M12 19v.01M16 17v.01M10 21v.01M14 21v.01"/>',
+rain:'<path d="M17 13H8.5a4.6 4.6 0 1 1 4.4-5.9H17a3 3 0 0 1 0 5.9z"/><path d="M8 16l-1 3M12 16l-1 3M16 16l-1 3"/>',
+snow:'<path d="M17 13H8.5a4.6 4.6 0 1 1 4.4-5.9H17a3 3 0 0 1 0 5.9z"/><path d="M8 17v.01M12 19v.01M16 17v.01M10 21v.01M14 21v.01"/>',
+storm:'<path d="M17 13H8.5a4.6 4.6 0 1 1 4.4-5.9H17a3 3 0 0 1 0 5.9z"/><path d="M12.5 13.5L10 17.5h3.5L11 21.5"/>',
+umbrella:'<path d="M12 3v1M3 13a9 9 0 0 1 18 0zM12 13v5a2 2 0 0 1-4 0"/>',
+tshirt:'<path d="M8 3L3 6l2.5 4L8 9v12h8V9l2.5 1L21 6l-5-3a4 4 0 0 1-8 0z"/>',
+layers:'<path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/>',
+jacket:'<path d="M9 3L3 6v5l3 1v9h12v-9l3-1V6l-6-3-3 4zM12 7v14"/>',
+flake:'<path d="M12 2v20M4.2 7l15.6 10M4.2 17L19.8 7"/>',
+wind:'<path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/>',
+drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+walk:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'};
 const ic=n=>`<svg class="ic i-${n}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]||''}</svg>`;
 function emoji(code,day=1){
  let n;
@@ -1300,59 +1300,22 @@ function synDebug(p){                                              // só com o 
     'nearest B  '+f(y&&y.lo)
   ].join('\n'))}</pre>`;
 }
-/* ícones dos sinais (cartões de evidência) */
-const SI={
- map:'<ellipse cx="12" cy="12" rx="9" ry="6.6"/><ellipse cx="12" cy="12" rx="4.4" ry="3"/>',
- gauge:'<path d="M4.4 17.2a8.4 8.4 0 1 1 15.2 0"/><path d="m12 13.4 3.4-4.2"/><circle cx="12" cy="13.6" r="1.3"/>',
- trend:'<path d="M3.5 17.5 9 12l3.5 3L20.5 6.5"/><path d="M15.5 6.5h5v5"/>',
- wind:IC.wind,drop:IC.drop,cloud:IC.cloud,
- temp:'<path d="M14 14.6V5.5a2 2 0 1 0-4 0v9.1a4 4 0 1 0 4 0z"/>',
- dot:'<circle cx="12" cy="12" r="3.2"/>'};
-function sigIcon(t){
-  const k=/^[AB]\s/.test(t)?'map'
-   :/ΔP|\/3h|hPa\/|inHg\//.test(t)?'trend'
-   :/^(Pressure|Pressão)/i.test(t)?'gauge'
-   :/(wind|vento|gust|rajada|km\/h|\bkt\b)/i.test(t)?'wind'
-   :/(dew|orvalho|humid)/i.test(t)?'drop'
-   :/^(temp|temperatura)/i.test(t)?'temp'
-   :/(cloud|nuvem|nuvens|sky|céu)/i.test(t)?'cloud':'dot';
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${SI[k]}</svg>`;
-}
-function sigTile(x){                                              // "B 980 hPa · 1390 km NO" → título + subtítulo
-  let a=x,b='';const i=x.indexOf(' · ');
-  if(i>0){a=x.slice(0,i);b=x.slice(i+3)}
-  else{const m=/^(.*?)\s*\((.+)\)$/.exec(x);if(m){a=m[1];b=m[2]}}
-  return `<li class="sgT"><span class="sgIc">${sigIcon(x)}</span><span class="sgTx"><b>${a}</b>${b?`<small>${b}</small>`:''}</span></li>`;
-}
-function skyKey(s){                                               // número-chave no palco: pressão ao nível do mar + tendência a 3 h
-  const p0=Number(pMSL()),dP=Number(s&&s.dP)||0;
-  if(!isFinite(p0))return'';
-  const dir=dP>.05?'up':dP<-.05?'down':'flat',
-   arr={up:'<path d="M12 19V6M6 11.5 12 5.5l6 6"/>',down:'<path d="M12 5v13M6 12.5l6 6 6-6"/>',flat:'<path d="M5 12h14M14 7l5 5-5 5"/>'}[dir];
-  return `<div class="expKey"><span class="k1">${T2('Sea-level pressure','Pressão ao nível do mar')}</span>
-   <span class="k2"><b>${pN(p0)}</b><small>${pU()}</small></span>
-   <span class="k3 ${dir}"><svg viewBox="0 0 24 24" aria-hidden="true">${arr}</svg>${dP>0?'+':''}${pdS(dP)} ${T2('in 3 h','em 3 h')}</span></div>`;
-}
 function skyHero(p){
   const det=(PATTERNS[p.id]||PATTERNS.transition)(p.s);
   const icon=PD_ICONS[p.id]||PD_ICONS[SKY_ALIAS[p.id]]||PD_ICONS.transition;
   const isIb=p.cat==='Iberia',sl=SKY_ALIAS[p.id]?null:synLine(p.s);
-  const all=sl?[...det.signals,sl.chip]:det.signals;
-  const sig=all.filter(x=>!/^(Pressure|Pressão)\s+[\d.,]+\s*(hPa|inHg)/i.test(x)&&!/^ΔP\s/.test(x));   // pressão e ΔP já estão no número-chave do palco
+  const sig=sl?[...det.signals,sl.chip]:det.signals;
   return`<section class="card expHero">
- <div class="expStage">
-  <span class="expCat${isIb?' ib':''}">${tr(p.cat)}</span>
-  <div class="expDiagram">${icon}</div>
-  ${skyKey(p.s)}
+ <div class="expTxt">
+ <span class="expCat${isIb?' ib':''}">${tr(p.cat)}</span>
+ <h2 class="expH">${det.title}</h2>
+ <p class="expP">${det.body}</p>
+ ${sl?`<p class="expSynP">${sl.text}</p>`:''}
+ <div class="expSig">${sig.map(x=>`<span class="sg"><i></i>${x}</span>`).join('')}</div>
+ ${typeof progOn==='function'&&progOn()?synDebug(p):''}
  </div>
- <div class="expBody">
-  <h2 class="expH">${det.title}</h2>
-  <p class="expP">${det.body}</p>
-  ${sl?`<p class="expSynP">${sl.text}</p>`:''}
-  ${sig.length?`<ul class="expSig" aria-label="${T2('What the data shows','O que os dados mostram')}">${sig.map(sigTile).join('')}</ul>`:''}
-  ${typeof progOn==='function'&&progOn()?synDebug(p):''}
- </div>
-</section>`;
+ <div class="expDiagram">${icon}</div>
+ </section>`;
 }
 function skyRepaint(){
   const el=$('#pane .expHero');if(!el||tab!=='sky'||!data)return;
@@ -1361,91 +1324,36 @@ function skyRepaint(){
 }
 
 /* ============ Céu Explicado: diagramas + sparkline ============ */
-const SVG_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>';
-const SVG_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
-const SVG_PULSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 6 4-13 2.5 7H21"/></svg>';
+const SVG_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
+const SVG_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+const SVG_PULSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>';
 
-/* ============ Diagramas do Céu Explicado · biblioteca desenhada à mão (viewBox 120×120) ============
-   Mesmo vocabulário em todos: sol com 12 raios iguais e halo, nuvem cúmulo com gradiente, gota verdadeira (arredondada em baixo,
-   ponta curva em cima), raio com cantos redondos, frentes com os símbolos meteorológicos corretos. Cada SVG leva os seus próprios
-   gradientes com um sufixo único, por isso vários podem coexistir na página. */
-let _pdU=0;
-const PDK=(()=>{
- const f=v=>+v.toFixed(2),P=(cx,cy,r,a)=>[cx+r*Math.cos(a*Math.PI/180),cy+r*Math.sin(a*Math.PI/180)];
- const defs=u=>`<defs>
-<linearGradient id="s${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a0"/><stop offset="1" stop-color="#f6a623"/></linearGradient>
-<radialGradient id="h${u}"><stop offset="0" stop-color="#ffd66e" stop-opacity=".65"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></radialGradient>
-<linearGradient id="c${u}" gradientUnits="userSpaceOnUse" x1="0" y1="-30" x2="0" y2="24"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9d8e8"/></linearGradient>
-<linearGradient id="k${u}" gradientUnits="userSpaceOnUse" x1="0" y1="-30" x2="0" y2="24"><stop offset="0" stop-color="#a7b9d0"/><stop offset="1" stop-color="#5f7694"/></linearGradient>
-<linearGradient id="d${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd3ff"/><stop offset="1" stop-color="#2f78dc"/></linearGradient>
-<linearGradient id="b${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe777"/><stop offset="1" stop-color="#f59a00"/></linearGradient>
-<linearGradient id="i${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6f6ff"/><stop offset="1" stop-color="#7cc3f0"/></linearGradient>
-<linearGradient id="w${u}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4aa3f0" stop-opacity="0"/><stop offset=".5" stop-color="#3a8be6"/><stop offset="1" stop-color="#2f6fd6"/></linearGradient>
-<linearGradient id="e${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8c996"/><stop offset="1" stop-color="#c9a169"/></linearGradient>
-</defs>`;
- const svg=(b,cls='')=>{const u=++_pdU;return `<svg viewBox="0 0 120 120" class="pdArt${cls?' '+cls:''}" aria-hidden="true">${defs(u)}${b(u)}</svg>`};
- /* sol: halo + 12 raios (longos e curtos alternados) + disco */
- const sun=(u,x,y,r,spin)=>{let g='';for(let k=0;k<12;k++){const a=k*30,[x0,y0]=P(x,y,r*1.42,a),[x1,y1]=P(x,y,r*(k%2?1.78:2.02),a);g+=`M${f(x0)} ${f(y0)}L${f(x1)} ${f(y1)}`}
-  return `<circle cx="${x}" cy="${y}" r="${f(r*2.6)}" fill="url(#h${u})"/><path d="${g}" stroke="#f7b733" stroke-width="${f(r*.26)}" stroke-linecap="round" fill="none"${spin?` class="pdRays" style="transform-origin:${x}px ${y}px"`:''}/><circle cx="${x}" cy="${y}" r="${r}" fill="url(#s${u})"/><circle cx="${f(x-r*.3)}" cy="${f(y-r*.3)}" r="${f(r*.34)}" fill="#fff" opacity=".35"/>`};
- /* nuvem cúmulo (largura ≈ 70 × s) */
- const cloud=(u,x,y,s,dark)=>`<g transform="translate(${x} ${y}) scale(${s})" fill="url(#${dark?'k':'c'}${u})"><rect x="-34" y="0" width="68" height="22" rx="11"/><circle cx="-15" cy="-3" r="15"/><circle cx="6" cy="-9" r="19"/><circle cx="24" cy="1" r="13"/></g>`;
- /* gota verdadeira: topo curvo, base redonda */
- const drop=(u,x,y,s,o=1)=>`<g transform="translate(${x} ${y}) scale(${s})" opacity="${o}"><path d="M0-11C2.6-6.4 7.4-2.6 7.4 2.6A7.4 7.4 0 0 1-7.4 2.6C-7.4-2.6-2.6-6.4 0-11z" fill="url(#d${u})"/><ellipse cx="-2.6" cy="3.2" rx="1.5" ry="2.6" fill="#fff" opacity=".45" transform="rotate(14 -2.6 3.2)"/></g>`;
- const bolt=(u,x,y,s)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M3-13-8 3h6l-3 12L10-4H4z" fill="url(#b${u})" stroke="#f59a00" stroke-width="1.6" stroke-linejoin="round"/>`;
- /* floco de neve: 6 braços com ramificações */
- const flake=(x,y,r,col='url(#i0)',w=3)=>{let g='';for(let k=0;k<6;k++){const a=k*60,[ex,ey]=P(0,0,r,a),[bx,by]=P(0,0,r*.62,a);g+=`M0 0L${f(ex)} ${f(ey)}`;for(const d of[-40,40]){const[qx,qy]=P(bx,by,r*.3,a+d);g+=`M${f(bx)} ${f(by)}L${f(qx)} ${f(qy)}`}}
-  return `<path transform="translate(${x} ${y})" d="${g}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" fill="none"/>`};
- /* ponto e tangente de uma Bézier quadrática (para colocar símbolos de frente ao longo da linha) */
- const qb=(p0,p1,p2,t)=>{const m=1-t,x=m*m*p0[0]+2*m*t*p1[0]+t*t*p2[0],y=m*m*p0[1]+2*m*t*p1[1]+t*t*p2[1],dx=2*m*(p1[0]-p0[0])+2*t*(p2[0]-p1[0]),dy=2*m*(p1[1]-p0[1])+2*t*(p2[1]-p1[1]),l=Math.hypot(dx,dy)||1;return[x,y,dx/l,dy/l]};
- const front=(u,kind)=>{const A=[10,92],B=[60,52],C=[110,84],cold=kind==='cold',c1=cold?'#5aa9f5':'#ff9a5a',c2=cold?'#2c6fd8':'#e2491f';let m='';
-  for(const t of[.16,.42,.68,.92]){const[x,y,tx,ty]=qb(A,B,C,t),nx=ty,ny=-tx;   // normal para cima
-   if(cold)m+=`<path d="M${f(x-tx*10)} ${f(y-ty*10)}L${f(x+tx*10)} ${f(y+ty*10)}L${f(x+nx*18)} ${f(y+ny*18)}z" fill="url(#f${u})" stroke="url(#f${u})" stroke-width="2" stroke-linejoin="round"/>`;
-   else m+=`<path d="M${f(x-tx*10)} ${f(y-ty*10)}A10 10 0 0 1 ${f(x+tx*10)} ${f(y+ty*10)}z" transform="rotate(0)" fill="url(#f${u})"/>`.replace(/A10 10 0 0 1/,'A10 10 0 0 0');}
-  return `<defs><linearGradient id="f${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
-<circle cx="60" cy="62" r="50" fill="${c1}" opacity=".12"/><path d="M${A}Q${B} ${C}" fill="none" stroke="url(#f${u})" stroke-width="5.5" stroke-linecap="round"/>${m}
-<path d="M24 100h72" stroke="${c2}" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9" opacity=".5"/>`};
- const wave=(x,y,w,col,sw=4,o=1)=>{const n=Math.round(w/14);let d=`M${x} ${y}`;for(let i=0;i<n;i++)d+=`q3.5-5 7 0t7 0`;return `<path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" opacity="${o}"/>`};
- const arrowL=(x,y,l,col,sw=5,cls='')=>`<path d="M${x} ${y}h${-l}M${x-l+9} ${y-8}l-9 8 9 8" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${cls?` class="${cls}"`:''}/>`;
- const arrowR=(x,y,l,col,sw=5,cls='')=>`<path d="M${x} ${y}h${l}M${x+l-9} ${y-8}l9 8-9 8" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${cls?` class="${cls}"`:''}/>`;
- const spiral=(cx,cy,r0,r1,turns,a0)=>{let d='';const n=Math.round(turns*28);for(let i=0;i<=n;i++){const t=i/n,[x,y]=P(cx,cy,r0+(r1-r0)*t,a0+t*turns*360);d+=(i?'L':'M')+f(x)+' '+f(y)}return d};
- return{svg,sun,cloud,drop,bolt,flake,front,wave,arrowL,arrowR,spiral,P,f};
-})();
-const PD_ICONS=(()=>{const{svg,sun,cloud,drop,bolt,flake,front,wave,arrowL,arrowR,spiral,P,f}=PDK;return{
- 'front-cold':svg(u=>front(u,'cold')),
- 'front-warm':svg(u=>front(u,'warm')),
- 'post-front':svg(u=>sun(u,70,44,15,1)+`<g transform="translate(40 88)" opacity=".92">${cloud(u,0,0,.62)}</g>`+wave(10,106,44,'#7db8e8',3.5,.7)),
- 'high':svg(u=>sun(u,60,56,20,1)+`<circle cx="60" cy="56" r="52" fill="none" stroke="#f6b13a" stroke-width="1.8" stroke-dasharray="2 7" stroke-linecap="round" opacity=".55"/>`+
-   [[22,104],[60,110],[98,104]].map(([x,y])=>`<path d="M${x-6} ${y-8}l6 7 6-7" fill="none" stroke="#7bb4e8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>`).join('')),
- 'tropical':svg(u=>sun(u,44,40,15,1)+wave(10,92,56,'#3f95e8',4)+wave(10,104,56,'#79b8f0',3.5,.7)+drop(u,90,62,1.6)+drop(u,104,84,1.1,.85)),
- 'polar':svg(u=>`<circle cx="60" cy="60" r="50" fill="#8fd0ef" opacity=".16"/>`+flake(60,60,40,`url(#i${_pdU})`,4.4)+`<circle cx="60" cy="60" r="5" fill="#fff" stroke="#8fd0ef" stroke-width="2.4"/>`),
- 'storm-conv':svg(u=>cloud(u,60,40,1.05,1)+bolt(u,56,90,1.5)+drop(u,86,86,.95)+drop(u,31,92,.8,.9)),
- 'fog-rad':svg(u=>`<circle cx="60" cy="48" r="22" fill="url(#s${u})" opacity=".9"/><circle cx="60" cy="48" r="38" fill="url(#h${u})"/>`+
-   [[16,68,88],[26,82,68],[12,96,96],[30,110,60]].map(([x,y,w],i)=>`<rect x="${x}" y="${y-5}" width="${w}" height="10" rx="5" fill="#a9bccf" opacity="${[.85,.7,.55,.4][i]}"/>`).join('')),
- 'showers':svg(u=>sun(u,36,36,12,1)+cloud(u,68,52,.95)+drop(u,48,92,1)+drop(u,70,98,1)+drop(u,92,92,1)),
- 'transition':svg(u=>sun(u,40,40,15,1)+cloud(u,68,70,1.02)),
- 'ib-nortada':svg(u=>`<path d="M6 12h26c4 14-4 22 2 36s-6 26 0 40-2 14-2 22H6z" fill="url(#e${u})"/><path d="M32 12c4 14-4 22 2 36s-6 26 0 40" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".6"/>`+
-   [[66,22],[84,46],[66,70]].map(([x,y])=>`<path d="M${x} ${y}v18M${x-8} ${y+11}l8 9 8-9" fill="none" stroke="#2a73c9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`).join('')+wave(46,108,60,'#4aa0ee',3.5,.8)),
- 'ib-levante':svg(u=>`<path d="M4 8h112v26c-18 6-30-2-50 2s-40 4-62-2z" fill="url(#e${u})"/><path d="M4 90c24-6 40 2 60-2s36-6 52 0v26H4z" fill="url(#e${u})"/>`+
-   arrowL(106,52,64,'#c4602c',5.5)+arrowL(92,68,44,'#e08a4c',4.5)+wave(10,104,30,'#4aa0ee',3,.0)),
- 'ib-suao':svg(u=>sun(u,36,34,13,1)+`<rect x="68" y="14" width="14" height="52" rx="7" fill="#fff" stroke="#d2dbe5" stroke-width="2"/><rect x="73" y="34" width="4" height="34" rx="2" fill="#e5402d"/><circle cx="75" cy="76" r="12" fill="#e5402d"/><circle cx="71.5" cy="72.5" r="3.4" fill="#fff" opacity=".4"/>`+
-   [[26,32],[38,32]].map(([x,y])=>'').join('')+arrowR(14,96,52,'#c4602c',5)+wave(14,108,40,'#f0a96b',3.5,.8)),
- 'ib-calima':svg(u=>sun(u,60,40,17,0)+[[14,74,92],[22,88,76],[12,102,96]].map(([x,y,w],i)=>`<rect x="${x}" y="${y-5}" width="${w}" height="10" rx="5" fill="#d8a352" opacity="${[.8,.65,.5][i]}"/>`).join('')+
-   [[28,64],[92,70],[104,58],[16,84]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.4" fill="#c58f3e" opacity=".8"/>`).join('')),
- 'ib-gotafria':svg(u=>`<circle cx="60" cy="56" r="44" fill="none" stroke="#6a72b8" stroke-width="2.4" stroke-dasharray="3 7" stroke-linecap="round" opacity=".6" class="pdSpin" style="transform-origin:60px 56px"/>`+cloud(u,60,50,.9,1)+drop(u,44,88,1)+drop(u,62,96,1)+drop(u,80,88,1)),
- 'bomb-cyclone':svg(u=>`<circle cx="60" cy="60" r="52" fill="#5b8fe0" opacity=".12"/><g class="pdSpin" style="transform-origin:60px 60px"><path d="${PDK.spiral(60,60,5,46,1.7,-20)}" fill="none" stroke="url(#w${u})" stroke-width="6" stroke-linecap="round"/><path d="${PDK.spiral(60,60,5,46,1.7,160)}" fill="none" stroke="#7db8f0" stroke-width="4" stroke-linecap="round" opacity=".7"/></g><circle cx="60" cy="60" r="7" fill="#2f6fd6"/><circle cx="60" cy="60" r="3" fill="#fff" opacity=".7"/>`),
- 'derecho':svg(u=>`<path d="M12 96Q60 6 108 96" fill="none" stroke="#cfdcea" stroke-width="16" stroke-linecap="round" opacity=".6"/>`+
-   [[20,40,86],[16,60,92],[20,80,86]].map(([x,y,l],i)=>arrowR(x,y,l,['#5e86b8','#2f6fd6','#5e86b8'][i],5.5,'pdDash')).join('')),
- 'blizzard':svg(u=>flake(46,52,26,`url(#i${_pdU})`,4)+flake(86,84,14,`url(#i${_pdU})`,3)+flake(92,32,9,`url(#i${_pdU})`,2.6)+
-   [[10,92,50],[30,106,40]].map(([x,y,l])=>`<path d="M${x} ${y}h${l}" stroke="#9cc4e6" stroke-width="4.5" stroke-linecap="round" opacity=".8"/>`).join('')),
- 'thundersnow':svg(u=>cloud(u,60,38,1.02,1)+bolt(u,60,88,1.45)+flake(30,94,9,`url(#i${_pdU})`,2.6)+flake(92,98,9,`url(#i${_pdU})`,2.6)),
- 'heatwave':svg(u=>sun(u,60,48,19,1)+[96,106].map((y,i)=>`<path d="M16 ${y}q11-9 22 0t22 0t22 0t22 0" fill="none" stroke="${['#f08a4b','#f7b266'][i]}" stroke-width="4.2" stroke-linecap="round" class="pdDash"/>`).join('')),
- 'monsoon':svg(u=>cloud(u,60,32,1.1,1)+[[34,74],[52,84],[70,74],[88,84],[43,100],[61,106],[79,100]].map(([x,y])=>drop(u,x,y,.8)).join('')),
- 'atm-river':svg(u=>[[40,'#2f6fd6',7,1],[62,'#5aa3ee',6,.8],[84,'#8ec2f4',5,.6]].map(([y,c,w,o])=>`<path d="M8 ${y+8}q22-30 44-8t60-10" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" opacity="${o}" class="pdDash"/>`).join('')+drop(u,100,96,1.2)+drop(u,84,104,.8,.8)),
- 'dust-storm':svg(u=>`<g class="pdSpin" style="transform-origin:60px 56px"><path d="${PDK.spiral(60,56,6,40,1.5,0)}" fill="none" stroke="#d9a65c" stroke-width="5" stroke-linecap="round" opacity=".85"/></g>`+
-   [[34,34],[88,40],[96,72],[26,76],[60,24]].map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${[3,2.4,3.2,2.4,2][i]}" fill="#c58f3e"/>`).join('')+`<rect x="14" y="98" width="92" height="9" rx="4.5" fill="#d8a352" opacity=".7"/>`),
- 'foehn':svg(u=>`<path d="M4 98 40 36l16 24 12-16 48 54z" fill="url(#e${u})"/><path d="M40 36l-9 14 9-4 7 8 9-4-8-10z" fill="#fff" opacity=".95"/>`+
-   `<path d="M10 44q40-16 62-4" fill="none" stroke="#5aa3ee" stroke-width="4.5" stroke-linecap="round"/><path d="M72 44q18 2 30 22" fill="none" stroke="#f08a4b" stroke-width="4.5" stroke-linecap="round" class="pdDash"/><path d="M96 58l7 11-12 2" fill="none" stroke="#f08a4b" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`+sun(u,100,20,7,1))
-}})();
+const PD_ICONS={
+'front-cold':`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#2f7ee0" opacity=".10"/><path d="M14 72 Q 60 40 106 72" fill="none" stroke="#2f7ee0" stroke-width="5" stroke-linecap="round"/><polygon points="34,70 42,70 38,58" fill="#2f7ee0"/><polygon points="58,60 66,60 62,48" fill="#2f7ee0"/><polygon points="82,60 90,60 86,48" fill="#2f7ee0"/></svg>`,
+'front-warm':`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#e5652e" opacity=".10"/><path d="M14 72 Q 60 40 106 72" fill="none" stroke="#e5652e" stroke-width="5" stroke-linecap="round"/><circle cx="38" cy="68" r="7" fill="#e5652e"/><circle cx="62" cy="58" r="7" fill="#e5652e"/><circle cx="86" cy="58" r="7" fill="#e5652e"/></svg>`,
+'post-front':`<svg viewBox="0 0 120 120"><circle cx="66" cy="46" r="20" fill="#f2a51a"/><g stroke="#f2a51a" stroke-width="4" stroke-linecap="round"><line x1="66" y1="12" x2="66" y2="20"/><line x1="66" y1="72" x2="66" y2="80"/><line x1="32" y1="46" x2="40" y2="46"/><line x1="92" y1="46" x2="100" y2="46"/><line x1="42" y1="22" x2="48" y2="28"/><line x1="84" y1="22" x2="78" y2="28"/></g><path d="M12 92 q10 -14 26 -8 q8 -10 22 -4" fill="none" stroke="#9fb3c4" stroke-width="6" stroke-linecap="round" opacity=".5"/></svg>`,
+'high':`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="22" fill="#f2a51a"/><g stroke="#f2a51a" stroke-width="4" stroke-linecap="round"><line x1="60" y1="18" x2="60" y2="28"/><line x1="60" y1="92" x2="60" y2="102"/><line x1="18" y1="60" x2="28" y2="60"/><line x1="92" y1="60" x2="102" y2="60"/><line x1="30" y1="30" x2="37" y2="37"/><line x1="83" y1="83" x2="90" y2="90"/><line x1="90" y1="30" x2="83" y2="37"/><line x1="37" y1="83" x2="30" y2="90"/></g><circle cx="60" cy="60" r="44" fill="none" stroke="#f2a51a" stroke-width="2" stroke-dasharray="3 7" opacity=".55"/></svg>`,
+'tropical':`<svg viewBox="0 0 120 120"><circle cx="46" cy="44" r="18" fill="#f2a51a"/><path d="M16 86 q7 -8 14 0 q7 -8 14 0 q7 -8 14 0" fill="none" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><path d="M78 92 c0 -10 14 -14 14 -24 0 10 14 14 14 24 a14 14 0 0 1 -28 0z" fill="#3b8fe0" opacity=".85"/></svg>`,
+'polar':`<svg viewBox="0 0 120 120"><g stroke="#8fd0ef" stroke-width="5" stroke-linecap="round"><line x1="60" y1="20" x2="60" y2="100"/><line x1="27" y1="37" x2="93" y2="83"/><line x1="93" y1="37" x2="27" y2="83"/></g><polygon points="60,6 50,20 70,20" fill="#5aa7ff"/></svg>`,
+'storm-conv':`<svg viewBox="0 0 120 120"><path d="M30 64 h54 a16 16 0 0 0 0 -32 24 24 0 0 0 -46 -6 18 18 0 0 0 -8 38z" fill="#6f8aa8"/><polyline points="58,70 46,88 60,88 50,106" fill="none" stroke="#f0cf45" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><line x1="80" y1="74" x2="74" y2="90" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="94" y1="74" x2="88" y2="90" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
+'fog-rad':`<svg viewBox="0 0 120 120"><circle cx="60" cy="46" r="16" fill="#cdd9e3"/><g stroke="#8aa0b5" stroke-width="5" stroke-linecap="round" opacity=".8"><line x1="18" y1="68" x2="102" y2="68"/><line x1="26" y1="82" x2="94" y2="82"/><line x1="34" y1="96" x2="86" y2="96"/></g></svg>`,
+'showers':`<svg viewBox="0 0 120 120"><circle cx="38" cy="40" r="15" fill="#f2a51a"/><path d="M46 68 h38 a14 14 0 0 0 0 -28 20 20 0 0 0 -38 -4 15 15 0 0 0 0 32z" fill="#6f8aa8"/><line x1="50" y1="80" x2="45" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="68" y1="80" x2="63" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="86" y1="80" x2="81" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
+'transition':`<svg viewBox="0 0 120 120"><circle cx="44" cy="44" r="17" fill="#f2a51a"/><path d="M52 72 h34 a13 13 0 0 0 0 -26 18 18 0 0 0 -35 -3 14 14 0 0 0 1 29z" fill="#6f8aa8"/></svg>`,
+'ib-nortada':`<svg viewBox="0 0 120 120"><path d="M14 10 L34 10 L26 110 L14 110 Z" fill="#cfe3ee"/><g stroke="#1d5f8c" stroke-width="6" stroke-linecap="round"><line x1="72" y1="14" x2="72" y2="34"/><line x1="72" y1="46" x2="72" y2="66"/><line x1="72" y1="78" x2="72" y2="98"/><polyline points="62,28 72,38 82,28"/><polyline points="62,60 72,70 82,60"/><polyline points="62,92 72,102 82,92"/></g><path d="M40 108 q8 -6 16 0 q8 -6 16 0" fill="none" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
+'ib-levante':`<svg viewBox="0 0 120 120"><polygon points="4,36 40,36 30,84 4,84" fill="#d8c7a8"/><polygon points="116,36 80,36 90,84 116,84" fill="#d8c7a8"/><line x1="44" y1="60" x2="76" y2="60" stroke="#b4552e" stroke-width="6" stroke-linecap="round"/><polyline points="64,48 78,60 64,72" fill="none" stroke="#b4552e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+'ib-suao':`<svg viewBox="0 0 120 120"><circle cx="34" cy="32" r="16" fill="#e0892f"/><rect x="28" y="60" width="12" height="30" rx="6" fill="#e0352b"/><circle cx="34" cy="92" r="9" fill="#e0352b"/><line x1="60" y1="66" x2="98" y2="66" stroke="#b4552e" stroke-width="5" stroke-linecap="round"/><polyline points="86,54 100,66 86,78" fill="none" stroke="#b4552e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+'ib-calima':`<svg viewBox="0 0 120 120"><circle cx="60" cy="44" r="20" fill="#e0a046"/><g stroke="#c9873a" stroke-width="6" stroke-linecap="round" opacity=".75"><line x1="14" y1="74" x2="106" y2="74"/><line x1="20" y1="88" x2="100" y2="88"/><line x1="28" y1="102" x2="92" y2="102"/></g></svg>`,
+'ib-gotafria':`<svg viewBox="0 0 120 120"><circle cx="60" cy="52" r="30" fill="none" stroke="#5d6391" stroke-width="3" stroke-dasharray="4 6" opacity=".55"/><path d="M44 64 h32 a14 14 0 0 0 0 -28 20 20 0 0 0 -38 -2 15 15 0 0 0 6 30z" fill="#5d6391" opacity=".8"/><line x1="46" y1="78" x2="40" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="62" y1="80" x2="56" y2="94" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="78" y1="78" x2="72" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
+ 'bomb-cyclone':`<svg viewBox="0 0 160 160" class="pdIcon"><g class="pdSpin"><path d="M80 20a60 60 0 1 0 42 102" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><path d="M80 20l10 14-18 2z" fill="currentColor"/></g></svg>`,
+ 'derecho':`<svg viewBox="0 0 160 160" class="pdIcon"><line x1="20" y1="60" x2="130" y2="60" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="pdDash"/><line x1="20" y1="90" x2="110" y2="90" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="pdDash"/><path d="M120 50l20 10-20 10" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></svg>`,
+ 'blizzard':`<svg viewBox="0 0 160 160" class="pdIcon"><g class="pdSpin" style="transform-origin:80px 80px"><path d="M80 40v80M45 60l70 40M115 60l-70 40" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></g><line x1="20" y1="120" x2="60" y2="120" stroke="currentColor" stroke-width="5" class="pdDash"/></svg>`,
+ 'thundersnow':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M85 30 60 85h20l-15 45 45-60H90z" fill="currentColor" class="pdPulse"/><circle cx="40" cy="120" r="4" fill="currentColor"/><circle cx="55" cy="130" r="4" fill="currentColor"/></svg>`,
+ 'heatwave':`<svg viewBox="0 0 160 160" class="pdIcon"><circle cx="80" cy="70" r="26" fill="currentColor" class="pdPulse"/><path d="M30 120q20-10 40 0t40 0t40 0" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`,
+ 'monsoon':`<svg viewBox="0 0 160 160" class="pdIcon"><ellipse cx="80" cy="55" rx="45" ry="25" fill="currentColor" opacity=".85"/><line x1="55" y1="90" x2="45" y2="125" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/><line x1="80" y1="90" x2="70" y2="130" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/><line x1="105" y1="90" x2="95" y2="125" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`,
+ 'atm-river':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M15 60q30-25 60 0t70 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" class="pdDash"/><path d="M15 95q30-25 60 0t70 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" opacity=".6" class="pdDash"/></svg>`,
+ 'dust-storm':`<svg viewBox="0 0 160 160" class="pdIcon"><g class="pdSpin" style="transform-origin:80px 80px"><circle cx="60" cy="70" r="4" fill="currentColor"/><circle cx="90" cy="60" r="3" fill="currentColor"/><circle cx="100" cy="90" r="4" fill="currentColor"/><circle cx="70" cy="100" r="3" fill="currentColor"/></g><path d="M20 120h120" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`,
+ 'foehn':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M20 110l40-60 25 35 20-25 35 50z" fill="currentColor" opacity=".7"/><line x1="90" y1="120" x2="90" y2="140" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`
+};
 
 function pressureSeries(){
  if(!data||!data.hourly)return null;
@@ -1471,36 +1379,25 @@ function pressureSparkSVG(){
  if(!hrs || hrs.length<2){
   return `<div class="sp-empty">${T2('Not enough data yet','Dados insuficientes por agora')}</div>`;
  }
- const W=260,H=84,padX=8,padT=10,padB=10;
+ const W=260,H=60,pad=6;
  const vals=hrs.map(p=>p.v);
  const min=Math.min(...vals), max=Math.max(...vals);
- const span=Math.max(max-min,1.5), mid=(max+min)/2, lo=mid-span/2*1.15;     // dá folga em cima e em baixo; tendências planas não ficam "esticadas"
+ const span=(max-min)||1;
  const pts=hrs.map((p,i)=>({
-  x:padX+i*(W-2*padX)/(hrs.length-1),
-  y:H-padB-((p.v-lo)/(span*1.15))*(H-padT-padB),
+  x:pad+i*(W-2*pad)/(hrs.length-1),
+  y:H-pad-((p.v-min)/span)*(H-2*pad),
   t:p.t, v:p.v, now:p.now
  }));
- let line=`M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;                 // curva suave (pontos médios)
- for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;line+=` Q${a.x.toFixed(1)},${a.y.toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)}`}
- const L=pts[pts.length-1];line+=` T${L.x.toFixed(1)},${L.y.toFixed(1)}`;
- const area=`${line} L${L.x.toFixed(1)},${H-padB+2} L${pts[0].x.toFixed(1)},${H-padB+2}Z`;
- const nowP=pts.find(p=>p.now);
- const grid=[.25,.5,.75].map(k=>`<line x1="${padX}" x2="${W-padX}" y1="${(padT+(H-padT-padB)*k).toFixed(1)}" y2="${(padT+(H-padT-padB)*k).toFixed(1)}" class="spGrid"/>`).join('');
+ const line=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
  const circles=pts.map(p=>
-  `<circle class="sp-pt${p.now?' sp-now':''}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.now?4.2:9}"
+  `<circle class="sp-pt${p.now?' sp-now':''}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.now?4:7}"
     data-t="${p.t}" data-v="${p.v.toFixed(1)}"></circle>`
  ).join('');
  return `<div class="sparkWrap">
-  <div class="spRange"><span>${T2('low','mín.')} <b>${pf(min)}</b></span><span>${T2('high','máx.')} <b>${pf(max)}</b></span></div>
-  <svg viewBox="0 0 ${W} ${H}" class="sparkline" role="img" aria-label="${T2('Pressure over about 12 hours','Pressão ao longo de cerca de 12 horas')}">
-   <defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--acc)" stop-opacity=".34"/><stop offset="1" style="stop-color:var(--acc)" stop-opacity="0"/></linearGradient></defs>
-   ${grid}
-   <path d="${area}" class="spArea"/>
-   <path d="${line}" class="spLine"/>
-   ${nowP?`<line x1="${nowP.x.toFixed(1)}" x2="${nowP.x.toFixed(1)}" y1="${padT-4}" y2="${H-padB+2}" class="spNowLine"/>`:''}
+  <svg viewBox="0 0 ${W} ${H}" class="sparkline" preserveAspectRatio="none">
+   <path d="${line}" class="sparkfill" fill="none"/>
    ${circles}
   </svg>
-  <div class="spAx"><span>${hrs[0].t}</span><span>${T2('now','agora')}</span><span>${hrs[hrs.length-1].t}</span></div>
   <div class="sp-tooltip" id="spTip"></div>
  </div>`;
 }
@@ -1630,10 +1527,9 @@ function skyPane(){
  const p=patternDetect();
  return`<div class="pane exp">
  ${skyHero(p)}
- <section class="card expCard expNext"><h4>${SVG_CLOCK}${tr('Next 6 hours')}</h4>
-  <div class="expNextBody"><p>${next6hText()}</p>
-  <div class="expSpark"><h5>${T2('Pressure trend','Tendência da pressão')}</h5>${pressureSparkSVG()}</div></div></section>
- <div class="expGrid duo">
+ <div class="expGrid three">
+ <section class="card expCard"><h4>${SVG_CLOCK}${tr('Next 6 hours')}</h4><p>${next6hText()}</p>
+ <div class="expSpark"><h5>${T2('Pressure trend','Tendência da pressão')}</h5>${pressureSparkSVG()}</div></section>
  <section class="card expCard"><h4>${SVG_CAL}${tr('This week in context')}</h4><p>${contextWeekText()}</p></section>
  <section class="card expCard"><h4>${SVG_PULSE}${T2('Signals right now','Sinais neste momento')}</h4><div class="expMetrics">${expMetricsHTML(p.s)}</div></section>
  </div>
@@ -2306,7 +2202,7 @@ function anomInner(){
 const xtSea=()=>{const i=seaInner();return i?`<section class="card xt" id="sea">${i}</section>`:''};
 function xtraHTML(){
  if(!data||!place)return'';
- return`<div class="pane xtra" id="xtra"><section class="card xt" id="anom">${anomInner()}</section>${xtSea()}</div>`;
+ return`<div class="pane xtra" id="xtra">${skyCardHTML()}<section class="card xt" id="anom">${anomInner()}</section>${xtSea()}</div>`;
 }
 function paintXtra(){
  const box=$('#xtra');if(!box||!data)return;
@@ -2315,6 +2211,7 @@ function paintXtra(){
  if(!i){if(sc)sc.remove()}
  else if(sc)sc.innerHTML=i;
  else box.insertAdjacentHTML('beforeend',`<section class="card xt" id="sea">${i}</section>`);
+ try{skyPaint()}catch(e){}
 }
 
 /* --- Air & pollen --- */
@@ -2585,7 +2482,7 @@ function privacyHTML(pt){
 <section class="pv-hero"><p class="pv-kicker">${L('Privacy · GDPR','Privacidade · RGPD')}</p><h1>${L('Your data, in plain words.','Os teus dados, sem letras pequenas.')}</h1><p class="pv-lead">${L('Skylab is an independent project. No ads, no trackers, no selling data. Here is exactly what is stored, where, for how long, and how to erase it.','O Skylab é um projeto independente. Sem anúncios, sem rastreadores, sem vender dados. Aqui está exatamente o que é guardado, onde, durante quanto tempo e como apagar.')}</p><ul class="pv-chips">${chips}</ul><p class="pv-s">${L('Last updated: October 2026','Atualizado: outubro de 2026')}</p><nav class="pv-toc" aria-label="${L('Sections','Secções')}">${tocH}</nav></section>
 ${sec('who',1,L('Who I am','Quem sou'),`<p>${L('Skylab is an independent personal project by Lourenço (Lisbon, Portugal), who is the controller of the data described here. Skylab is meant for people aged 13 or over. Contact: ','O Skylab é um projeto pessoal independente do Lourenço (Lisboa, Portugal), responsável pelos dados aqui descritos. O Skylab destina-se a pessoas com 13 ou mais anos. Contacto: ')}${m}.</p>`)}
 ${sec('free',2,L('Without an account','Sem conta'),`<p>${L('You can use all the weather features without signing in. Nothing about you is stored on my servers. Your choices (units, language, recent places, favourites, main city, last place viewed, terminal history and theme, developer mode, and a counter of your most visited places used to pick where notifications go) stay in your browser’s local storage. Skylab sets no cookies of its own and uses no advertising or analytics cookies or trackers. Fonts are hosted by Skylab itself. Google sign-in and the Cloudflare Turnstile anti-bot check are only loaded when you open the sign-in window, and may use their own cookies or similar technologies under their own policies.','Podes usar o tempo todo sem iniciar sessão. Nada sobre ti fica guardado nos meus servidores. As tuas escolhas (unidades, idioma, locais recentes, favoritos, cidade principal, último local visto, histórico e tema do terminal, modo programador e um contador dos locais mais visitados, usado para escolher para onde vão as notificações) ficam no armazenamento local do teu browser. O Skylab não define cookies próprios nem usa cookies de publicidade ou de análise, nem rastreadores. As letras são alojadas pelo próprio Skylab. O início de sessão Google e a verificação anti-robô Cloudflare Turnstile só são carregados quando abres a janela de início de sessão, e podem usar os seus próprios cookies ou tecnologias semelhantes, segundo as suas políticas.')}</p><p>${L('Your device location is requested when you press “locate”. If you have already allowed location for this site, Skylab may also use it when you open the page to suggest your city; otherwise it only guesses a city from your time zone, on your device. Coordinates are used to fetch the forecast and are not stored unless you save a place as a favourite, set a main city or enable notifications. What you type in the city search is sent to the Open-Meteo geocoding service.','A localização do teu dispositivo é pedida quando carregas em “localizar”. Se já deste permissão de localização a este site, o Skylab pode também usá-la ao abrir a página para sugerir a tua cidade; caso contrário, apenas deduz uma cidade a partir do teu fuso horário, no teu dispositivo. As coordenadas servem para obter a previsão e não são guardadas, a não ser que guardes um local como favorito, definas uma cidade principal ou ativas notificações. O texto que escreves na pesquisa de cidades é enviado ao serviço de geocodificação do Open-Meteo.')}</p>`)}
-${sec('acc',3,L('With an account','Com conta'),`<p>${L('Stored in a Cloudflare D1 database:','Guardado numa base de dados Cloudflare D1:')}</p><ul class="pv-list"><li>${L('your username and email;','o teu username e o teu email;')}</li><li>${L('if you sign up with a password, only a salted PBKDF2 hash of it, never the password itself;','se te registares com palavra-passe, apenas um hash PBKDF2 com sal, nunca a palavra-passe;')}</li><li>${L('if you sign in with Google, your Google identifier and profile picture URL;','se entrares com Google, o teu identificador Google e o URL da foto de perfil;')}</li><li>${L('your synced data: favourite places, main city, recent places, last place viewed, units, language, selected tab, developer-mode setting, and terminal theme and command history (up to 200 commands, so avoid typing personal information there);','os teus dados sincronizados: locais favoritos, cidade principal, locais recentes, último local visto, unidades, idioma, separador escolhido, modo programador, e tema e histórico de comandos do terminal (até 200 comandos, por isso evita escrever informação pessoal aí);')}</li><li>${L('your login sessions: a hash of the session token, valid for 14 days.','as tuas sessões: um hash do token, válido 14 dias.')}</li></ul><p>${L('To create an account (or the first time you sign in with an older account) I email a 6-digit code to the address you entered, sent from skylab.support@gmail.com through Gmail. The account is only created once you enter it. Until then, your email, username and a password hash wait in a pending record that is deleted when you verify or after 10 minutes; the code itself is stored only as a hash.','Para criar uma conta (ou na primeira vez que entras com uma conta antiga) envio um código de 6 dígitos para o email que indicaste, a partir de skylab.support@gmail.com através do Gmail. A conta só é criada depois de o introduzires. Até lá, o teu email, o username e um hash da palavra-passe ficam num registo pendente, apagado quando confirmas ou ao fim de 10 minutos; o próprio código só é guardado em forma de hash.')}</p><p>${L('I only use your email to identify your account, sign you in and send you verification codes: no newsletters, no marketing. While you are signed in, your session token and basic profile (username, email, photo) are also kept in your browser’s local storage.','Uso o teu email apenas para identificar a conta, iniciar sessão e enviar-te códigos de verificação: sem newsletters nem marketing. Enquanto tens sessão iniciada, o token da sessão e o perfil básico (username, email, foto) ficam também no armazenamento local do teu browser.')}</p>`)}
+${sec('acc',3,L('With an account','Com conta'),`<p>${L('Stored in a Cloudflare D1 database:','Guardado numa base de dados Cloudflare D1:')}</p><ul class="pv-list"><li>${L('your username and email;','o teu username e o teu email;')}</li><li>${L('if you sign up with a password, only a salted PBKDF2 hash of it, never the password itself;','se te registares com palavra-passe, apenas um hash PBKDF2 com sal, nunca a palavra-passe;')}</li><li>${L('if you sign in with Google, your Google identifier and profile picture URL;','se entrares com Google, o teu identificador Google e o URL da foto de perfil;')}</li><li>${L('your synced data: favourite places, main city, recent places, last place viewed, units, language, selected tab, developer-mode setting, and terminal theme and command history (up to 200 commands, so avoid typing personal information there);','os teus dados sincronizados: locais favoritos, cidade principal, locais recentes, último local visto, unidades, idioma, separador escolhido, modo programador, e tema e histórico de comandos do terminal (até 200 comandos, por isso evita escrever informação pessoal aí);')}</li><li>${L('your climate journal, if you start one: one daily summary of the weather in your main city (highs and lows, rain, sunshine and, if you choose, the pollen level) and your SkyScore interests; you can delete the journal at any time and it is erased with your account;','o teu diário climático, se o iniciares: um resumo diário do tempo na tua cidade principal (máxima e mínima, chuva, sol e, se quiseres, o nível de pólen) e os teus interesses do SkyScore; podes apagar o diário quando quiseres e é apagado com a conta;')}</li><li>${L('your login sessions: a hash of the session token, valid for 14 days.','as tuas sessões: um hash do token, válido 14 dias.')}</li></ul><p>${L('To create an account (or the first time you sign in with an older account) I email a 6-digit code to the address you entered, sent from skylab.support@gmail.com through Gmail. The account is only created once you enter it. Until then, your email, username and a password hash wait in a pending record that is deleted when you verify or after 10 minutes; the code itself is stored only as a hash.','Para criar uma conta (ou na primeira vez que entras com uma conta antiga) envio um código de 6 dígitos para o email que indicaste, a partir de skylab.support@gmail.com através do Gmail. A conta só é criada depois de o introduzires. Até lá, o teu email, o username e um hash da palavra-passe ficam num registo pendente, apagado quando confirmas ou ao fim de 10 minutos; o próprio código só é guardado em forma de hash.')}</p><p>${L('I only use your email to identify your account, sign you in and send you verification codes: no newsletters, no marketing. While you are signed in, your session token and basic profile (username, email, photo) are also kept in your browser’s local storage.','Uso o teu email apenas para identificar a conta, iniciar sessão e enviar-te códigos de verificação: sem newsletters nem marketing. Enquanto tens sessão iniciada, o token da sessão e o perfil básico (username, email, foto) ficam também no armazenamento local do teu browser.')}</p>`)}
 ${sec('push',4,L('Notifications','Notificações'),`<p>${L('If you enable notifications I store your browser’s push address and keys, an approximate location (about 100 m) with its name, plus language and unit, so I can send weather alerts. You can turn them off at any time.','Se ativares as notificações guardo o endereço e as chaves push do teu browser, uma localização aproximada (cerca de 100 m) com o nome, o idioma e a unidade, para poder enviar avisos do tempo. Podes desativá-las quando quiseres.')} ${L('To receive them, a service worker is installed in your browser.','Para as receber, é instalado um service worker no teu browser.')}</p>`)}
 ${sec('sec',5,L('Security logs','Registos de segurança'),`<p>${L('For abuse prevention I keep security logs (an identifier derived from your IP address and the type of incident) for 7 days. In a serious incident the IP may appear in a private alert to the maintainer.','Para prevenir abusos guardo registos de segurança (um identificador derivado do teu IP e o tipo de incidente) durante 7 dias. Num incidente grave o IP pode constar de um alerta privado enviado ao responsável.')}</p>`)}
 ${sec('third',6,L('Third parties','Terceiros'),`<p>${L('To show you data, your browser or my server contacts these services. They can see your IP address and, where relevant, the coordinates requested.','Para mostrar dados, o teu browser ou o meu servidor contactam estes serviços, que podem ver o teu IP e, quando aplicável, as coordenadas pedidas.')}</p><ul class="pv-tags">${prov}</ul><p>${L('When you choose a password, its hash prefix (5 characters, never the password) is checked against Have I Been Pwned.','Quando escolhes uma palavra-passe, o prefixo do seu hash (5 carateres, nunca a palavra-passe) é verificado no Have I Been Pwned.')}</p><p>${L('Forecast, radar and map layers from some providers pass through my Cloudflare Worker, which caches them. I do not log these ordinary requests (only abuse incidents, see Security logs), but Cloudflare, as host, processes technical logs under its own policy.','A previsão, o radar e as camadas de mapa de alguns fornecedores passam pelo meu Cloudflare Worker, que os guarda em cache. Não registo estes pedidos normais (apenas incidentes de abuso, ver Registos de segurança), mas a Cloudflare, como alojadora, trata registos técnicos segundo a sua própria política.')}</p>`)}
@@ -5247,6 +5144,16 @@ function authShell(){
      <span id="pushDesc">Now and what’s coming</span>
     </label>
     <span class="auth-prog-state" id="pushState">OFF</span>
+   </div>
+   <div class="auth-prog" id="skjRow">
+    <button type="button" class="auth-prog-btn" id="skjBtn" data-sk="journal" aria-describedby="skjDesc">
+     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M8 8h8M8 12h5"/></svg>
+    </button>
+    <label class="auth-prog-txt" for="skjBtn">
+     <b>Climate journal</b>
+     <span id="skjDesc">The weather you lived through, month by month</span>
+    </label>
+    <span class="auth-prog-state">→</span>
    </div>
    <div class="auth-profile-actions">
     <button type="button" class="pill solid big auth-logout-btn" id="authLogoutBtn">Terminar Sessão</button>
@@ -8507,3 +8414,305 @@ function orbHTML(){return(typeof data!=='undefined'&&data&&window.SkyOrb)?SkyOrb
  window.SkyOrb={html,mount};
  const _st=setTab;setTab=function(k){_st(k);if(k==='today')mount()};
 })();
+/* ═══════════ SKYSCORE — motor de pontuação (colar IGUAL no app.js e no worker.js) ═══════════ */
+const SKY_ACTS=['run','bike','hike','allergy','photo','surf','stars'];
+const SKY_NAME={run:['Running','Corrida'],bike:['Cycling','Ciclismo'],hike:['Hiking','Caminhada'],allergy:['Allergies','Alergias'],photo:['Photography','Fotografia'],surf:['Surf','Surf'],stars:['Stargazing','Astronomia']};
+const SKY_WHY={cold:['Too cold','Frio demais'],hot:['Too hot','Calor a mais'],humid:['Muggy air','Ar abafado'],rain:['Rain risk','Risco de chuva'],storm:['Thunderstorms','Trovoadas'],wind:['Strong wind','Vento forte'],air:['Poor air quality','Ar poluído'],pollen:['Pollen','Pólen'],dispersal:['Dry wind spreads pollen','Vento seco espalha pólen'],mold:['Damp air (mould)','Ar húmido (bolores)'],dark:['Outside the best light','Fora da melhor luz'],cloud:['Cloud cover','Nebulosidade'],haze:['Hazy air','Ar enevoado'],small:['Waves too small','Ondas pequenas'],big:['Waves too big','Ondas grandes'],short:['Short-period swell','Período curto'],moon:['Bright moon','Lua brilhante'],daylight:['Not dark yet','Ainda não é de noite']};
+const SKY_POS={temp:['Ideal temperature','Temperatura ideal'],dry:['Dry','Sem chuva'],calm:['Light wind','Vento fraco'],air:['Clean air','Ar limpo'],pol:['Low pollen','Pólen baixo'],waves:['Good waves','Boas ondas'],sky:['Good light','Boa luz'],dark:['Dark sky','Céu escuro']};
+const SKY_SAY={
+ run:[[90,'A day for personal bests.','Dia para bater recordes.'],[75,'Great running weather.','Ótimo tempo para correr.'],[55,'Fine for a run, with a catch.','Dá para correr, com um senão.'],[35,'Not ideal for running.','Não é o ideal para correr.'],[0,'Skip the run today.','Hoje é melhor não correr.']],
+ bike:[[90,'Perfect ride.','Passeio perfeito.'],[75,'Great day to ride.','Ótimo dia para pedalar.'],[55,'Rideable.','Dá para pedalar.'],[35,'Tough ride.','Pedalada difícil.'],[0,'Leave the bike home.','Deixa a bicicleta em casa.']],
+ hike:[[90,'Trail day of the year.','Dia de trilho por excelência.'],[75,'Great hiking weather.','Ótimo tempo para caminhar.'],[55,'Fine for an easy hike.','Dá para uma caminhada leve.'],[35,'Not great on the trail.','Fraco para o trilho.'],[0,'Stay off the trail.','Fica longe do trilho.']],
+ allergy:[[85,'An easy day for allergies.','Dia tranquilo para alergias.'],[65,'Mild: carry your meds.','Moderado: leva a medicação.'],[40,'Tough day for allergies.','Dia difícil para alergias.'],[0,'Rough: limit time outside.','Duro: reduz o tempo no exterior.']],
+ photo:[[85,'Golden light with character.','Luz dourada com carácter.'],[65,'Decent light.','Luz razoável.'],[40,'Flat light.','Luz sem graça.'],[0,'Nothing to shoot today.','Hoje não há luz para fotografar.']],
+ surf:[[85,'Session of the week.','A sessão da semana.'],[65,'Good waves.','Boas ondas.'],[40,'Marginal surf.','Surf marginal.'],[0,'Not worth paddling out.','Não compensa ir à água.']],
+ stars:[[85,'Superb dark sky.','Céu escuro e limpo.'],[65,'Good for stargazing.','Bom para observar estrelas.'],[40,'Patchy sky.','Céu irregular.'],[0,'Nothing to see tonight.','Hoje não há nada para ver.']]};
+const skyClamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const skyHM=m=>{m=((Math.round(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+const skyMin=s=>+s.slice(11,13)*60+ +s.slice(14,16);
+function skyMoon(ds){const age=(((Date.parse(ds.slice(0,10)+'T12:00:00Z')-Date.UTC(2000,0,6,18,14))/864e5)%29.530588+29.530588)%29.530588;return Math.round((1-Math.cos(2*Math.PI*age/29.530588))/2*100)}
+function skySay(a,s,pt){const L=SKY_SAY[a];for(const r of L)if(s>=r[0])return pt?r[2]:r[1];return''}
+function skyHour(a,f){
+ const p={},add=(k,v)=>{if(v>0.01)p[k]=(p[k]||0)+v};
+ const t=f.t,pop=f.pop||0,g=Math.max(f.gust||0,f.wind||0),c=f.code,storm=c>=95,wet=(c>=51&&c<=67)||(c>=80&&c<=86);
+ if(a==='run'||a==='bike'||a==='hike'){
+  const lo={run:5,bike:12,hike:8}[a],hi={run:17,bike:25,hike:23}[a];
+  if(!f.day)add('dark',a==='hike'?60:25);
+  if(t<lo)add('cold',(lo-t)*(a==='bike'?4:3.5));else if(t>hi)add('hot',(t-hi)*(a==='run'?3.5:3));
+  if(f.dp!=null&&f.dp>16)add('humid',(f.dp-16)*3);
+  add('rain',pop*(a==='hike'?.45:.55)+(wet?15:0));
+  if(storm)add('storm',60);
+  add('wind',Math.max(0,g-(a==='bike'?18:30))*(a==='bike'?1.4:.9));
+  if(f.aqi!=null)add('air',Math.max(0,f.aqi-30)*(a==='hike'?.4:.7));
+  if(f.allergy&&f.pol!=null)add('pollen',[0,6,16,30][f.pol]);
+ }else if(a==='allergy'){
+  if(f.pol==null&&f.aqi==null)return null;
+  if(f.pol!=null){
+   let pp=[0,22,50,78][f.pol];
+   if(f.pol>0){
+    if(f.hr>=11&&f.hr<=17)pp+=8;                                   // o pólen costuma ter o pico a meio do dia
+    if(pop>=60||wet)pp*=.6;                                        // a chuva "lava" o ar
+    else if(g>=25&&(f.rh||0)<60)add('dispersal',12);               // vento seco espalha-o
+   }
+   add('pollen',pp);
+  }
+  if(f.aqi!=null)add('air',Math.max(0,f.aqi-25)*.8);
+  if((f.rh||0)>=85)add('mold',6);
+ }else if(a==='photo'){
+  if(!f.gold)add('dark',70);
+  if(storm)add('storm',50);
+  if(wet||pop>=60)add('rain',45);
+  add('cloud',c===2?0:c===1?4:c===0?14:c===3?38:(c===45||c===48)?30:0);
+  add('haze',Math.max(0,(f.rh||0)-85)*.8);
+  add('wind',Math.max(0,g-35)*.6);
+ }else if(a==='surf'){
+  if(f.wh==null)return null;
+  const h=f.wh,pr=f.wp||0;
+  if(h<1.2)add('small',h<.4?70:h<.8?48:25);else if(h>2.5)add('big',h<=3.5?18:h<=4.5?40:65);
+  if(pr&&pr<7)add('short',(7-pr)*5);
+  add('wind',Math.max(0,(f.wind||0)-18)*1.6);
+  add('rain',pop*.15);
+  if(storm)add('storm',40);
+  if(!f.day)add('dark',40);
+ }else if(a==='stars'){
+  if(f.day)add('daylight',80);
+  add('cloud',c===0?0:c===1?6:c===2?25:c===3?60:(c===45||c===48)?55:(wet||storm)?70:0);
+  add('moon',(f.moon||0)*.28);
+  add('humid',Math.max(0,(f.rh||0)-75)*.5);
+  add('wind',Math.max(0,g-30)*.4);
+ }
+ let sum=0;for(const k in p)sum+=p[k];
+ let s=skyClamp(Math.round(100-sum),0,100);
+ if(storm&&a!=='allergy'&&s>15)s=15;
+ return{s,p};
+}
+/* H: {time,t,pop,code,day,wind,gust,rh,dp}; ctx: {today,nowIdx,sr[],ss[],pol[],aqi,allergy,sea}; d = 0..6 */
+function skyDay(a,H,d,ctx){
+ const dates=[];for(const x of H.time){const k=x.slice(0,10);if(dates[dates.length-1]!==k)dates.push(k)}
+ const di=Math.max(0,dates.indexOf(ctx.today))+d,date=dates[di];if(!date)return null;
+ const idx=[];for(let j=0;j<H.time.length;j++)if(H.time[j].slice(0,10)===date&&(d>0||j>=ctx.nowIdx))idx.push(j);
+ const sr=ctx.sr&&ctx.sr[d]?skyMin(ctx.sr[d]):null,ss=ctx.ss&&ctx.ss[d]?skyMin(ctx.ss[d]):null,moon=skyMoon(date);
+ const pol=ctx.pol&&ctx.pol[d]!=null?ctx.pol[d]:null,aqi=d===0?ctx.aqi:null;
+ const over=a!=='stars'&&a!=='allergy'&&d===0&&!idx.some(j=>H.day[j]);
+ const rows=[];
+ for(const j of idx){
+  const hr=+H.time[j].slice(11,13);
+  const gold=ss!=null&&sr!=null&&(hr===Math.floor((ss-25)/60)||hr===Math.floor((sr+20)/60));
+  let wh=null,wp=null;
+  if(a==='surf'&&ctx.sea){const k=ctx.sea.idx[H.time[j]];if(k!=null){wh=ctx.sea.wh[k];wp=ctx.sea.wp[k]}}
+  const r=skyHour(a,{t:H.t[j],pop:H.pop[j],code:H.code[j],day:!!H.day[j],wind:H.wind[j],gust:H.gust[j],rh:H.rh[j],dp:H.dp[j],hr,aqi,pol,allergy:ctx.allergy,moon,gold,wh,wp});
+  if(r&&!(a==='photo'&&!gold)&&!(a==='allergy'&&!H.day[j]))rows.push({j,hr,r});
+ }
+ if(!rows.length)return{a,d,date,s:null,over};
+ const W=a==='photo'?1:2;let best=null;
+ for(let i=0;i<rows.length;i++){
+  const win=rows.slice(i,i+W);if(win.length<W&&rows.length>=W)continue;
+  const avg=win.reduce((x,y)=>x+y.r.s,0)/win.length;
+  if(!best||avg>best.avg)best={avg,win};
+ }
+ const p={};for(const w of best.win)for(const k in w.r.p)p[k]=(p[k]||0)+w.r.p[k]/best.win.length;
+ const why=Object.entries(p).filter(e=>e[1]>=5).sort((x,y)=>y[1]-x[1]).slice(0,3).map(e=>e[0]);
+ const pos=[];
+ if(a==='run'||a==='bike'||a==='hike'){
+  if(!p.cold&&!p.hot)pos.push('temp');if((p.rain||0)<8)pos.push('dry');if((p.wind||0)<3)pos.push('calm');if(aqi!=null&&(p.air||0)<2)pos.push('air');
+ }else if(a==='allergy'){if(pol===0)pos.push('pol');if(aqi!=null&&(p.air||0)<2)pos.push('air');if((p.rain||0)<8&&pol==null)pos.push('dry')}
+ else if(a==='photo'){if(!p.cloud&&!p.rain&&!p.storm)pos.push('sky')}
+ else if(a==='surf'){if(!p.small&&!p.big&&!p.short)pos.push('waves');if(!p.wind)pos.push('calm')}
+ else if(a==='stars'){if(!p.cloud&&!p.daylight)pos.push('dark')}
+ const h0=best.win[0],h1=best.win[best.win.length-1];
+ const win=a==='photo'&&ss!=null?[skyHM(ss-45),skyHM(ss)]:[String(h0.hr).padStart(2,'0')+':00',String((h1.hr+1)%24).padStart(2,'0')+':00'];
+ const s=Math.round(best.avg);
+ return{a,d,date,s,win,t:H.t[h0.j],pop:H.pop[h0.j],why:why.filter(k=>!(s>=90)),pos:pos.slice(0,2),over,pol};
+}
+
+/* ═══════════ SKYSCORE + DIÁRIO CLIMÁTICO (cartão da aba Hoje + página do diário) ═══════════ */
+const SKY_JOURNAL_API=AUTH_CONFIG.apiUrl.replace('/auth','/journal');
+let skyEdit=false,skyDraft=null,skySel=null,skyDay0=0;
+const skyCfg=()=>{const c=lsGet('skyInterests');return c&&Array.isArray(c.acts)?{acts:c.acts.filter(a=>SKY_ACTS.includes(a)),main:c.main||null,notif:c.notif||{on:false,hour:7}}:{acts:[],main:null,notif:{on:false,hour:7}}};
+const skyCol=s=>s>=75?'#2fb34a':s>=55?'#c4952c':s>=35?'#e08a2c':'#d4553a';
+const skyLabel=(a,s)=>a==='allergy'?(s>=85?T2('Easy','Tranquilo'):s>=65?T2('Mild','Moderado'):s>=40?T2('Tough','Difícil'):T2('Rough','Duro')):(s>=90?T2('Epic','Épico'):s>=75?T2('Great','Ótimo'):s>=55?T2('Good','Bom'):s>=35?T2('Meh','Fraco'):T2('Skip','Evita'));
+function skyCompute(a){
+ const h=data.hourly,H={time:h.time,t:h.temperature_2m,pop:h.precipitation_probability,code:h.weather_code,day:h.is_day,wind:h.wind_speed_10m,gust:h.wind_gusts_10m,rh:h.relative_humidity_2m,dp:h.dew_point_2m};
+ const sea=xtGet('sea'),pol=[];
+ if(pollenOutlook&&pollenOutlook.length)pollenOutlook.forEach((o,i)=>pol[i]=o.lvl);else if(sig.pollen&&RISK[sig.pollen.risk]!=null)pol[0]=RISK[sig.pollen.risk];
+ const ctx={today:data.current.time.slice(0,10),nowIdx:idx0(),sr:data.daily.sunrise,ss:data.daily.sunset,pol,aqi:sig.aqi,allergy:skyCfg().acts.includes('allergy'),
+  sea:sea&&sea.t&&sea.wh?{idx:Object.fromEntries(sea.t.map((x,i)=>[x,i])),wh:sea.wh,wp:sea.wp||[]}:null};
+ const out=[];for(let d=0;d<7;d++)out.push(skyDay(a,H,d,ctx));return out;
+}
+function skyBook(all){                                  // sequência de dias e recordes (guardados e sincronizados)
+ const n=new Date(),k=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+ const y=new Date(n-864e5),yk=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+ let st=lsGet('skyStreak')||{last:'',n:0,best:0};
+ if(st.last!==k){st={last:k,n:st.last===yk?st.n+1:1,best:Math.max(st.best||0,st.last===yk?st.n+1:1)};lsSet('skyStreak',st)}
+ const bk=lsGet('skyBest')||{};let ch=false,rec=null;
+ for(const a in all){const r=all[a][0];if(r&&r.s!=null&&!r.over&&(!bk[a]||r.s>bk[a].s)){if(bk[a]&&r.s>=80)rec=a;bk[a]={s:r.s,d:k};ch=true}}
+ if(ch)lsSet('skyBest',bk);
+ return{st,bk,rec};
+}
+function skyInner(){
+ const cfg=skyCfg();
+ if(skyEdit||!cfg.acts.length)return skyEditHTML(cfg);
+ const all={};for(const a of cfg.acts)all[a]=skyCompute(a);
+ const bk=skyBook(all);
+ const act=cfg.acts.includes(skySel)?skySel:(cfg.acts.includes(cfg.main)?cfg.main:cfg.acts[0]);
+ const days=all[act],head=days[0]&&days[0].over?1:0,di=skyDay0>0?skyDay0:head,r=days[di];
+ const wdn=(i,f)=>days[i]?new Date(days[i].date+'T12:00').toLocaleDateString(LOC(),{weekday:f}):'–';
+ const dn=i=>i===0?T2('Today','Hoje'):i===1?T2('Tomorrow','Amanhã'):wdn(i,'long');
+ const pt=LANG==='pt',nm=SKY_NAME[act][pt?1:0];
+ const chips=cfg.acts.map(a=>{const x=all[a][head];return`<button type="button" class="sk-chip" data-sk="act" data-v="${a}" aria-pressed="${a===act}">${SKY_NAME[a][pt?1:0]}<b style="color:${x&&x.s!=null?skyCol(x.s):'inherit'}">${x&&x.s!=null?x.s:'–'}</b></button>`}).join('');
+ let body;
+ if(!r||r.s==null){
+  const loading=act==='surf'&&xtGet('sea')===undefined||act==='allergy'&&!extras.pol;
+  body=`<p class="note">${loading?T2('Loading the data this score needs…','A carregar os dados de que esta pontuação precisa…')
+   :act==='surf'?T2('No sea data for this place, so there is no surf score here.','Sem dados do mar neste local, por isso não há pontuação de surf.')
+   :act==='allergy'?T2('No pollen or air-quality data for this place.','Sem dados de pólen ou qualidade do ar neste local.')
+   :T2('Nothing to score for this day.','Nada para pontuar neste dia.')}</p>`;
+ }else{
+  const C=2*Math.PI*30,col=skyCol(r.s);
+  const why=[...r.why.map(k=>`<span class="sk-r neg">${SKY_WHY[k][pt?1:0]}</span>`),...r.pos.map(k=>`<span class="sk-r pos">${SKY_POS[k][pt?1:0]}</span>`)].join('');
+  const winL=act==='photo'?T2('Golden hour','Hora dourada'):act==='allergy'?T2('Gentlest window','Melhor janela'):T2('Best window','Melhor janela');
+  body=`<div class="sk-main"><div class="sk-ring" style="--c:${col}"><svg viewBox="0 0 76 76" width="84" height="84" role="img" aria-label="SkyScore ${r.s} / 100"><circle cx="38" cy="38" r="30" fill="none" stroke="rgba(20,49,79,.12)" stroke-width="7"/><circle cx="38" cy="38" r="30" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${(C*(1-r.s/100)).toFixed(1)}" transform="rotate(-90 38 38)"/></svg><b data-cu="${r.s}">0</b></div>
+  <div class="sk-txt"><div class="sk-day">${dn(di)} · ${nm} · <em style="color:${col}">${skyLabel(act,r.s)}</em></div><p class="sk-say">${skySay(act,r.s,pt)}</p><p class="sk-win">${winL}: <b>${r.win[0]}–${r.win[1]}</b>${act!=='stars'&&act!=='photo'?` · ${T(r.t)}° · ${Math.round(r.pop)}% ${T2('rain','chuva')}`:''}</p></div></div>
+  ${why?`<div class="sk-rs">${why}</div>`:''}`;
+ }
+ const best=days.reduce((b,x,i)=>x&&x.s!=null&&(!b||x.s>b.s)?{...x,i}:b,null);
+ const week=`<div class="sk-wk" role="group" aria-label="${T2('Next days','Próximos dias')}">${days.map((x,i)=>{const s=x&&x.s!=null?x.s:null;return`<button type="button" class="sk-d" data-sk="day" data-v="${i}" aria-pressed="${i===di}" ${s==null?'disabled':''}><i style="--h:${s==null?4:Math.max(6,s)}%;--c:${s==null?'rgba(20,49,79,.2)':skyCol(s)}"></i><b>${s==null?'–':s}</b><small>${i===0?T2('Today','Hoje'):wdn(i,'short')}</small></button>`}).join('')}</div>`;
+ const bestL=best&&best.i!==di?`<p class="sk-note">${T2('Best day this week','Melhor dia da semana')}: <b>${dn(best.i)} · ${best.s}</b></p>`:'';
+ const st=bk.st,rec=bk.bk[act];
+ const foot=`<div class="sk-ft"><span class="sk-st" title="${T2('Days in a row you opened Skylab','Dias seguidos em que abriste o Skylab')}"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2s5 4.5 5 9.5a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5s1.5 1 2 2c0-3 1-5.5 2-8z"/></svg>${st.n} ${st.n===1?T2('day','dia'):T2('days','dias')}${st.best>st.n?` · ${T2('best','recorde')} ${st.best}`:''}</span>${rec?`<span class="sk-rec">${T2('Your best','O teu recorde')}: ${rec.s}</span>`:''}<button type="button" class="sk-jb" data-sk="journal">${T2('My climate journal','O meu diário climático')} →</button></div>`;
+ return`<div class="sk-h"><h3>SkyScore</h3><button type="button" class="sk-gear" data-sk="edit" aria-label="${T2('Customise','Personalizar')}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div><div class="sk-chips">${chips}</div>${body}${week}${bestL}${foot}`;
+}
+function skyEditHTML(cfg){
+ const d=skyDraft||(skyDraft={acts:[...cfg.acts],hour:cfg.notif.hour||7,on:!!cfg.notif.on}),pt=LANG==='pt';
+ const desc={run:T2('Temperature, rain, wind, air','Temperatura, chuva, vento, ar'),bike:T2('Wind and rain weigh more','Vento e chuva pesam mais'),hike:T2('Trail conditions and storms','Condições do trilho e trovoadas'),allergy:T2('Pollen and air quality','Pólen e qualidade do ar'),photo:T2('Golden hour and clouds','Hora dourada e nuvens'),surf:T2('Wave height and period','Altura e período das ondas'),stars:T2('Clouds, moon and humidity','Nuvens, Lua e humidade')};
+ const list=SKY_ACTS.map(a=>`<button type="button" class="sk-opt" data-sk="tog" data-v="${a}" aria-pressed="${d.acts.includes(a)}"><b>${SKY_NAME[a][pt?1:0]}</b><small>${desc[a]}</small></button>`).join('');
+ const notif=isUserAuth()?`<div class="sk-nt"><button type="button" class="sk-sw" data-sk="ntog" aria-pressed="${d.on}"><i></i></button><div><b>${T2('Morning SkyScore','SkyScore da manhã')}</b><small>${T2('A notification with your score and best window','Uma notificação com a tua pontuação e a melhor janela')}</small></div><span class="sk-hr"><button type="button" data-sk="hr" data-v="-1" aria-label="-">‹</button><b>${String(d.hour).padStart(2,'0')}:00</b><button type="button" data-sk="hr" data-v="1" aria-label="+">›</button></span></div>`
+  :`<p class="sk-note">${T2('Create a free account to get your score as a morning notification and to keep your climate journal.','Cria uma conta gratuita para receberes a pontuação numa notificação de manhã e para guardares o teu diário climático.')} <button type="button" class="sk-link" data-sk="auth">${T2('Sign up','Criar conta')}</button></p>`;
+ return`<div class="sk-h"><h3>SkyScore</h3></div><p class="note">${T2('Pick what you do outside. Every day Skylab turns the forecast, pollen, air and sea into a 0–100 score for each activity.','Escolhe o que fazes ao ar livre. Todos os dias o Skylab transforma a previsão, o pólen, o ar e o mar numa pontuação de 0 a 100 para cada atividade.')}</p><div class="sk-opts">${list}</div>${notif}<div class="sk-act"><button type="button" class="sk-go" data-sk="save" ${d.acts.length?'':'disabled'}>${T2('Save','Guardar')}</button>${cfg.acts.length?`<button type="button" class="sk-ca" data-sk="cancel">${T2('Cancel','Cancelar')}</button>`:''}</div>`;
+}
+function skyCardHTML(){return data?`<section class="card xt sky" id="sky">${skyInner()}</section>`:''}
+function skyPaint(){const el=$('#sky');if(!el||!data)return;el.innerHTML=skyInner();runCounters(el)}
+{const _ca=checkAlerts;checkAlerts=function(){_ca.apply(this,arguments);try{skyPaint()}catch(e){}}}
+
+document.addEventListener('click',async e=>{
+ const b=e.target.closest('[data-sk]');if(!b)return;
+ const k=b.dataset.sk,v=b.dataset.v;
+ if(k==='act'){skySel=v;skyDay0=0;skyPaint()}
+ else if(k==='day'){skyDay0=+v;skyPaint()}
+ else if(k==='edit'){skyEdit=true;skyDraft=null;skyPaint()}
+ else if(k==='cancel'){skyEdit=false;skyDraft=null;skyPaint()}
+ else if(k==='tog'){const d=skyDraft,i=d.acts.indexOf(v);if(i<0)d.acts.push(v);else d.acts.splice(i,1);skyPaint()}
+ else if(k==='ntog'){skyDraft.on=!skyDraft.on;skyPaint()}
+ else if(k==='hr'){skyDraft.hour=Math.max(5,Math.min(11,skyDraft.hour+(+v)));skyPaint()}
+ else if(k==='auth'){authOpen()}
+ else if(k==='journal'){skjOpen()}
+ else if(k==='save'){
+  const d=skyDraft;if(!d||!d.acts.length)return;
+  let on=d.on&&isUserAuth();
+  if(on&&!pushIsOn()){on=await pushEnable();if(!on)toast(T2('Notifications are off on this device, so the morning score will not arrive.','As notificações estão desligadas neste dispositivo, por isso a pontuação da manhã não vai chegar.'))}
+  const old=skyCfg();
+  lsSet('skyInterests',{acts:d.acts,main:d.acts.includes(old.main)?old.main:d.acts[0],notif:{on,hour:d.hour}});
+  skyEdit=false;skyDraft=null;skySel=null;skyPaint();
+ }
+});
+
+/* ---------- Diário climático ---------- */
+const SKJ={cfg:undefined,days:[],per:null,rep:null,busy:false,err:''};
+async function skjApi(path,opt){
+ const r=await fetch(SKY_JOURNAL_API+path,{...opt,headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentToken}});
+ if(r.status===401){authSessionDead();throw new Error('auth')}
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'HTTP '+r.status);return j;
+}
+const skjMon=ym=>new Date(ym+'-15T12:00').toLocaleDateString(LOC(),{month:'long',year:'numeric'});
+const skjPerName=p=>p.length===4?T2('year '+p,'ano '+p):skjMon(p);
+function skjOpen(){
+ let el=$('#sj');if(!el){el=document.createElement('div');el.id='sj';el.className='sj';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label',T2('Climate journal','Diário climático'));document.body.appendChild(el)}
+ document.documentElement.classList.add('sj-open');el.hidden=false;skjPaint();
+ if(isUserAuth())skjLoad();
+}
+function skjClose(){const el=$('#sj');if(el)el.hidden=true;document.documentElement.classList.remove('sj-open');if(location.hash==='#diario')history.replaceState(null,'',location.pathname+location.search)}
+async function skjLoad(){
+ SKJ.busy=true;SKJ.err='';skjPaint();
+ try{
+  const j=await skjApi('');SKJ.cfg=j.cfg;SKJ.days=j.days||[];
+  if(SKJ.cfg){
+   const now=new Date(),cur=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'),pm=new Date(now.getFullYear(),now.getMonth()-1,1),prev=pm.getFullYear()+'-'+String(pm.getMonth()+1).padStart(2,'0');
+   const n=ym=>SKJ.days.filter(d=>d[0].startsWith(ym)).length;
+   await skjReport(SKJ.per||(n(prev)>=10?prev:cur));
+  }
+ }catch(e){if(e.message!=='auth')SKJ.err=e.message}
+ SKJ.busy=false;skjPaint();
+}
+async function skjReport(p){SKJ.per=p;try{SKJ.rep=await skjApi('/report?p='+p)}catch(e){SKJ.rep=null;SKJ.err=e.message}}
+function skjHeads(r){
+ const out=[],c=r.cmp||{},yr=r.p.length===4,unit=yr?T2('year','ano'):T2('month','mês'),span=c.n+1;
+ const line=(m,hiTxt,loTxt)=>{const x=c[m];if(!x||c.n<2)return;const L=x.lower,n=c.n;
+  if(L===n)out.push(hiTxt(1));else if(L===0)out.push(loTxt(1));else if(n>=3&&L===n-1)out.push(hiTxt(2));else if(n>=3&&L===1)out.push(loTxt(2))};
+ line('sun',k=>T2(`The ${k===2?'2nd ':''}sunniest ${unit} of the last ${span} years`,`O ${unit} ${k===2?'2.º ':''}mais soalheiro dos últimos ${span} anos`),
+            k=>T2(`The ${k===2?'2nd ':''}greyest ${unit} of the last ${span} years`,`O ${unit} ${k===2?'2.º ':''}mais cinzento dos últimos ${span} anos`));
+ line('rain',k=>T2(`The ${k===2?'2nd ':''}wettest ${unit} of the last ${span} years`,`O ${unit} ${k===2?'2.º ':''}mais chuvoso dos últimos ${span} anos`),
+             k=>T2(`The ${k===2?'2nd ':''}driest ${unit} of the last ${span} years`,`O ${unit} ${k===2?'2.º ':''}mais seco dos últimos ${span} anos`));
+ line('temp',k=>T2(`The ${k===2?'2nd ':''}warmest ${unit} of the last ${span} years`,`O ${unit} ${k===2?'2.º ':''}mais quente dos últimos ${span} anos`),
+             k=>T2(`The ${k===2?'2nd ':''}coldest ${unit} of the last ${span} years`,`O ${unit} ${k===2?'2.º ':''}mais frio dos últimos ${span} anos`));
+ if(!out.length&&c.n>=2)out.push(T2('Right around normal for your city.','Dentro do habitual para a tua cidade.'));
+ if(r.pol_n>0){
+  if(r.pol_high>0)out.push(T2(`You were exposed to ${r.pol_high} day${r.pol_high===1?'':'s'} of high or extreme pollen`+(r.pol_ext?` (${r.pol_ext} extreme)`:''),`Estiveste exposto a ${r.pol_high} dia${r.pol_high===1?'':'s'} de pólen alto ou extremo`+(r.pol_ext?` (${r.pol_ext} extremo${r.pol_ext===1?'':'s'})`:'')));
+  else out.push(T2('No high-pollen days recorded.','Nenhum dia de pólen alto registado.'));
+ }
+ return out;
+}
+function skjHeat(){
+ const m=new Map(SKJ.days.map(d=>[d[0],d])),cells=[],end=new Date();end.setHours(12,0,0,0);
+ const first=new Date(end);first.setDate(first.getDate()-83);
+ const pad=(first.getDay()+6)%7;for(let i=0;i<pad;i++)cells.push('<i class="e"></i>');
+ for(let i=0;i<84;i++){const d=new Date(first);d.setDate(first.getDate()+i);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),x=m.get(k);
+  cells.push(x?`<i class="${x[3]>=1?'r':''}" style="background:${tempColor(x[1])}" title="${d.toLocaleDateString(LOC(),{day:'numeric',month:'short'})} · ${T(x[1])}°/${T(x[2])}°${x[3]>=1?' · '+x[3].toFixed(1)+' mm':''}"></i>`:'<i class="n"></i>')}
+ return`<div class="sj-heat" aria-label="${T2('Last 12 weeks','Últimas 12 semanas')}">${cells.join('')}</div><p class="sj-cap">${T2('Last 12 weeks · colour = daily high · dot = rain','Últimas 12 semanas · cor = máxima do dia · ponto = chuva')}</p>`;
+}
+function skjPaint(){
+ const el=$('#sj');if(!el)return;
+ const head=`<div class="sj-top"><h2>${T2('Climate journal','Diário climático')}</h2><button type="button" class="sj-x" data-sj="close" aria-label="${T2('Close','Fechar')}">✕</button></div>`;
+ let body='';
+ if(!isUserAuth())body=`<div class="sj-box"><p>${T2('Your journal remembers the weather you lived through: monthly reports, comparisons with the last 5 years and “this day, years ago”. It needs a free account.','O teu diário guarda o tempo que viveste: relatórios mensais, comparações com os últimos 5 anos e «neste dia, há anos». Precisa de uma conta gratuita.')}</p><button type="button" class="sk-go" data-sj="auth">${T2('Create account / Sign in','Criar conta / Entrar')}</button></div>`;
+ else if(SKJ.busy&&SKJ.cfg===undefined)body=`<p class="note sk">${T2('Loading…','A carregar…')}</p>`;
+ else if(SKJ.err&&SKJ.cfg===undefined)body=`<p class="note">${escH(SKJ.err)}</p><button type="button" class="sk-go" data-sj="retry">${T2('Try again','Tentar outra vez')}</button>`;
+ else if(!SKJ.cfg){
+  const t=pushTarget()||(place?{name:place.name,lat:place.lat,lon:place.lon,sub:place.sub}:null),al=skyCfg().acts.includes('allergy');
+  body=t?`<div class="sj-box"><p>${T2(`Skylab will keep a daily summary of the weather in <b>${escH(t.name)}</b>: highs and lows, rain, sunshine and (optionally) pollen. It starts with the last 2 months, so your first report is ready now.`,`O Skylab vai guardar um resumo diário do tempo em <b>${escH(t.name)}</b>: máximas e mínimas, chuva, sol e (opcionalmente) pólen. Começa com os últimos 2 meses, por isso o primeiro relatório fica logo pronto.`)}</p><label class="sj-ck"><input type="checkbox" id="sjPol" ${al?'checked':''}> ${T2('Also record daily pollen level','Registar também o nível de pólen diário')}</label><button type="button" class="sk-go" data-sj="start" ${SKJ.busy?'disabled':''}>${SKJ.busy?T2('Starting…','A começar…'):T2('Start my journal','Começar o meu diário')}</button><p class="sk-note">${T2('You can delete the journal at any time. The city is your home city (or the one you visit most).','Podes apagar o diário quando quiseres. A cidade é a tua cidade principal (ou a que mais visitas).')}</p></div>`
+   :`<div class="sj-box"><p>${T2('Pick a home city or look up a place first.','Escolhe uma cidade principal ou pesquisa um local primeiro.')}</p></div>`;
+ }else{
+  const c=SKJ.cfg,r=SKJ.rep,months=[...new Set(SKJ.days.map(d=>d[0].slice(0,7)))].sort().reverse().slice(0,6),yrs=[...new Set(SKJ.days.map(d=>d[0].slice(0,4)))];
+  const chips=[...months,...(SKJ.days.length>=300?yrs:[])].map(p=>`<button type="button" class="sk-chip" data-sj="per" data-v="${p}" aria-pressed="${p===SKJ.per}">${p.length===4?p:skjMon(p)}</button>`).join('');
+  let rep='';
+  if(SKJ.busy)rep=`<p class="note sk">${T2('Loading…','A carregar…')}</p>`;
+  else if(r&&r.n>0){
+   const hs=skjHeads(r).map(h=>`<li>${escH(h)}</li>`).join('');
+   const tile=(l,v)=>`<div class="sj-t"><small>${l}</small><b>${v}</b></div>`;
+   const dd=x=>x?new Date(x.day+'T12:00').toLocaleDateString(LOC(),{day:'numeric',month:'short'}):'–';
+   rep=`<div class="sj-rep"><h3>${T2('Your','O teu')} ${skjPerName(r.p)}</h3>${r.n<(r.p.length===4?300:20)?`<p class="sk-note">${T2(`Based on ${r.n} recorded days.`,`Com base em ${r.n} dias registados.`)}</p>`:''}${hs?`<ul class="sj-hl">${hs}</ul>`:''}<div class="sj-tiles">${tile(T2('Average temp','Temp. média'),T(r.tmean)+'°')}${tile(T2('Rainy days','Dias de chuva'),r.rain_days)}${tile(T2('Sun per day','Sol por dia'),dcm(r.sun_avg,1)+' h')}${tile(T2('Warmest day','Dia mais quente'),r.hot?`${T(r.hot.tmax)}° <small>${dd(r.hot)}</small>`:'–')}${tile(T2('Coldest day','Dia mais frio'),r.cold?`${T(r.cold.tmin)}° <small>${dd(r.cold)}</small>`:'–')}${r.pol_n>0?tile(T2('High-pollen days','Dias de pólen alto'),r.pol_high):tile(T2('Rain total','Chuva total'),(unit=='c'?Math.round(r.precip)+' mm':(r.precip/25.4).toFixed(1)+' in'))}</div></div>`;
+  }else rep=`<p class="note">${T2('Not enough data for this period yet.','Ainda não há dados suficientes para este período.')}</p>`;
+  const otd=r&&r.otd&&r.otd.length?`<div class="sj-rep"><h3>${T2('This day, years ago','Neste dia, há anos')}</h3><ul class="sj-otd">${r.otd.map(o=>`<li><b>${o.y}</b><span>${T(o.tmean)}° ${T2('avg','média')} · ${o.precip>=1?dcm(o.precip,1)+' mm':T2('dry','seco')}${o.sun!=null?' · '+dcm(o.sun,1)+' h '+T2('sun','sol'):''}</span></li>`).join('')}</ul></div>`:'';
+  body=`<p class="sj-loc">${escH(c.name)} · ${T2('since','desde')} ${new Date(c.since).toLocaleDateString(LOC(),{day:'numeric',month:'long',year:'numeric'})}</p><div class="sk-chips">${chips}</div>${rep}${skjHeat()}${otd}<button type="button" class="sk-ca sj-del" data-sj="del">${T2('Delete my journal','Apagar o meu diário')}</button>`;
+ }
+ el.innerHTML=`<div class="sj-in">${head}${body}</div>`;
+}
+document.addEventListener('click',async e=>{
+ const b=e.target.closest('[data-sj]');if(!b)return;const k=b.dataset.sj;
+ if(k==='close')skjClose();
+ else if(k==='auth'){skjClose();authOpen()}
+ else if(k==='retry')skjLoad();
+ else if(k==='per'){SKJ.busy=true;skjPaint();await skjReport(b.dataset.v);SKJ.busy=false;skjPaint()}
+ else if(k==='start'){
+  const t=pushTarget()||(place?{name:place.name,lat:place.lat,lon:place.lon}:null);if(!t)return;
+  SKJ.busy=true;skjPaint();
+  try{const j=await skjApi('',{method:'PUT',body:JSON.stringify({name:t.name,lat:+t.lat,lon:+t.lon,pol:$('#sjPol')&&$('#sjPol').checked?1:0})});SKJ.cfg=j.cfg;SKJ.days=j.days||[];SKJ.per=null;SKJ.busy=false;await skjLoad();return}
+  catch(er){SKJ.err=er.message;toast(er.message)}
+  SKJ.busy=false;skjPaint();
+ }else if(k==='del'){
+  if(!confirm(T2('Delete your climate journal? This cannot be undone.','Apagar o teu diário climático? Não é possível desfazer.')))return;
+  try{await skjApi('',{method:'DELETE'});SKJ.cfg=null;SKJ.days=[];SKJ.rep=null;SKJ.per=null;toast(T2('Journal deleted.','Diário apagado.'));skjPaint()}catch(er){toast(er.message)}
+ }
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.documentElement.classList.contains('sj-open'))skjClose()});
+if(location.hash==='#diario')setTimeout(()=>{if(isUserAuth())skjOpen()},1800);
+{const _u=updateAuthUI;updateAuthUI=function(){_u();const l=$('#skjRow b'),d=$('#skjDesc');if(l&&d){l.textContent=T2('Climate journal','Diário climático');d.textContent=T2('The weather you lived through, month by month','O tempo que viveste, mês a mês')}}}
