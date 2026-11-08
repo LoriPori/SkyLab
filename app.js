@@ -61,7 +61,7 @@ let LANG=lsGet('lang')||((navigator.language||'').toLowerCase().startsWith('pt')
 const LOC=()=>LANG=='pt'?'pt-PT':'en';
 document.documentElement.lang=LANG;
 try{localStorage.removeItem('unit');localStorage.removeItem('unitManual')}catch(e){}   // limpa o estado antigo que bloqueava a mudança automática
-let unit=lsGet('unitPick')||(LANG=='pt'?'c':'f'),data=null,place=null,tab=(['today','week','air','sky','sci'].includes(lsGet('tabPick'))?lsGet('tabPick'):'today'),lastKey='',tickT;
+let unit=lsGet('unitPick')||(LANG=='pt'?'c':'f'),data=null,place=null,tab='today',lastKey='',tickT;
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const T=c=>Math.round(unit=='c'?c:c*9/5+32);
 const W=k=>unit=='c'?Math.round(k)+' km/h':Math.round(k*.539957)+' kt';
@@ -699,7 +699,7 @@ async function reverse(lat,lon){
  if(bt&&!bt.revUsed&&bt.key===lat+','+lon){bt.revUsed=true;try{const j=await bootWait(bt.p);if(j&&j.rev&&j.rev.name)return j.rev}catch(e){}}
  try{
   const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=${LANG}`);const j=await r.json();
-    return{name:j.city||j.locality||'Your location',sub:[j.principalSubdivision,j.countryName].filter(Boolean).join(', ')};
+    return{name:j.locality||j.city||'Your location',sub:[j.principalSubdivision,j.countryName].filter(Boolean).join(', ')};   // locality = freguesia/localidade (Castanheira); city = concelho (Vila Franca de Xira)
  }catch(e){return{name:'Your location',sub:''}}
 }
 const geo=async(n,c=5)=>((await(await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(n)}&count=${c}&language=${LANG}`)).json()).results||[]).map(x=>({lat:x.latitude,lon:x.longitude,name:x.name,sub:[x.admin1,x.country].filter(Boolean).join(', ')}));
@@ -1712,7 +1712,7 @@ const PANES={today:()=>todayPane(),week:()=>weekPane(),radar:()=>radarPane(),air
 const INIT={today:()=>scrub(),radar:()=>radarInit()};
 function setTab(k){
  radarStop();
- tab=k;if(lsGet('tabPick')!==k)lsSet('tabPick',k);$$('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t==k));moveInd();
+ tab=k;$$('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t==k));moveInd();
  const pane=$('#pane');pane.innerHTML=PANES[k]();
  if(INIT[k])INIT[k]();
  if(k==='sky')initSparkTooltip();   // <-- adicionar esta linha
@@ -4340,7 +4340,7 @@ async function ipmaLoad(){
  }
  if(!ipmaWarn||Date.now()-ipmaT>6e5){ipmaWarn=await fetchJSON(WORKER+'/ipma-warnings');ipmaT=Date.now()}
 }
-function ipmaClose(){const p=$('#wpop'),b=$('#wrn');if(p)p.hidden=true;if(b)b.setAttribute('aria-expanded','false')}
+function ipmaClose(){const p=$('#wpop'),b=$('#wrn');if(p)p.hidden=true;if(b)b.setAttribute('aria-expanded','false');document.documentElement.classList.remove('wpop-open')}
 function ipmaPaint(){
  const p=$('#wpop');if(!p||!ipmaCur)return;
  const fmt=s=>new Date(s).toLocaleString(LANG=='pt'?'pt-PT':'en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})
@@ -4373,8 +4373,14 @@ async function ipmaUpdate(pl){
 $('#wrn').onclick=e=>{
  e.stopPropagation();
  const p=$('#wpop'),open=p.hidden;
+ /* No telemóvel o painel é uma folha fixa em baixo: tem de viver no <body>. Dentro do <header> (sticky, z-index 50) ficava presa
+    ao contexto de empilhamento do cabeçalho e a barra inferior tapava-o. No ecrã grande volta ao cabeçalho (posição absoluta). */
+ const mob=document.documentElement.classList.contains('is-mobile'),hd=$('#hd');
+ if(mob&&p.parentNode!==document.body)document.body.appendChild(p);
+ else if(!mob&&hd&&p.parentNode===document.body)hd.appendChild(p);
  if(open)ipmaPaint();
  p.hidden=!open;$('#wrn').setAttribute('aria-expanded',open);
+ document.documentElement.classList.toggle('wpop-open',open&&mob);
 };
 addEventListener('click',e=>{if(!e.target.closest('#wpop,#wrn'))ipmaClose()});
 addEventListener('keydown',e=>{if(e.key=='Escape')ipmaClose()});

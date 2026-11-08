@@ -2023,3 +2023,7 @@ html.is-mobile .xt-grid{grid-template-columns:1fr 1fr}
 .xt-state.up b{color:#1b6fb8}.xt-state.dn b{color:#7650c8}
 .xt-state .xt-arr{color:inherit}
 html.is-mobile .xt-state span,html.is-mobile .xt-state small{color:var(--m-mut)}
+
+/* Folha dos avisos IPMA (telemóvel): por cima de tudo e sem a barra inferior a tapar */
+html.is-mobile .wpop{z-index:1400}
+html.is-mobile.wpop-open .m-nav,html.is-mobile.wpop-open .m-nav.show{display:none!important}
