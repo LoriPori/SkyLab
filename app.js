@@ -133,14 +133,18 @@ function tempBase(t){
  return STOPS[STOPS.length-1][1];
 }
 const COND_MIX={clear:null,cloud:['#8a9bb0',.36],rain:['#6f84a3',.42],snow:['#86a6c4',.38],fog:['#93a0ad',.48],storm:['#5d6391',.52],night:['#3d4394',.52]};
+/* A cor da barra de estado (topo) e da barra de navegação do Android acompanha o fundo da página em vez do azul fixo do index.html */
+function themeMeta(a,b){const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',mix(a,b,.4))}
 function theme(tC,k){
  let base=tempBase(tC);const m=COND_MIX[k];if(m)base=mix(base,m[0],m[1]);
  if(IS_MOBILE){const ext=Math.max(0,Math.min(1,Math.max((tC-24)/10,(6-tC)/12)));base=mix(base,'#ffffff',.07+.17*ext)}   // telemóvel: mais claro, sobretudo no calor e no frio extremos
  const w=m?0:Math.max(0,Math.min(1,(tC-16)/8));            // 0 = fresco/nublado, 1 = dia quente de céu limpo
  const s=document.documentElement.style;
  s.setProperty('--a',base);
- s.setProperty('--b',mix(mix(base,'#ffffff',.42),mix(base,'#4a2410',IS_MOBILE?.14:.34),w));   // quente: o fim do degradê escurece em vez de clarear
+ const b2=mix(mix(base,'#ffffff',.42),mix(base,'#4a2410',IS_MOBILE?.14:.34),w);
+ s.setProperty('--b',b2);   // quente: o fim do degradê escurece em vez de clarear
  s.setProperty('--acc',mix(base,'#0c2a52',.52));
+ themeMeta(base,b2);
 }
 function landTheme(night,k){                       // página inicial: cor própria, não depende da temperatura
  if(night){theme(10,k);return}                     // noite: igual ao que já tinhas
@@ -148,6 +152,7 @@ function landTheme(night,k){                       // página inicial: cor próp
  s.setProperty('--a',base);
  s.setProperty('--b',mix(base,'#0c2a52',.30));     // o fim do degradê escurece em vez de clarear
  s.setProperty('--acc',mix(base,'#0c2a52',.52));
+ themeMeta(base,mix(base,'#0c2a52',.30));
 }
 function tempColor(c){const t=Math.max(-10,Math.min(38,c)),hue=208-((t+10)/48)*182;return`hsl(${hue.toFixed(0)},72%,58%)`}
 
@@ -401,6 +406,7 @@ const PT={
  'Jump to a place with interesting weather':'Saltar para um sítio com tempo interessante','Sound':'Som',
  'Ambient weather sound':'Som ambiente do tempo','Units':'Unidades',
  'Weather by Open-Meteo · Places by BigDataCloud · Pollen by Atmospore':'Meteorologia por Open-Meteo · Locais por BigDataCloud · Pólen por Atmospore',
+ 'Pressure & isobars by':'Pressão e isóbaras por',
  'The sky, explained.':'O céu, explicado.',
  'Live weather for anywhere on Earth, with the science behind what you’re looking at.':'Tempo em direto para qualquer ponto da Terra, com a ciência por trás do que estás a ver.',
  'Use my location':'Usar a minha localização','Surprise me':'Surpreende-me','Skylab — Weather & Science':'Skylab — Tempo e Ciência',
@@ -1157,7 +1163,20 @@ function synBox(){                                                 // caixa de �
   return{z:SYN_Z,st,i0:Math.floor((place.lon-R*kx)/st),i1:Math.ceil((place.lon+R*kx)/st),
          j0:Math.max(-jm,Math.floor((place.lat-R)/st)),j1:Math.min(jm,Math.ceil((place.lat+R)/st))};
 }
+function synAnalyseGlobal(){                                      // mesmo campo NOAA GFS do mapa → o A/B do mapa é o A/B que o Céu Explicado conhece
+  const p0=pMSL(),la=place.lat,lo=place.lon,rad=Math.PI/180;
+  const brg=(la2,lo2)=>{const f1=la*rad,f2=la2*rad,dl=(lo2-lo)*rad;
+    return(Math.atan2(Math.sin(dl)*Math.cos(f2),Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dl))/rad+360)%360};
+  const list=PG.ext.map(e=>({hi:e.hi,p:e.p,lat:e.lat,lng:e.lng,d:hav(la,lo,e.lat,e.lng),b:brg(e.lat,e.lng)})).filter(e=>e.d<=2800).sort((x,y)=>x.d-y.d);
+  let sum=0,cnt=0;                                                 // anel de 600–1 200 km à volta do local
+  for(const km of[600,900,1200])for(let k=0;k<12;k++){
+    const t=k*30*rad,d=km/111.2,v=pgAt(la+d*Math.cos(t),lo+d*Math.sin(t)/Math.max(.2,Math.cos(la*rad)));
+    if(v===v){sum+=v;cnt++}
+  }
+  return{p0,rel:cnt>=8?p0-sum/cnt:null,hi:list.find(e=>e.hi)||null,lo:list.find(e=>!e.hi)||null};
+}
 function synAnalyse(){
+  if(PG)return synAnalyseGlobal();
   const g=synBox(),M=isoBuild(g);
   if(!M)return null;
   const p0=pMSL(),la=place.lat,lo=place.lon,rad=Math.PI/180;
@@ -1180,9 +1199,14 @@ function synGet(){                                                 // análise e
   synMemo={k,t:Date.now(),a};
   return a;
 }
-async function synEnsure(){                                        // pede os nós em falta (worker /grid, com cache) e repinta o herói quando chegarem
+async function synEnsure(){                                        // pede o campo global (worker /pressure) — ou, se falhar, os nós em falta (/grid) — e repinta o herói
   if(!place||synBusy)return;
-  const g=synBox(),need=isoMissing(g),k=synKey();
+  const k=synKey();
+  if(PG&&Date.now()-PG.at<PG_TTL)return;                           // campo global fresco: nada a pedir
+  synBusy=true;let G=null;
+  try{G=await pgLoad()}catch(e){}finally{synBusy=false}
+  if(G){synMemo.t=0;if(tab==='sky'&&place&&synKey()===k)skyRepaint();return}
+  const g=synBox(),need=isoMissing(g);
   if(!need.length||Date.now()<Math.max(isoBlock,tempBlock))return;
   synBusy=true;
   try{await gridLoad(g.z,need)}
@@ -2450,7 +2474,7 @@ function privacyHTML(pt){
  const toc=[['who',L('Who I am','Quem sou')],['free',L('Without an account','Sem conta')],['acc',L('With an account','Com conta')],['push',L('Notifications','Notificações')],['sec',L('Security logs','Registos de segurança')],['third',L('Third parties','Terceiros')],['keep',L('Legal basis & retention','Base legal e conservação')],['rights',L('Your rights','Os teus direitos')]];
  const tocH=toc.map(([k,t])=>`<a href="#pv-${k}">${t}</a>`).join('');
  const sec=(k,i,t,body)=>`<section class="pv-card" id="pv-${k}"><h2><span class="pv-n">${String(i).padStart(2,'0')}</span>${t}</h2>${body}</section>`;
- const prov=[['Open-Meteo',L('forecast','previsão')],['BigDataCloud',L('place names','nomes de locais')],['Atmospore',L('pollen','pólen')],['IPMA',L('Portugal warnings','avisos de Portugal')],['RainViewer',L('radar','radar')],['NASA GIBS',L('satellite','satélite')],['OpenWeather',L('map layers','camadas')],['CARTO · OpenStreetMap',L('maps','mapas')],['Google',L('sign-in, profile photo, email codes (Gmail)','início de sessão, foto de perfil, códigos por email (Gmail)')],['Cloudflare',L('hosting, database, bot check','alojamento, base de dados, anti-bot')],['GitHub Pages',L('site hosting','alojamento do site')],['unpkg · jsDelivr',L('map and globe libraries, map data','bibliotecas do mapa e do globo, dados dos mapas')],['NOAA',L('station observations','observações de estações')]].map(([a,b])=>`<li><b>${a}</b><small>${b}</small></li>`).join('');
+ const prov=[['Open-Meteo',L('forecast','previsão')],['NOAA · NCEP GFS',L('air pressure and isobars (fetched by the Skylab server, so NOAA never sees your IP)','pressão atmosférica e isóbaras (pedida pelo servidor do Skylab, por isso a NOAA nunca vê o teu IP)')],['BigDataCloud',L('place names','nomes de locais')],['Atmospore',L('pollen','pólen')],['IPMA',L('Portugal warnings','avisos de Portugal')],['RainViewer',L('radar','radar')],['NASA GIBS',L('satellite','satélite')],['OpenWeather',L('map layers','camadas')],['CARTO · OpenStreetMap',L('maps','mapas')],['Google',L('sign-in, profile photo, email codes (Gmail)','início de sessão, foto de perfil, códigos por email (Gmail)')],['Cloudflare',L('hosting, database, bot check','alojamento, base de dados, anti-bot')],['GitHub Pages',L('site hosting','alojamento do site')],['unpkg · jsDelivr',L('map and globe libraries, map data','bibliotecas do mapa e do globo, dados dos mapas')],['NOAA',L('station observations','observações de estações')]].map(([a,b])=>`<li><b>${a}</b><small>${b}</small></li>`).join('');
  const rows=[[L('Account (username, email, password hash, Google ID and photo URL)','Conta (username, email, hash da palavra-passe, ID e foto Google)'),L('Until you delete your account','Até apagares a conta')],[L('Synced data (favourites, main city, history…)','Dados sincronizados (favoritos, cidade principal, histórico…)'),L('Until you delete your account','Até apagares a conta')],[L('Pending email verification (email, username, password hash, code hash)','Verificação de email pendente (email, username, hash da palavra-passe, hash do código)'),L('10 minutes at most','10 minutos no máximo')],[L('Login sessions','Sessões de início de sessão'),L('14 days','14 dias')],[L('Push address, keys and approximate location','Endereço e chaves push e localização aproximada'),L('Until you turn them off or delete your account','Até as desativares ou apagares a conta')],[L('Security logs','Registos de segurança'),L('7 days','7 dias')],[L('Without an account','Sem conta'),L('Nothing is stored on my servers','Nada fica nos meus servidores')]].map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
  return `<div class="pv-bar"><button type="button" class="pv-back" data-priv-close aria-label="${L('Back to Skylab','Voltar ao Skylab')}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>${L('Back','Voltar')}</span></button><div class="pv-logo"><span class="lg"></span>Skylab</div><div class="pv-seg" role="group" aria-label="Language"><button type="button" data-pv-lang="pt" aria-pressed="${pt}">PT</button><button type="button" data-pv-lang="en" aria-pressed="${!pt}">EN</button></div></div>
 <div class="pv-main">
@@ -3542,6 +3566,7 @@ const mapOpts = isPT
    : '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · rain <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> · wind/clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · sat <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>';
  radarMap.attributionControl.addAttribution(att);
   radarMap.attributionControl.addAttribution('temp <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (CC BY 4.0)');
+  radarMap.attributionControl.addAttribution('isobars <a href="https://www.nco.ncep.noaa.gov/pmb/products/gfs/" target="_blank" rel="noopener">NOAA/NCEP GFS</a>');
  L.marker([place.lat,place.lon],{keyboard:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(radarMap);
  radarMap.on('click focus',()=>radarMap.scrollWheelZoom.enable());
  radarMap.on('mouseout',()=>radarMap.scrollWheelZoom.disable());
@@ -4138,11 +4163,121 @@ async function tempBordersOn(){
   }catch(e){console.warn('[Borders]',e.message)}
 }
 
-/* ============ Linhas de pressão (isóbaras) + A/B · Open-Meteo pressure_msl ============ */
+/* ============ Campo GLOBAL de pressão · NOAA/NCEP GFS (0,25°, reduzido a 1,5°) via worker /pressure ============
+   Um único campo para o planeta inteiro (carrega 1×, cache 45 min), independente do zoom e do ecrã:
+   as isóbaras são calculadas localmente a partir dele (Catmull-Rom + marching squares), por isso já não há
+   "buracos" quando o Open-Meteo recusa blocos (429) nem linhas em faixas a zoom baixo.
+   Se o /pressure falhar, cai no método antigo (blocos Open-Meteo /grid) e tenta de novo mais tarde. */
+const PG_TTL=45*60e3;
+let PG=null,PGp=null,PGfail=0;
+async function pgLoad(){
+  if(PG&&Date.now()-PG.at<PG_TTL)return PG;
+  if(PGp)return PGp;
+  if(Date.now()<PGfail)return PG;                                  // falhou há pouco: usa o que houver (ou null → método antigo)
+  PGp=(async()=>{
+    try{
+      const r=await fetch(WORKER+'/pressure',{signal:AbortSignal.timeout(25000)});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const j=await r.json();
+      if(!j||!(j.w>=8)||!(j.h>=8)||!(j.st>0)||!Array.isArray(j.p)||j.p.length!==j.w*j.h)throw new Error('forma');
+      const p=new Float32Array(j.p.length);
+      for(let k=0;k<p.length;k++){const v=j.p[k];p[k]=v==null?NaN:v/10}      // décimos de hPa → hPa
+      const G={w:j.w,h:j.h,st:j.st,lat0:j.lat0,lon0:j.lon0,p,at:Date.now(),run:j.run||'',src:j.src||'NOAA GFS',ext:[]};
+      PG=G;G.ext=pgExtremes(G);PGfail=0;
+      return G;
+    }catch(e){
+      console.warn('[Pressure]',e.message);PGfail=Date.now()+6e4;return PG;      // mantém o campo antigo se o refresh falhar
+    }finally{PGp=null}
+  })();
+  return PGp;
+}
+/* valor de pressão (hPa) num ponto: Catmull-Rom bicúbico, com a longitude a dar a volta ao mundo */
+function pgAt(lat,lon){
+  const G=PG;if(!G)return NaN;
+  const w=G.w,h=G.h,p=G.p,la=Math.max(G.lat0,Math.min(G.lat0+(h-1)*G.st,lat)),fy=(la-G.lat0)/G.st,y=Math.min(h-2,Math.floor(fy)),ty=fy-y;
+  let fx=((lon-G.lon0)/G.st)%w;if(fx<0)fx+=w;
+  const x=Math.floor(fx),tx=fx-x,xs=[0,1,2,3].map(k=>(((x-1+k)%w)+w)%w),r=[];
+  for(let k=0;k<4;k++){const o=Math.max(0,Math.min(h-1,y-1+k))*w;r.push(isoCR(p[o+xs[0]],p[o+xs[1]],p[o+xs[2]],p[o+xs[3]],tx))}
+  return isoCR(r[0],r[1],r[2],r[3],ty);
+}
+/* amostra o campo numa malha regular (lat sul→norte, lon oeste→leste) com passo ds, alinhada ao mundo */
+function pgSample(la0,lo0,ds,nx,ny){
+  const G=PG,w=G.w,h=G.h,p=G.p,F=new Float32Array(nx*ny),cx=new Int32Array(nx*4),ct=new Float32Array(nx),r=[0,0,0,0];
+  for(let X=0;X<nx;X++){let fx=((lo0+X*ds-G.lon0)/G.st)%w;if(fx<0)fx+=w;const x=Math.floor(fx);ct[X]=fx-x;for(let k=0;k<4;k++)cx[X*4+k]=(((x-1+k)%w)+w)%w}
+  for(let Y=0;Y<ny;Y++){
+    const la=Math.max(G.lat0,Math.min(G.lat0+(h-1)*G.st,la0+Y*ds)),fy=(la-G.lat0)/G.st,y=Math.min(h-2,Math.floor(fy)),ty=fy-y;
+    const o=[0,1,2,3].map(k=>Math.max(0,Math.min(h-1,y-1+k))*w);
+    for(let X=0;X<nx;X++){
+      const c=X*4,t=ct[X];
+      for(let k=0;k<4;k++)r[k]=isoCR(p[o[k]+cx[c]],p[o[k]+cx[c+1]],p[o[k]+cx[c+2]],p[o[k]+cx[c+3]],t);
+      F[Y*nx+X]=isoCR(r[0],r[1],r[2],r[3],ty);
+    }
+  }
+  return F;
+}
+/* altas (A) e baixas (B) do planeta: extremos locais a ~7° com proeminência mínima, afinados no campo suave */
+function pgExtremes(G){
+  const w=G.w,h=G.h,p=G.p,R=Math.max(3,Math.round(7/G.st)),cand=[];
+  const at=(x,y)=>p[y*w+(((x%w)+w)%w)];
+  for(let y=R;y<h-R;y++){
+    const lat=G.lat0+y*G.st;if(Math.abs(lat)>78)continue;           // perto dos polos a redução ao nível do mar é pouco fiável
+    for(let x=0;x<w;x++){
+      const c=at(x,y);if(c!==c)continue;
+      let mx=true,mn=true,sum=0,cnt=0;
+      scan:for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){
+        if(!dx&&!dy)continue;const q=at(x+dx,y+dy);
+        if(q!==q){mx=mn=false;break scan}
+        if(q>c)mx=false;if(q<c)mn=false;
+        if(!mx&&!mn)break scan;
+        if(Math.max(Math.abs(dx),Math.abs(dy))===R){sum+=q;cnt++}
+      }
+      if(!mx&&!mn)continue;
+      const d=c-sum/Math.max(1,cnt);
+      if((mx&&d>=2)||(mn&&-d>=2))cand.push({hi:mx&&d>=2,p:c,d:Math.abs(d),lat,lng:G.lon0+x*G.st});
+    }
+  }
+  cand.sort((a,b)=>b.d-a.d);
+  const out=[],near=(a,b)=>{let dl=Math.abs(a.lng-b.lng)%360;if(dl>180)dl=360-dl;return Math.hypot(a.lat-b.lat,dl*Math.cos(a.lat*Math.PI/180))<2*R*G.st};
+  for(const e of cand){
+    if(out.some(o=>o.hi===e.hi&&near(o,e)))continue;
+    let bl=e.lat,bo=e.lng,bv=e.p;                                    // afina a posição e o valor no campo bicúbico (passos de ¼ de nó)
+    for(let a=-4;a<=4;a++)for(let b=-4;b<=4;b++){
+      const la=e.lat+a*G.st/4,lo=e.lng+b*G.st/4,v=pgAt(la,lo);
+      if(v===v&&(e.hi?v>bv:v<bv)){bv=v;bl=la;bo=lo}
+    }
+    out.push({hi:e.hi,p:bv,lat:bl,lng:bo});
+  }
+  return out;
+}
+/* isóbaras do que está no ecrã, a partir do campo global. Malha alinhada ao mundo (não ao ecrã) → as linhas não "tremem" ao arrastar. */
+function isoBuildGlobal(){
+  const G=PG;if(!G||!radarMap)return null;
+  const b=radarMap.getBounds(),z=radarMap.getZoom();
+  const ds=G.st/(z<=3?2:z<=5?3:4),iv=z<=3?4:z<=6?2:1;              // mais linhas e mais juntas que antes (8/4/2 hPa)
+  const pla=(b.getNorth()-b.getSouth())*.1+2*ds,plo=Math.min(360,(b.getEast()-b.getWest())*.1+2*ds);
+  const s=Math.max(-84,b.getSouth()-pla),n=Math.min(84,b.getNorth()+pla);
+  let w=b.getWest()-plo,e=b.getEast()+plo;if(e-w>720){const m=(w+e)/2;w=m-360;e=m+360}
+  const la0=Math.floor(s/ds)*ds,lo0=Math.floor(w/ds)*ds,ny=Math.ceil((n-la0)/ds)+1,nx=Math.ceil((e-lo0)/ds)+1;
+  if(nx<4||ny<4)return null;
+  const F=pgSample(la0,lo0,ds,nx,ny);
+  let lo=1e9,hi=-1e9;for(let k=0;k<F.length;k++){const v=F[k];if(v===v){if(v<lo)lo=v;if(v>hi)hi=v}}
+  if(!(hi>lo))return null;
+  const lines=[];
+  for(let lv=Math.ceil(lo/iv)*iv;lv<=hi;lv+=iv){
+    const segs=[];isoMarch(F,nx,ny,lv,(x1,y1,x2,y2)=>segs.push([x1,y1,x2,y2]));
+    if(!segs.length)continue;
+    const chains=isoChain(segs).filter(c=>c.length>2).map(c=>isoSmooth(isoThin(c),1).map(q=>[la0+q[1]*ds,lo0+q[0]*ds]));
+    const sg=[];chains.forEach(c=>{for(let i=0;i<c.length-1;i++)sg.push([c[i][0],c[i][1],c[i+1][0],c[i+1][1]])});
+    lines.push({lv,segs:sg,chains});
+  }
+  return{lines,ext:G.ext,iv};
+}
+
+/* ============ Linhas de pressão (isóbaras) + A/B · campo global NOAA GFS (com Open-Meteo /grid como reserva) ============ */
 const ISO_KINDS=['rain','cloud','temp'];                           // radares com isóbaras (sem vento nem satélite)
 const ISO_TTL=18e5;                                                // dados válidos 30 min
 const isoStepOf=z=>tempStepOf(z);                                  // mesmo reticulado da temperatura → um único pedido serve os dois               // independente da temperatura
-let isoCache={},isoGrp=null,isoOld=new Set(),isoGen=0,isoT=0,isoBlock=0,isoRun=false,isoAgain=false,isoOn=false;
+let isoRef=0,isoCache={},isoGrp=null,isoOld=new Set(),isoGen=0,isoT=0,isoBlock=0,isoRun=false,isoAgain=false,isoOn=false;
 
 const isoZ=()=>Math.max(5,tempZ());                                // isóbaras: nunca com passo > 10° (a 40°/20° só há 5–9 filas de latitude e as linhas ficam em faixas horizontais)
 const isoNode=(z,i,j)=>{const m=isoCache[z],e=m&&m.get(tempKey(j,i)),v=e?e[0]:NaN;return v>850&&v<1090?v:NaN};   // valores absurdos contam como "sem dados"
@@ -4255,16 +4390,19 @@ function isoDraw(M){
   if(M){
     const multi=M.lines.flatMap(l=>l.chains),o={pane:'isobars',className:'isoln',interactive:false,lineCap:'round',lineJoin:'round',smoothFactor:.6};
     if(multi.length){
-      L.polyline(multi,{...o,color:'#ffffff',weight:3.6,opacity:.65}).addTo(nu);     // halo
-      L.polyline(multi,{...o,color:'#14314f',weight:1.4,opacity:.9}).addTo(nu);
+      const maj=M.iv?M.lines.filter(l=>l.lv%20===0).flatMap(l=>l.chains):[],mnr=M.iv?M.lines.filter(l=>l.lv%20!==0).flatMap(l=>l.chains):multi;
+      L.polyline(multi,{...o,color:'#ffffff',weight:M.iv&&M.iv<=2?3:3.6,opacity:.6}).addTo(nu);     // halo
+      if(mnr.length)L.polyline(mnr,{...o,color:'#14314f',weight:M.iv&&M.iv<=2?.95:1.4,opacity:.82}).addTo(nu);
+      if(maj.length)L.polyline(maj,{...o,color:'#0b2340',weight:1.9,opacity:.95}).addTo(nu);          // 1000, 1020, 1040… em destaque
     }
     /* etiquetas hPa: posição ligada à grelha do mundo (não ao ecrã) → não saltam ao arrastar */
     const cd=260*360/(256*Math.pow(2,tempZ())),best=new Map(),bd=radarMap.getBounds().pad(-.04);
-    M.lines.forEach(l=>l.segs.forEach(s=>{
+    const lblEvery=M.iv&&M.iv<4?4:1;                                // com linhas de 1–2 hPa só se escreve a cada 4 hPa
+    M.lines.forEach(l=>{if(l.lv%lblEvery)return;l.segs.forEach(s=>{
       const lat=(s[0]+s[2])/2,lng=(s[1]+s[3])/2,ci=Math.floor(lat/cd),cj=Math.floor(lng/cd),k=l.lv+'|'+ci+'|'+cj;
       const d=Math.hypot(lat-(ci+.5)*cd,lng-(cj+.5)*cd),b=best.get(k);
       if(!b||d<b.d)best.set(k,{d,lat,lng,lv:l.lv});
-    }));
+    })});
     const placed=[];
     [...best.values()].sort((a,b)=>a.d-b.d).forEach(c=>{
       const ll=L.latLng(c.lat,c.lng);if(!bd.contains(ll))return;
@@ -4275,35 +4413,44 @@ function isoDraw(M){
     });
     /* A = alta pressão · B = baixa pressão */
     const vb=radarMap.getBounds();
-    M.ext.forEach(e=>{const ll=L.latLng(e.lat,e.lng);if(!vb.contains(ll))return;
-      L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,zIndexOffset:500,icon:L.divIcon({className:'isoax '+(e.hi?'hi':'lo'),html:`<b>${e.hi?'A':'B'}</b><small>${Math.round(e.p)}</small>`,iconSize:[0,0]})}).addTo(nu)});
+    M.ext.forEach(e=>{
+      for(let k=Math.floor((vb.getWest()-e.lng)/360);k<=Math.ceil((vb.getEast()-e.lng)/360);k++){       // o campo é global: aparece em todas as cópias do mundo visíveis
+        const ll=L.latLng(e.lat,e.lng+360*k);if(!vb.contains(ll))continue;
+        L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,zIndexOffset:500,icon:L.divIcon({className:'isoax '+(e.hi?'hi':'lo'),html:`<b>${e.hi?'A':'B'}</b><small>${Math.round(e.p)}</small>`,iconSize:[0,0]})}).addTo(nu)}});
   }
   nu.addTo(radarMap);isoGrp=nu;                                    // o novo entra com fade; o antigo sai logo a seguir
   isoOld.add(old);
   setTimeout(()=>{isoOld.delete(old);try{radarMap&&radarMap.removeLayer(old)}catch(e){}},900);
 }
 let isoRetry=0;
+async function isoLegacy(gen){                                       // reserva: blocos Open-Meteo (/grid) por zoom e ecrã
+  const g=isoGridBox();
+  for(let pass=0;pass<3;pass++){                                   // cada ronda só traz 16 blocos: até 3 rondas
+    const need=isoMissing(g);
+    if(!need.length||Date.now()<=Math.max(isoBlock,tempBlock))break;   // respeita também o bloqueio do radar de temperatura
+    try{await isoFetch(g.z,need)}
+    catch(err){
+      console.warn('[Isobars]',err.message);
+      isoBlock=Date.now()+(err.message==='429'?3e5:3e4);
+      if(err.message==='429')tempBlock=Math.max(tempBlock,isoBlock);   // 429: ambos param de pedir
+      break;
+    }
+  }
+  if(gen!==isoGen||!radarMap||!isoOn)return;
+  const M=isoBuild(g);
+  if(M){isoRetry=0;isoDraw(M)}                                     // só substitui as linhas se houver dados; antes apagava tudo
+  else if(isoRetry<3){isoRetry++;clearTimeout(isoT);isoT=setTimeout(isoUpdate,6000)}   // volta a tentar em 6 s
+}
 async function isoUpdate(){
   if(!radarMap||!isoOn)return;
   if(isoRun){isoAgain=true;return}
   isoRun=true;const gen=isoGen;
   try{
-    const g=isoGridBox();
-    for(let pass=0;pass<3;pass++){                                   // cada ronda só traz 16 blocos: até 3 rondas
-      const need=isoMissing(g);
-      if(!need.length||Date.now()<=Math.max(isoBlock,tempBlock))break;   // respeita também o bloqueio do radar de temperatura
-      try{await isoFetch(g.z,need)}
-      catch(err){
-        console.warn('[Isobars]',err.message);
-        isoBlock=Date.now()+(err.message==='429'?3e5:3e4);
-        if(err.message==='429')tempBlock=Math.max(tempBlock,isoBlock);   // 429: ambos param de pedir
-        break;
-      }
-    }
+    const G=await pgLoad();                                        // campo global (1 pedido, em cache); null se o worker/NOAA falhar
     if(gen!==isoGen||!radarMap||!isoOn)return;
-    const M=isoBuild(g);
-    if(M){isoRetry=0;isoDraw(M)}                                     // só substitui as linhas se houver dados; antes apagava tudo
-    else if(isoRetry<3){isoRetry++;clearTimeout(isoT);isoT=setTimeout(isoUpdate,6000)}   // volta a tentar em 6 s
+    let M=null;if(G){try{M=isoBuildGlobal()}catch(e){console.warn('[Isobars]',e.message)}}
+    if(M){isoRetry=0;isoDraw(M);return}
+    await isoLegacy(gen);
   }finally{isoRun=false;if(isoAgain){isoAgain=false;isoUpdate()}}
 }
 const isoMoved=()=>{clearTimeout(isoT);isoT=setTimeout(isoUpdate,900)};
@@ -4313,10 +4460,11 @@ function isoStart(){
   mkPane('isobars',258);mkPane('isolab',270);
   isoGrp=L.layerGroup().addTo(radarMap);isoOn=true;
   radarMap.on('moveend',isoMoved);
+  clearInterval(isoRef);isoRef=setInterval(isoUpdate,9e5);        // refresca de 15 em 15 min (o pgLoad só vai à rede quando passam 45 min)
   isoUpdate();
 }
 function isoStop(){
-  isoGen++;isoOn=false;clearTimeout(isoT);
+  isoGen++;isoOn=false;clearTimeout(isoT);clearInterval(isoRef);
   if(radarMap){
     try{radarMap.off('moveend',isoMoved)}catch(e){}
     if(isoGrp){try{radarMap.removeLayer(isoGrp)}catch(e){}}
@@ -7854,7 +8002,7 @@ ${k==='uv'?`<div class="m-uvbar" style="margin:14px 0 8px" aria-hidden="true"><i
 <div class="m-pref"><span>${T2('Units','Unidades')}</span><div class="m-seg" role="group"><button type="button" data-u="c" aria-pressed="${unit==='c'}">°C</button><button type="button" data-u="f" aria-pressed="${unit==='f'}">°F</button></div></div>
 <div class="m-pref"><span>${T2('Language','Idioma')}</span><div class="m-seg" role="group"><button type="button" data-l="pt" aria-pressed="${LANG==='pt'}">PT</button><button type="button" data-l="en" aria-pressed="${LANG==='en'}">EN</button></div></div>
 <div class="m-pref"><span>${T2('Ambient sound','Som ambiente')}<small>${T2('Weather sounds that follow the sky','Sons do tempo que acompanham o céu')}</small></span><button type="button" class="m-sw" data-act="snd" role="switch" aria-pressed="${!!sOn}" aria-label="${T2('Ambient sound','Som ambiente')}"></button></div>
-<p class="m-credits">${T2('Weather by','Tempo por')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · ${T2('Places by','Locais por')} <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a> · ${T2('Pollen by','Pólen por')} <a href="https://atmospore.ai/" target="_blank" rel="noopener">Atmospore</a> · ${T2('Waves & climate normals by','Ondas e normais climatológicas por')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (<a href="https://climate.copernicus.eu/climate-reanalysis" target="_blank" rel="noopener">ERA5</a>) · ${T2('Portugal forecasts and warnings by','Previsões e avisos de Portugal pelo')} <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a> · <a href="mailto:${CONTACT_EMAIL}">${T2('Contact','Contacto')}</a> · <button type="button" class="priv-link" data-priv>${T2('Privacy','Privacidade')}</button></p>`}
+<p class="m-credits">${T2('Weather by','Tempo por')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · ${T2('Places by','Locais por')} <a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">BigDataCloud</a> · ${T2('Pollen by','Pólen por')} <a href="https://atmospore.ai/" target="_blank" rel="noopener">Atmospore</a> · ${T2('Pressure & isobars by','Pressão e isóbaras por')} <a href="https://www.nco.ncep.noaa.gov/pmb/products/gfs/" target="_blank" rel="noopener">NOAA/NCEP GFS</a> · ${T2('Waves & climate normals by','Ondas e normais climatológicas por')} <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (<a href="https://climate.copernicus.eu/climate-reanalysis" target="_blank" rel="noopener">ERA5</a>) · ${T2('Portugal forecasts and warnings by','Previsões e avisos de Portugal pelo')} <a href="https://www.ipma.pt/" target="_blank" rel="noopener">IPMA</a> · <a href="mailto:${CONTACT_EMAIL}">${T2('Contact','Contacto')}</a> · <button type="button" class="priv-link" data-priv>${T2('Privacy','Privacidade')}</button></p>`}
  function menuOpen(){$('#mMenuB').innerHTML=menuHTML();openSheet('mMenu')}
  const PROXY={auth:'#authBtn',fav:'#favBtn',hur:'#hbtn',term:'#termBtn',inst:'#inst'};
  function menuClick(e){
