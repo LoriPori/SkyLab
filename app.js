@@ -89,23 +89,23 @@ function cat(code,day){
 }
 const LABEL={0:'Clear sky',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Rain showers',81:'Rain showers',82:'Violent showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorm',96:'Thunderstorm with hail',99:'Thunderstorm with hail'};
 const IC={
-sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
-cloud:'<path d="M17.5 19H9a5 5 0 1 1 4.8-6.4h3.7a3.2 3.2 0 0 1 0 6.4z"/>',
-partly:'<circle cx="8" cy="8" r="2.6"/><path d="M8 2.5v1.2M2.5 8h1.2M4.1 4.1l.9.9M11.9 4.1l-.9.9M18 20H10.5a4.2 4.2 0 1 1 4-5.5H18a2.9 2.9 0 0 1 0 5.5z"/>',
-fog:'<path d="M4 8h16M2 12h20M5 16h14M8 20h8"/>',
-drizzle:'<path d="M17 13H8.5a4.6 4.6 0 1 1 4.4-5.9H17a3 3 0 0 1 0 5.9z"/><path d="M8 17v.01M12 19v.01M16 17v.01M10 21v.01M14 21v.01"/>',
-rain:'<path d="M17 13H8.5a4.6 4.6 0 1 1 4.4-5.9H17a3 3 0 0 1 0 5.9z"/><path d="M8 16l-1 3M12 16l-1 3M16 16l-1 3"/>',
-snow:'<path d="M17 13H8.5a4.6 4.6 0 1 1 4.4-5.9H17a3 3 0 0 1 0 5.9z"/><path d="M8 17v.01M12 19v.01M16 17v.01M10 21v.01M14 21v.01"/>',
-storm:'<path d="M17 13H8.5a4.6 4.6 0 1 1 4.4-5.9H17a3 3 0 0 1 0 5.9z"/><path d="M12.5 13.5L10 17.5h3.5L11 21.5"/>',
-umbrella:'<path d="M12 3v1M3 13a9 9 0 0 1 18 0zM12 13v5a2 2 0 0 1-4 0"/>',
-tshirt:'<path d="M8 3L3 6l2.5 4L8 9v12h8V9l2.5 1L21 6l-5-3a4 4 0 0 1-8 0z"/>',
-layers:'<path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/>',
-jacket:'<path d="M9 3L3 6v5l3 1v9h12v-9l3-1V6l-6-3-3 4zM12 7v14"/>',
-flake:'<path d="M12 2v20M4.2 7l15.6 10M4.2 17L19.8 7"/>',
-wind:'<path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/>',
-drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
-walk:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'};
+sun:'<circle cx="12" cy="12" r="4.2"/><path d="M19.4 12L21.7 12M17.23 17.23L18.86 18.86M12 19.4L12 21.7M6.77 17.23L5.14 18.86M4.6 12L2.3 12M6.77 6.77L5.14 5.14M12 4.6L12 2.3M17.23 6.77L18.86 5.14"/>',
+partly:'<path d="M10.68 6.64A2.9 2.9 0 1 0 7.8 11.16"/><path d="M4.62 11.98L3.42 13.18M3.1 8.3L1.4 8.3M4.62 4.62L3.42 3.42M8.3 3.1L8.3 1.4M11.98 4.62L13.18 3.42"/><path d="M10 20h7.6a3.6 3.6 0 0 0 .5-7.17 5.1 5.1 0 0 0-9.7 1.1A3.1 3.1 0 0 0 10 20z"/>',
+moon:'<path d="M20.4 14.6A8.6 8.6 0 1 1 9.4 3.6a6.8 6.8 0 0 0 11 11z"/>',
+cloud:'<path d="M7.4 18.5h9.4a4.1 4.1 0 0 0 .5-8.17 5.7 5.7 0 0 0-10.9 1.3A3.5 3.5 0 0 0 7.4 18.5z"/>',
+fog:'<path d="M5 8.5h14M3 12.5h18M6 16.5h12M9 20.5h6"/>',
+drizzle:'<path d="M7.2 14.6h9.3a3.7 3.7 0 0 0 .5-7.37 5.2 5.2 0 0 0-9.9 1.2 3.2 3.2 0 0 0 .1 6.17z"/><path d="M8.4 17.6l-.7 1.7M12.2 17.6l-.7 1.7M16 17.6l-.7 1.7M10.3 20.6l-.6 1.4M14.1 20.6l-.6 1.4"/>',
+rain:'<path d="M7.2 14.6h9.3a3.7 3.7 0 0 0 .5-7.37 5.2 5.2 0 0 0-9.9 1.2 3.2 3.2 0 0 0 .1 6.17z"/><path d="M8.2 17.4l-1.4 3.8M12.2 17.4l-1.4 3.8M16.2 17.4l-1.4 3.8"/>',
+snow:'<path d="M7.2 14.6h9.3a3.7 3.7 0 0 0 .5-7.37 5.2 5.2 0 0 0-9.9 1.2 3.2 3.2 0 0 0 .1 6.17z"/><circle cx="8.4" cy="18.2" r=".9" fill="currentColor" stroke="none"/><circle cx="12.2" cy="17.8" r=".9" fill="currentColor" stroke="none"/><circle cx="16" cy="18.2" r=".9" fill="currentColor" stroke="none"/><circle cx="10.3" cy="21" r=".9" fill="currentColor" stroke="none"/><circle cx="14.1" cy="20.8" r=".9" fill="currentColor" stroke="none"/>',
+storm:'<path d="M7.2 14.6h9.3a3.7 3.7 0 0 0 .5-7.37 5.2 5.2 0 0 0-9.9 1.2 3.2 3.2 0 0 0 .1 6.17z"/><path d="M12.9 14.6 10.3 18.4h3.6l-1.8 3.6"/>',
+drop:'<path d="M12 21.5a6.6 6.6 0 0 0 6.6-6.6c0-2-1-3.8-2.9-5.4C14 8 12.7 6 12 3.2 11.3 6 10 8 8.3 9.5 6.4 11.1 5.4 12.9 5.4 14.9A6.6 6.6 0 0 0 12 21.5z"/>',
+flake:'<path d="M12 12L21.6 12M18.4 12L20.63 9.99M18.4 12L20.63 14.01M12 12L16.8 20.31M15.2 17.54L18.05 18.47M15.2 17.54L14.58 20.48M12 12L7.2 20.31M8.8 17.54L9.42 20.48M8.8 17.54L5.95 18.47M12 12L2.4 12M5.6 12L3.37 14.01M5.6 12L3.37 9.99M12 12L7.2 3.69M8.8 6.46L5.95 5.53M8.8 6.46L9.42 3.52M12 12L16.8 3.69M15.2 6.46L14.58 3.52M15.2 6.46L18.05 5.53"/>',
+wind:'<path d="M17.6 7.6a2.6 2.6 0 1 1 1.9 4.4H2.5M9.6 4.6A2.2 2.2 0 1 1 11.2 8.4H2.5M12.6 19.4a2.2 2.2 0 1 0 1.6-3.8H2.5"/>',
+umbrella:'<path d="M3 12.5a9 9 0 0 1 18 0 3 3 0 0 0-3-1.5 3 3 0 0 0-3 1.5 3 3 0 0 0-3-1.5 3 3 0 0 0-3 1.5 3 3 0 0 0-3-1.5 3 3 0 0 0-3 1.5z"/><path d="M12 11v7.2a2 2 0 0 0 4 0M12 3.5V2.5"/>',
+tshirt:'<path d="M8.6 3.2 3.4 5.4a1 1 0 0 0-.55 1.2l.9 3a1 1 0 0 0 1 .7H7V20a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-9.7h2.25a1 1 0 0 0 1-.7l.9-3a1 1 0 0 0-.55-1.2l-5.2-2.2a3.6 3.6 0 0 1-6.8 0z"/>',
+layers:'<path d="M12 3 3 7.7l9 4.7 9-4.7L12 3z"/><path d="m3 12 9 4.7 9-4.7"/><path d="m3 16.3 9 4.7 9-4.7"/>',
+jacket:'<path d="M8.6 3 3.6 5.6 2.6 11.2l3.2 1V21h12.4v-8.8l3.2-1-1-5.6-5-2.6L12 6.8 8.6 3z"/><path d="M12 6.8V21"/>',
+walk:'<circle cx="12" cy="12" r="9"/><path d="m15.6 8.4-1.8 5.4-5.4 1.8 1.8-5.4z"/>'};
 const ic=n=>`<svg class="ic i-${n}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]||''}</svg>`;
 function emoji(code,day=1){
  let n;
@@ -1300,22 +1300,59 @@ function synDebug(p){                                              // só com o 
     'nearest B  '+f(y&&y.lo)
   ].join('\n'))}</pre>`;
 }
+/* ícones dos sinais (cartões de evidência) */
+const SI={
+ map:'<ellipse cx="12" cy="12" rx="9" ry="6.6"/><ellipse cx="12" cy="12" rx="4.4" ry="3"/>',
+ gauge:'<path d="M4.4 17.2a8.4 8.4 0 1 1 15.2 0"/><path d="m12 13.4 3.4-4.2"/><circle cx="12" cy="13.6" r="1.3"/>',
+ trend:'<path d="M3.5 17.5 9 12l3.5 3L20.5 6.5"/><path d="M15.5 6.5h5v5"/>',
+ wind:IC.wind,drop:IC.drop,cloud:IC.cloud,
+ temp:'<path d="M14 14.6V5.5a2 2 0 1 0-4 0v9.1a4 4 0 1 0 4 0z"/>',
+ dot:'<circle cx="12" cy="12" r="3.2"/>'};
+function sigIcon(t){
+  const k=/^[AB]\s/.test(t)?'map'
+   :/ΔP|\/3h|hPa\/|inHg\//.test(t)?'trend'
+   :/^(Pressure|Pressão)/i.test(t)?'gauge'
+   :/(wind|vento|gust|rajada|km\/h|\bkt\b)/i.test(t)?'wind'
+   :/(dew|orvalho|humid)/i.test(t)?'drop'
+   :/^(temp|temperatura)/i.test(t)?'temp'
+   :/(cloud|nuvem|nuvens|sky|céu)/i.test(t)?'cloud':'dot';
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${SI[k]}</svg>`;
+}
+function sigTile(x){                                              // "B 980 hPa · 1390 km NO" → título + subtítulo
+  let a=x,b='';const i=x.indexOf(' · ');
+  if(i>0){a=x.slice(0,i);b=x.slice(i+3)}
+  else{const m=/^(.*?)\s*\((.+)\)$/.exec(x);if(m){a=m[1];b=m[2]}}
+  return `<li class="sgT"><span class="sgIc">${sigIcon(x)}</span><span class="sgTx"><b>${a}</b>${b?`<small>${b}</small>`:''}</span></li>`;
+}
+function skyKey(s){                                               // número-chave no palco: pressão ao nível do mar + tendência a 3 h
+  const p0=Number(pMSL()),dP=Number(s&&s.dP)||0;
+  if(!isFinite(p0))return'';
+  const dir=dP>.05?'up':dP<-.05?'down':'flat',
+   arr={up:'<path d="M12 19V6M6 11.5 12 5.5l6 6"/>',down:'<path d="M12 5v13M6 12.5l6 6 6-6"/>',flat:'<path d="M5 12h14M14 7l5 5-5 5"/>'}[dir];
+  return `<div class="expKey"><span class="k1">${T2('Sea-level pressure','Pressão ao nível do mar')}</span>
+   <span class="k2"><b>${pN(p0)}</b><small>${pU()}</small></span>
+   <span class="k3 ${dir}"><svg viewBox="0 0 24 24" aria-hidden="true">${arr}</svg>${dP>0?'+':''}${pdS(dP)} ${T2('in 3 h','em 3 h')}</span></div>`;
+}
 function skyHero(p){
   const det=(PATTERNS[p.id]||PATTERNS.transition)(p.s);
   const icon=PD_ICONS[p.id]||PD_ICONS[SKY_ALIAS[p.id]]||PD_ICONS.transition;
   const isIb=p.cat==='Iberia',sl=SKY_ALIAS[p.id]?null:synLine(p.s);
-  const sig=sl?[...det.signals,sl.chip]:det.signals;
+  const all=sl?[...det.signals,sl.chip]:det.signals;
+  const sig=all.filter(x=>!/^(Pressure|Pressão)\s+[\d.,]+\s*(hPa|inHg)/i.test(x)&&!/^ΔP\s/.test(x));   // pressão e ΔP já estão no número-chave do palco
   return`<section class="card expHero">
- <div class="expTxt">
- <span class="expCat${isIb?' ib':''}">${tr(p.cat)}</span>
- <h2 class="expH">${det.title}</h2>
- <p class="expP">${det.body}</p>
- ${sl?`<p class="expSynP">${sl.text}</p>`:''}
- <div class="expSig">${sig.map(x=>`<span class="sg"><i></i>${x}</span>`).join('')}</div>
- ${typeof progOn==='function'&&progOn()?synDebug(p):''}
+ <div class="expStage">
+  <span class="expCat${isIb?' ib':''}">${tr(p.cat)}</span>
+  <div class="expDiagram">${icon}</div>
+  ${skyKey(p.s)}
  </div>
- <div class="expDiagram">${icon}</div>
- </section>`;
+ <div class="expBody">
+  <h2 class="expH">${det.title}</h2>
+  <p class="expP">${det.body}</p>
+  ${sl?`<p class="expSynP">${sl.text}</p>`:''}
+  ${sig.length?`<ul class="expSig" aria-label="${T2('What the data shows','O que os dados mostram')}">${sig.map(sigTile).join('')}</ul>`:''}
+  ${typeof progOn==='function'&&progOn()?synDebug(p):''}
+ </div>
+</section>`;
 }
 function skyRepaint(){
   const el=$('#pane .expHero');if(!el||tab!=='sky'||!data)return;
@@ -1324,36 +1361,91 @@ function skyRepaint(){
 }
 
 /* ============ Céu Explicado: diagramas + sparkline ============ */
-const SVG_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
-const SVG_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
-const SVG_PULSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>';
+const SVG_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>';
+const SVG_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+const SVG_PULSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 6 4-13 2.5 7H21"/></svg>';
 
-const PD_ICONS={
-'front-cold':`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#2f7ee0" opacity=".10"/><path d="M14 72 Q 60 40 106 72" fill="none" stroke="#2f7ee0" stroke-width="5" stroke-linecap="round"/><polygon points="34,70 42,70 38,58" fill="#2f7ee0"/><polygon points="58,60 66,60 62,48" fill="#2f7ee0"/><polygon points="82,60 90,60 86,48" fill="#2f7ee0"/></svg>`,
-'front-warm':`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#e5652e" opacity=".10"/><path d="M14 72 Q 60 40 106 72" fill="none" stroke="#e5652e" stroke-width="5" stroke-linecap="round"/><circle cx="38" cy="68" r="7" fill="#e5652e"/><circle cx="62" cy="58" r="7" fill="#e5652e"/><circle cx="86" cy="58" r="7" fill="#e5652e"/></svg>`,
-'post-front':`<svg viewBox="0 0 120 120"><circle cx="66" cy="46" r="20" fill="#f2a51a"/><g stroke="#f2a51a" stroke-width="4" stroke-linecap="round"><line x1="66" y1="12" x2="66" y2="20"/><line x1="66" y1="72" x2="66" y2="80"/><line x1="32" y1="46" x2="40" y2="46"/><line x1="92" y1="46" x2="100" y2="46"/><line x1="42" y1="22" x2="48" y2="28"/><line x1="84" y1="22" x2="78" y2="28"/></g><path d="M12 92 q10 -14 26 -8 q8 -10 22 -4" fill="none" stroke="#9fb3c4" stroke-width="6" stroke-linecap="round" opacity=".5"/></svg>`,
-'high':`<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="22" fill="#f2a51a"/><g stroke="#f2a51a" stroke-width="4" stroke-linecap="round"><line x1="60" y1="18" x2="60" y2="28"/><line x1="60" y1="92" x2="60" y2="102"/><line x1="18" y1="60" x2="28" y2="60"/><line x1="92" y1="60" x2="102" y2="60"/><line x1="30" y1="30" x2="37" y2="37"/><line x1="83" y1="83" x2="90" y2="90"/><line x1="90" y1="30" x2="83" y2="37"/><line x1="37" y1="83" x2="30" y2="90"/></g><circle cx="60" cy="60" r="44" fill="none" stroke="#f2a51a" stroke-width="2" stroke-dasharray="3 7" opacity=".55"/></svg>`,
-'tropical':`<svg viewBox="0 0 120 120"><circle cx="46" cy="44" r="18" fill="#f2a51a"/><path d="M16 86 q7 -8 14 0 q7 -8 14 0 q7 -8 14 0" fill="none" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><path d="M78 92 c0 -10 14 -14 14 -24 0 10 14 14 14 24 a14 14 0 0 1 -28 0z" fill="#3b8fe0" opacity=".85"/></svg>`,
-'polar':`<svg viewBox="0 0 120 120"><g stroke="#8fd0ef" stroke-width="5" stroke-linecap="round"><line x1="60" y1="20" x2="60" y2="100"/><line x1="27" y1="37" x2="93" y2="83"/><line x1="93" y1="37" x2="27" y2="83"/></g><polygon points="60,6 50,20 70,20" fill="#5aa7ff"/></svg>`,
-'storm-conv':`<svg viewBox="0 0 120 120"><path d="M30 64 h54 a16 16 0 0 0 0 -32 24 24 0 0 0 -46 -6 18 18 0 0 0 -8 38z" fill="#6f8aa8"/><polyline points="58,70 46,88 60,88 50,106" fill="none" stroke="#f0cf45" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><line x1="80" y1="74" x2="74" y2="90" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="94" y1="74" x2="88" y2="90" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
-'fog-rad':`<svg viewBox="0 0 120 120"><circle cx="60" cy="46" r="16" fill="#cdd9e3"/><g stroke="#8aa0b5" stroke-width="5" stroke-linecap="round" opacity=".8"><line x1="18" y1="68" x2="102" y2="68"/><line x1="26" y1="82" x2="94" y2="82"/><line x1="34" y1="96" x2="86" y2="96"/></g></svg>`,
-'showers':`<svg viewBox="0 0 120 120"><circle cx="38" cy="40" r="15" fill="#f2a51a"/><path d="M46 68 h38 a14 14 0 0 0 0 -28 20 20 0 0 0 -38 -4 15 15 0 0 0 0 32z" fill="#6f8aa8"/><line x1="50" y1="80" x2="45" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="68" y1="80" x2="63" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="86" y1="80" x2="81" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
-'transition':`<svg viewBox="0 0 120 120"><circle cx="44" cy="44" r="17" fill="#f2a51a"/><path d="M52 72 h34 a13 13 0 0 0 0 -26 18 18 0 0 0 -35 -3 14 14 0 0 0 1 29z" fill="#6f8aa8"/></svg>`,
-'ib-nortada':`<svg viewBox="0 0 120 120"><path d="M14 10 L34 10 L26 110 L14 110 Z" fill="#cfe3ee"/><g stroke="#1d5f8c" stroke-width="6" stroke-linecap="round"><line x1="72" y1="14" x2="72" y2="34"/><line x1="72" y1="46" x2="72" y2="66"/><line x1="72" y1="78" x2="72" y2="98"/><polyline points="62,28 72,38 82,28"/><polyline points="62,60 72,70 82,60"/><polyline points="62,92 72,102 82,92"/></g><path d="M40 108 q8 -6 16 0 q8 -6 16 0" fill="none" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
-'ib-levante':`<svg viewBox="0 0 120 120"><polygon points="4,36 40,36 30,84 4,84" fill="#d8c7a8"/><polygon points="116,36 80,36 90,84 116,84" fill="#d8c7a8"/><line x1="44" y1="60" x2="76" y2="60" stroke="#b4552e" stroke-width="6" stroke-linecap="round"/><polyline points="64,48 78,60 64,72" fill="none" stroke="#b4552e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-'ib-suao':`<svg viewBox="0 0 120 120"><circle cx="34" cy="32" r="16" fill="#e0892f"/><rect x="28" y="60" width="12" height="30" rx="6" fill="#e0352b"/><circle cx="34" cy="92" r="9" fill="#e0352b"/><line x1="60" y1="66" x2="98" y2="66" stroke="#b4552e" stroke-width="5" stroke-linecap="round"/><polyline points="86,54 100,66 86,78" fill="none" stroke="#b4552e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-'ib-calima':`<svg viewBox="0 0 120 120"><circle cx="60" cy="44" r="20" fill="#e0a046"/><g stroke="#c9873a" stroke-width="6" stroke-linecap="round" opacity=".75"><line x1="14" y1="74" x2="106" y2="74"/><line x1="20" y1="88" x2="100" y2="88"/><line x1="28" y1="102" x2="92" y2="102"/></g></svg>`,
-'ib-gotafria':`<svg viewBox="0 0 120 120"><circle cx="60" cy="52" r="30" fill="none" stroke="#5d6391" stroke-width="3" stroke-dasharray="4 6" opacity=".55"/><path d="M44 64 h32 a14 14 0 0 0 0 -28 20 20 0 0 0 -38 -2 15 15 0 0 0 6 30z" fill="#5d6391" opacity=".8"/><line x1="46" y1="78" x2="40" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="62" y1="80" x2="56" y2="94" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/><line x1="78" y1="78" x2="72" y2="92" stroke="#3b8fe0" stroke-width="4" stroke-linecap="round"/></svg>`,
- 'bomb-cyclone':`<svg viewBox="0 0 160 160" class="pdIcon"><g class="pdSpin"><path d="M80 20a60 60 0 1 0 42 102" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><path d="M80 20l10 14-18 2z" fill="currentColor"/></g></svg>`,
- 'derecho':`<svg viewBox="0 0 160 160" class="pdIcon"><line x1="20" y1="60" x2="130" y2="60" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="pdDash"/><line x1="20" y1="90" x2="110" y2="90" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="pdDash"/><path d="M120 50l20 10-20 10" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></svg>`,
- 'blizzard':`<svg viewBox="0 0 160 160" class="pdIcon"><g class="pdSpin" style="transform-origin:80px 80px"><path d="M80 40v80M45 60l70 40M115 60l-70 40" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></g><line x1="20" y1="120" x2="60" y2="120" stroke="currentColor" stroke-width="5" class="pdDash"/></svg>`,
- 'thundersnow':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M85 30 60 85h20l-15 45 45-60H90z" fill="currentColor" class="pdPulse"/><circle cx="40" cy="120" r="4" fill="currentColor"/><circle cx="55" cy="130" r="4" fill="currentColor"/></svg>`,
- 'heatwave':`<svg viewBox="0 0 160 160" class="pdIcon"><circle cx="80" cy="70" r="26" fill="currentColor" class="pdPulse"/><path d="M30 120q20-10 40 0t40 0t40 0" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`,
- 'monsoon':`<svg viewBox="0 0 160 160" class="pdIcon"><ellipse cx="80" cy="55" rx="45" ry="25" fill="currentColor" opacity=".85"/><line x1="55" y1="90" x2="45" y2="125" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/><line x1="80" y1="90" x2="70" y2="130" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/><line x1="105" y1="90" x2="95" y2="125" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`,
- 'atm-river':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M15 60q30-25 60 0t70 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" class="pdDash"/><path d="M15 95q30-25 60 0t70 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" opacity=".6" class="pdDash"/></svg>`,
- 'dust-storm':`<svg viewBox="0 0 160 160" class="pdIcon"><g class="pdSpin" style="transform-origin:80px 80px"><circle cx="60" cy="70" r="4" fill="currentColor"/><circle cx="90" cy="60" r="3" fill="currentColor"/><circle cx="100" cy="90" r="4" fill="currentColor"/><circle cx="70" cy="100" r="3" fill="currentColor"/></g><path d="M20 120h120" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`,
- 'foehn':`<svg viewBox="0 0 160 160" class="pdIcon"><path d="M20 110l40-60 25 35 20-25 35 50z" fill="currentColor" opacity=".7"/><line x1="90" y1="120" x2="90" y2="140" stroke="currentColor" stroke-width="5" stroke-linecap="round" class="pdDash"/></svg>`
-};
+/* ============ Diagramas do Céu Explicado · biblioteca desenhada à mão (viewBox 120×120) ============
+   Mesmo vocabulário em todos: sol com 12 raios iguais e halo, nuvem cúmulo com gradiente, gota verdadeira (arredondada em baixo,
+   ponta curva em cima), raio com cantos redondos, frentes com os símbolos meteorológicos corretos. Cada SVG leva os seus próprios
+   gradientes com um sufixo único, por isso vários podem coexistir na página. */
+let _pdU=0;
+const PDK=(()=>{
+ const f=v=>+v.toFixed(2),P=(cx,cy,r,a)=>[cx+r*Math.cos(a*Math.PI/180),cy+r*Math.sin(a*Math.PI/180)];
+ const defs=u=>`<defs>
+<linearGradient id="s${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a0"/><stop offset="1" stop-color="#f6a623"/></linearGradient>
+<radialGradient id="h${u}"><stop offset="0" stop-color="#ffd66e" stop-opacity=".65"/><stop offset="1" stop-color="#ffd66e" stop-opacity="0"/></radialGradient>
+<linearGradient id="c${u}" gradientUnits="userSpaceOnUse" x1="0" y1="-30" x2="0" y2="24"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9d8e8"/></linearGradient>
+<linearGradient id="k${u}" gradientUnits="userSpaceOnUse" x1="0" y1="-30" x2="0" y2="24"><stop offset="0" stop-color="#a7b9d0"/><stop offset="1" stop-color="#5f7694"/></linearGradient>
+<linearGradient id="d${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd3ff"/><stop offset="1" stop-color="#2f78dc"/></linearGradient>
+<linearGradient id="b${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe777"/><stop offset="1" stop-color="#f59a00"/></linearGradient>
+<linearGradient id="i${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6f6ff"/><stop offset="1" stop-color="#7cc3f0"/></linearGradient>
+<linearGradient id="w${u}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4aa3f0" stop-opacity="0"/><stop offset=".5" stop-color="#3a8be6"/><stop offset="1" stop-color="#2f6fd6"/></linearGradient>
+<linearGradient id="e${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8c996"/><stop offset="1" stop-color="#c9a169"/></linearGradient>
+</defs>`;
+ const svg=(b,cls='')=>{const u=++_pdU;return `<svg viewBox="0 0 120 120" class="pdArt${cls?' '+cls:''}" aria-hidden="true">${defs(u)}${b(u)}</svg>`};
+ /* sol: halo + 12 raios (longos e curtos alternados) + disco */
+ const sun=(u,x,y,r,spin)=>{let g='';for(let k=0;k<12;k++){const a=k*30,[x0,y0]=P(x,y,r*1.42,a),[x1,y1]=P(x,y,r*(k%2?1.78:2.02),a);g+=`M${f(x0)} ${f(y0)}L${f(x1)} ${f(y1)}`}
+  return `<circle cx="${x}" cy="${y}" r="${f(r*2.6)}" fill="url(#h${u})"/><path d="${g}" stroke="#f7b733" stroke-width="${f(r*.26)}" stroke-linecap="round" fill="none"${spin?` class="pdRays" style="transform-origin:${x}px ${y}px"`:''}/><circle cx="${x}" cy="${y}" r="${r}" fill="url(#s${u})"/><circle cx="${f(x-r*.3)}" cy="${f(y-r*.3)}" r="${f(r*.34)}" fill="#fff" opacity=".35"/>`};
+ /* nuvem cúmulo (largura ≈ 70 × s) */
+ const cloud=(u,x,y,s,dark)=>`<g transform="translate(${x} ${y}) scale(${s})" fill="url(#${dark?'k':'c'}${u})"><rect x="-34" y="0" width="68" height="22" rx="11"/><circle cx="-15" cy="-3" r="15"/><circle cx="6" cy="-9" r="19"/><circle cx="24" cy="1" r="13"/></g>`;
+ /* gota verdadeira: topo curvo, base redonda */
+ const drop=(u,x,y,s,o=1)=>`<g transform="translate(${x} ${y}) scale(${s})" opacity="${o}"><path d="M0-11C2.6-6.4 7.4-2.6 7.4 2.6A7.4 7.4 0 0 1-7.4 2.6C-7.4-2.6-2.6-6.4 0-11z" fill="url(#d${u})"/><ellipse cx="-2.6" cy="3.2" rx="1.5" ry="2.6" fill="#fff" opacity=".45" transform="rotate(14 -2.6 3.2)"/></g>`;
+ const bolt=(u,x,y,s)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M3-13-8 3h6l-3 12L10-4H4z" fill="url(#b${u})" stroke="#f59a00" stroke-width="1.6" stroke-linejoin="round"/>`;
+ /* floco de neve: 6 braços com ramificações */
+ const flake=(x,y,r,col='url(#i0)',w=3)=>{let g='';for(let k=0;k<6;k++){const a=k*60,[ex,ey]=P(0,0,r,a),[bx,by]=P(0,0,r*.62,a);g+=`M0 0L${f(ex)} ${f(ey)}`;for(const d of[-40,40]){const[qx,qy]=P(bx,by,r*.3,a+d);g+=`M${f(bx)} ${f(by)}L${f(qx)} ${f(qy)}`}}
+  return `<path transform="translate(${x} ${y})" d="${g}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" fill="none"/>`};
+ /* ponto e tangente de uma Bézier quadrática (para colocar símbolos de frente ao longo da linha) */
+ const qb=(p0,p1,p2,t)=>{const m=1-t,x=m*m*p0[0]+2*m*t*p1[0]+t*t*p2[0],y=m*m*p0[1]+2*m*t*p1[1]+t*t*p2[1],dx=2*m*(p1[0]-p0[0])+2*t*(p2[0]-p1[0]),dy=2*m*(p1[1]-p0[1])+2*t*(p2[1]-p1[1]),l=Math.hypot(dx,dy)||1;return[x,y,dx/l,dy/l]};
+ const front=(u,kind)=>{const A=[10,92],B=[60,52],C=[110,84],cold=kind==='cold',c1=cold?'#5aa9f5':'#ff9a5a',c2=cold?'#2c6fd8':'#e2491f';let m='';
+  for(const t of[.16,.42,.68,.92]){const[x,y,tx,ty]=qb(A,B,C,t),nx=ty,ny=-tx;   // normal para cima
+   if(cold)m+=`<path d="M${f(x-tx*10)} ${f(y-ty*10)}L${f(x+tx*10)} ${f(y+ty*10)}L${f(x+nx*18)} ${f(y+ny*18)}z" fill="url(#f${u})" stroke="url(#f${u})" stroke-width="2" stroke-linejoin="round"/>`;
+   else m+=`<path d="M${f(x-tx*10)} ${f(y-ty*10)}A10 10 0 0 1 ${f(x+tx*10)} ${f(y+ty*10)}z" transform="rotate(0)" fill="url(#f${u})"/>`.replace(/A10 10 0 0 1/,'A10 10 0 0 0');}
+  return `<defs><linearGradient id="f${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
+<circle cx="60" cy="62" r="50" fill="${c1}" opacity=".12"/><path d="M${A}Q${B} ${C}" fill="none" stroke="url(#f${u})" stroke-width="5.5" stroke-linecap="round"/>${m}
+<path d="M24 100h72" stroke="${c2}" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9" opacity=".5"/>`};
+ const wave=(x,y,w,col,sw=4,o=1)=>{const n=Math.round(w/14);let d=`M${x} ${y}`;for(let i=0;i<n;i++)d+=`q3.5-5 7 0t7 0`;return `<path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" opacity="${o}"/>`};
+ const arrowL=(x,y,l,col,sw=5,cls='')=>`<path d="M${x} ${y}h${-l}M${x-l+9} ${y-8}l-9 8 9 8" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${cls?` class="${cls}"`:''}/>`;
+ const arrowR=(x,y,l,col,sw=5,cls='')=>`<path d="M${x} ${y}h${l}M${x+l-9} ${y-8}l9 8-9 8" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${cls?` class="${cls}"`:''}/>`;
+ const spiral=(cx,cy,r0,r1,turns,a0)=>{let d='';const n=Math.round(turns*28);for(let i=0;i<=n;i++){const t=i/n,[x,y]=P(cx,cy,r0+(r1-r0)*t,a0+t*turns*360);d+=(i?'L':'M')+f(x)+' '+f(y)}return d};
+ return{svg,sun,cloud,drop,bolt,flake,front,wave,arrowL,arrowR,spiral,P,f};
+})();
+const PD_ICONS=(()=>{const{svg,sun,cloud,drop,bolt,flake,front,wave,arrowL,arrowR,spiral,P,f}=PDK;return{
+ 'front-cold':svg(u=>front(u,'cold')),
+ 'front-warm':svg(u=>front(u,'warm')),
+ 'post-front':svg(u=>sun(u,70,44,15,1)+`<g transform="translate(40 88)" opacity=".92">${cloud(u,0,0,.62)}</g>`+wave(10,106,44,'#7db8e8',3.5,.7)),
+ 'high':svg(u=>sun(u,60,56,20,1)+`<circle cx="60" cy="56" r="52" fill="none" stroke="#f6b13a" stroke-width="1.8" stroke-dasharray="2 7" stroke-linecap="round" opacity=".55"/>`+
+   [[22,104],[60,110],[98,104]].map(([x,y])=>`<path d="M${x-6} ${y-8}l6 7 6-7" fill="none" stroke="#7bb4e8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>`).join('')),
+ 'tropical':svg(u=>sun(u,44,40,15,1)+wave(10,92,56,'#3f95e8',4)+wave(10,104,56,'#79b8f0',3.5,.7)+drop(u,90,62,1.6)+drop(u,104,84,1.1,.85)),
+ 'polar':svg(u=>`<circle cx="60" cy="60" r="50" fill="#8fd0ef" opacity=".16"/>`+flake(60,60,40,`url(#i${_pdU})`,4.4)+`<circle cx="60" cy="60" r="5" fill="#fff" stroke="#8fd0ef" stroke-width="2.4"/>`),
+ 'storm-conv':svg(u=>cloud(u,60,40,1.05,1)+bolt(u,56,90,1.5)+drop(u,86,86,.95)+drop(u,31,92,.8,.9)),
+ 'fog-rad':svg(u=>`<circle cx="60" cy="48" r="22" fill="url(#s${u})" opacity=".9"/><circle cx="60" cy="48" r="38" fill="url(#h${u})"/>`+
+   [[16,68,88],[26,82,68],[12,96,96],[30,110,60]].map(([x,y,w],i)=>`<rect x="${x}" y="${y-5}" width="${w}" height="10" rx="5" fill="#a9bccf" opacity="${[.85,.7,.55,.4][i]}"/>`).join('')),
+ 'showers':svg(u=>sun(u,36,36,12,1)+cloud(u,68,52,.95)+drop(u,48,92,1)+drop(u,70,98,1)+drop(u,92,92,1)),
+ 'transition':svg(u=>sun(u,40,40,15,1)+cloud(u,68,70,1.02)),
+ 'ib-nortada':svg(u=>`<path d="M6 12h26c4 14-4 22 2 36s-6 26 0 40-2 14-2 22H6z" fill="url(#e${u})"/><path d="M32 12c4 14-4 22 2 36s-6 26 0 40" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".6"/>`+
+   [[66,22],[84,46],[66,70]].map(([x,y])=>`<path d="M${x} ${y}v18M${x-8} ${y+11}l8 9 8-9" fill="none" stroke="#2a73c9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`).join('')+wave(46,108,60,'#4aa0ee',3.5,.8)),
+ 'ib-levante':svg(u=>`<path d="M4 8h112v26c-18 6-30-2-50 2s-40 4-62-2z" fill="url(#e${u})"/><path d="M4 90c24-6 40 2 60-2s36-6 52 0v26H4z" fill="url(#e${u})"/>`+
+   arrowL(106,52,64,'#c4602c',5.5)+arrowL(92,68,44,'#e08a4c',4.5)+wave(10,104,30,'#4aa0ee',3,.0)),
+ 'ib-suao':svg(u=>sun(u,36,34,13,1)+`<rect x="68" y="14" width="14" height="52" rx="7" fill="#fff" stroke="#d2dbe5" stroke-width="2"/><rect x="73" y="34" width="4" height="34" rx="2" fill="#e5402d"/><circle cx="75" cy="76" r="12" fill="#e5402d"/><circle cx="71.5" cy="72.5" r="3.4" fill="#fff" opacity=".4"/>`+
+   [[26,32],[38,32]].map(([x,y])=>'').join('')+arrowR(14,96,52,'#c4602c',5)+wave(14,108,40,'#f0a96b',3.5,.8)),
+ 'ib-calima':svg(u=>sun(u,60,40,17,0)+[[14,74,92],[22,88,76],[12,102,96]].map(([x,y,w],i)=>`<rect x="${x}" y="${y-5}" width="${w}" height="10" rx="5" fill="#d8a352" opacity="${[.8,.65,.5][i]}"/>`).join('')+
+   [[28,64],[92,70],[104,58],[16,84]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.4" fill="#c58f3e" opacity=".8"/>`).join('')),
+ 'ib-gotafria':svg(u=>`<circle cx="60" cy="56" r="44" fill="none" stroke="#6a72b8" stroke-width="2.4" stroke-dasharray="3 7" stroke-linecap="round" opacity=".6" class="pdSpin" style="transform-origin:60px 56px"/>`+cloud(u,60,50,.9,1)+drop(u,44,88,1)+drop(u,62,96,1)+drop(u,80,88,1)),
+ 'bomb-cyclone':svg(u=>`<circle cx="60" cy="60" r="52" fill="#5b8fe0" opacity=".12"/><g class="pdSpin" style="transform-origin:60px 60px"><path d="${PDK.spiral(60,60,5,46,1.7,-20)}" fill="none" stroke="url(#w${u})" stroke-width="6" stroke-linecap="round"/><path d="${PDK.spiral(60,60,5,46,1.7,160)}" fill="none" stroke="#7db8f0" stroke-width="4" stroke-linecap="round" opacity=".7"/></g><circle cx="60" cy="60" r="7" fill="#2f6fd6"/><circle cx="60" cy="60" r="3" fill="#fff" opacity=".7"/>`),
+ 'derecho':svg(u=>`<path d="M12 96Q60 6 108 96" fill="none" stroke="#cfdcea" stroke-width="16" stroke-linecap="round" opacity=".6"/>`+
+   [[20,40,86],[16,60,92],[20,80,86]].map(([x,y,l],i)=>arrowR(x,y,l,['#5e86b8','#2f6fd6','#5e86b8'][i],5.5,'pdDash')).join('')),
+ 'blizzard':svg(u=>flake(46,52,26,`url(#i${_pdU})`,4)+flake(86,84,14,`url(#i${_pdU})`,3)+flake(92,32,9,`url(#i${_pdU})`,2.6)+
+   [[10,92,50],[30,106,40]].map(([x,y,l])=>`<path d="M${x} ${y}h${l}" stroke="#9cc4e6" stroke-width="4.5" stroke-linecap="round" opacity=".8"/>`).join('')),
+ 'thundersnow':svg(u=>cloud(u,60,38,1.02,1)+bolt(u,60,88,1.45)+flake(30,94,9,`url(#i${_pdU})`,2.6)+flake(92,98,9,`url(#i${_pdU})`,2.6)),
+ 'heatwave':svg(u=>sun(u,60,48,19,1)+[96,106].map((y,i)=>`<path d="M16 ${y}q11-9 22 0t22 0t22 0t22 0" fill="none" stroke="${['#f08a4b','#f7b266'][i]}" stroke-width="4.2" stroke-linecap="round" class="pdDash"/>`).join('')),
+ 'monsoon':svg(u=>cloud(u,60,32,1.1,1)+[[34,74],[52,84],[70,74],[88,84],[43,100],[61,106],[79,100]].map(([x,y])=>drop(u,x,y,.8)).join('')),
+ 'atm-river':svg(u=>[[40,'#2f6fd6',7,1],[62,'#5aa3ee',6,.8],[84,'#8ec2f4',5,.6]].map(([y,c,w,o])=>`<path d="M8 ${y+8}q22-30 44-8t60-10" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" opacity="${o}" class="pdDash"/>`).join('')+drop(u,100,96,1.2)+drop(u,84,104,.8,.8)),
+ 'dust-storm':svg(u=>`<g class="pdSpin" style="transform-origin:60px 56px"><path d="${PDK.spiral(60,56,6,40,1.5,0)}" fill="none" stroke="#d9a65c" stroke-width="5" stroke-linecap="round" opacity=".85"/></g>`+
+   [[34,34],[88,40],[96,72],[26,76],[60,24]].map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${[3,2.4,3.2,2.4,2][i]}" fill="#c58f3e"/>`).join('')+`<rect x="14" y="98" width="92" height="9" rx="4.5" fill="#d8a352" opacity=".7"/>`),
+ 'foehn':svg(u=>`<path d="M4 98 40 36l16 24 12-16 48 54z" fill="url(#e${u})"/><path d="M40 36l-9 14 9-4 7 8 9-4-8-10z" fill="#fff" opacity=".95"/>`+
+   `<path d="M10 44q40-16 62-4" fill="none" stroke="#5aa3ee" stroke-width="4.5" stroke-linecap="round"/><path d="M72 44q18 2 30 22" fill="none" stroke="#f08a4b" stroke-width="4.5" stroke-linecap="round" class="pdDash"/><path d="M96 58l7 11-12 2" fill="none" stroke="#f08a4b" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`+sun(u,100,20,7,1))
+}})();
 
 function pressureSeries(){
  if(!data||!data.hourly)return null;
@@ -1379,25 +1471,36 @@ function pressureSparkSVG(){
  if(!hrs || hrs.length<2){
   return `<div class="sp-empty">${T2('Not enough data yet','Dados insuficientes por agora')}</div>`;
  }
- const W=260,H=60,pad=6;
+ const W=260,H=84,padX=8,padT=10,padB=10;
  const vals=hrs.map(p=>p.v);
  const min=Math.min(...vals), max=Math.max(...vals);
- const span=(max-min)||1;
+ const span=Math.max(max-min,1.5), mid=(max+min)/2, lo=mid-span/2*1.15;     // dá folga em cima e em baixo; tendências planas não ficam "esticadas"
  const pts=hrs.map((p,i)=>({
-  x:pad+i*(W-2*pad)/(hrs.length-1),
-  y:H-pad-((p.v-min)/span)*(H-2*pad),
+  x:padX+i*(W-2*padX)/(hrs.length-1),
+  y:H-padB-((p.v-lo)/(span*1.15))*(H-padT-padB),
   t:p.t, v:p.v, now:p.now
  }));
- const line=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+ let line=`M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;                 // curva suave (pontos médios)
+ for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;line+=` Q${a.x.toFixed(1)},${a.y.toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)}`}
+ const L=pts[pts.length-1];line+=` T${L.x.toFixed(1)},${L.y.toFixed(1)}`;
+ const area=`${line} L${L.x.toFixed(1)},${H-padB+2} L${pts[0].x.toFixed(1)},${H-padB+2}Z`;
+ const nowP=pts.find(p=>p.now);
+ const grid=[.25,.5,.75].map(k=>`<line x1="${padX}" x2="${W-padX}" y1="${(padT+(H-padT-padB)*k).toFixed(1)}" y2="${(padT+(H-padT-padB)*k).toFixed(1)}" class="spGrid"/>`).join('');
  const circles=pts.map(p=>
-  `<circle class="sp-pt${p.now?' sp-now':''}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.now?4:7}"
+  `<circle class="sp-pt${p.now?' sp-now':''}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.now?4.2:9}"
     data-t="${p.t}" data-v="${p.v.toFixed(1)}"></circle>`
  ).join('');
  return `<div class="sparkWrap">
-  <svg viewBox="0 0 ${W} ${H}" class="sparkline" preserveAspectRatio="none">
-   <path d="${line}" class="sparkfill" fill="none"/>
+  <div class="spRange"><span>${T2('low','mín.')} <b>${pf(min)}</b></span><span>${T2('high','máx.')} <b>${pf(max)}</b></span></div>
+  <svg viewBox="0 0 ${W} ${H}" class="sparkline" role="img" aria-label="${T2('Pressure over about 12 hours','Pressão ao longo de cerca de 12 horas')}">
+   <defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--acc)" stop-opacity=".34"/><stop offset="1" style="stop-color:var(--acc)" stop-opacity="0"/></linearGradient></defs>
+   ${grid}
+   <path d="${area}" class="spArea"/>
+   <path d="${line}" class="spLine"/>
+   ${nowP?`<line x1="${nowP.x.toFixed(1)}" x2="${nowP.x.toFixed(1)}" y1="${padT-4}" y2="${H-padB+2}" class="spNowLine"/>`:''}
    ${circles}
   </svg>
+  <div class="spAx"><span>${hrs[0].t}</span><span>${T2('now','agora')}</span><span>${hrs[hrs.length-1].t}</span></div>
   <div class="sp-tooltip" id="spTip"></div>
  </div>`;
 }
@@ -1527,9 +1630,10 @@ function skyPane(){
  const p=patternDetect();
  return`<div class="pane exp">
  ${skyHero(p)}
- <div class="expGrid three">
- <section class="card expCard"><h4>${SVG_CLOCK}${tr('Next 6 hours')}</h4><p>${next6hText()}</p>
- <div class="expSpark"><h5>${T2('Pressure trend','Tendência da pressão')}</h5>${pressureSparkSVG()}</div></section>
+ <section class="card expCard expNext"><h4>${SVG_CLOCK}${tr('Next 6 hours')}</h4>
+  <div class="expNextBody"><p>${next6hText()}</p>
+  <div class="expSpark"><h5>${T2('Pressure trend','Tendência da pressão')}</h5>${pressureSparkSVG()}</div></div></section>
+ <div class="expGrid duo">
  <section class="card expCard"><h4>${SVG_CAL}${tr('This week in context')}</h4><p>${contextWeekText()}</p></section>
  <section class="card expCard"><h4>${SVG_PULSE}${T2('Signals right now','Sinais neste momento')}</h4><div class="expMetrics">${expMetricsHTML(p.s)}</div></section>
  </div>
