@@ -1560,8 +1560,8 @@ html.is-mobile .tt .tl{grid-area:lab;font-size:14px;font-weight:650;margin:0 0 2
 html.is-mobile .tt .tl::before{content:"";width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.25)}
 html.is-mobile .tt input{grid-area:inp;height:44px!important;padding:16px 0;margin:0;background-clip:content-box!important;-webkit-background-clip:content-box!important;border-radius:0;touch-action:pan-y}
 html.is-mobile .tt input::-webkit-slider-runnable-track{height:12px;border-radius:6px;background:transparent}
-html.is-mobile .tt input::-webkit-slider-thumb{width:44px;height:44px;margin-top:-16px;border-radius:50%;border:10px solid transparent;background:#fff;background-clip:padding-box;box-shadow:0 0 0 1px rgba(5,25,55,.12),0 4px 14px rgba(5,25,55,.45)}
-html.is-mobile .tt input::-moz-range-thumb{width:24px;height:24px;border:10px solid transparent;background:#fff;background-clip:padding-box;border-radius:50%;box-shadow:0 4px 14px rgba(5,25,55,.45)}
+html.is-mobile .tt input::-webkit-slider-thumb{width:28px;height:28px;margin-top:-8px;border-radius:50%;border:0;background:#fff;box-shadow:0 0 0 1px rgba(5,25,55,.12),0 4px 14px rgba(5,25,55,.45)}
+html.is-mobile .tt input::-moz-range-thumb{width:28px;height:28px;border:0;background:#fff;border-radius:50%;box-shadow:0 4px 14px rgba(5,25,55,.45)}
 html.is-mobile .tt input:hover::-webkit-slider-thumb,html.is-mobile .tt input:active::-webkit-slider-thumb{transform:scale(1.08)}
 .m-ticks{grid-area:tick;display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;color:rgba(255,255,255,.92);padding:0 2px;font-variant-numeric:tabular-nums}
 .m-ref{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:36px;margin-left:auto;padding:0 12px;border-radius:18px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;font-size:13px;font-weight:650;text-shadow:none}
@@ -2035,3 +2035,7 @@ html.is-mobile.wpop-open .m-nav,html.is-mobile.wpop-open .m-nav.show{display:non
 /* Próximas 24 h (PC): barra de deslocamento escondida, como no resto da app */
 .hours{scrollbar-width:none;-ms-overflow-style:none}
 .hours::-webkit-scrollbar{display:none}
+
+/* Deslizante das 24 h (telemóvel): a bolinha tinha 10 px de margem transparente de cada lado, por isso nunca chegava ao início/fim da barra.
+   Agora é a própria bolinha (28 px) que percorre a barra toda; a altura de 44 px do campo continua a dar área de toque. */
+html.is-mobile .tt .tl{padding:4px 0 4px 4px;margin:-4px 0 -2px}   /* o anel do pontinho ficava cortado pelo overflow:hidden */
