@@ -1399,11 +1399,11 @@ html.is-mobile .sugg .hd{padding:16px 18px;font-size:14px;color:var(--m-mut)}
 
 /* ---------- navegação inferior (zona do polegar) ---------- */
 html.is-mobile .m-nav{display:none}
-html.is-mobile .m-nav.show{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;z-index:40;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));height:64px;padding:0;
+html.is-mobile .m-nav.show{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;z-index:40;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));height:64px;padding:0;
   border-radius:26px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);
   border:1px solid rgba(255,255,255,.9);box-shadow:0 14px 40px rgba(5,25,55,.3),0 2px 8px rgba(5,25,55,.12);animation:mNavIn .5s var(--m-ease) both}
 @keyframes mNavIn{from{transform:translateY(120%);opacity:0}}
-.m-nav .m-ind{position:absolute;top:6px;bottom:6px;left:0;width:20%;padding:0 4px;pointer-events:none;transform:translateX(calc(var(--i,0)*100%));transition:transform .5s cubic-bezier(.3,1.35,.4,1)}
+.m-nav .m-ind{position:absolute;top:6px;bottom:6px;left:0;width:calc(100% / 6);padding:0 4px;pointer-events:none;transform:translateX(calc(var(--i,0)*100%));transition:transform .5s cubic-bezier(.3,1.35,.4,1)}
 .m-nav .m-ind i{display:block;height:100%;border-radius:20px;background:color-mix(in srgb,var(--acc) 12%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 14%,transparent)}
 .m-nav button{position:relative;display:grid;place-items:center;align-content:center;gap:2px;min-height:56px;color:var(--m-mut);font-size:11px;font-weight:650;letter-spacing:.01em;transition:color .25s}
 .m-nav button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .35s var(--m-ease)}
@@ -2243,3 +2243,133 @@ html.is-mobile .sj{z-index:1400}
 .sk-tc-meta{font-size:11px;color:var(--mut);margin-top:4px;font-variant-numeric:tabular-nums}
 html.is-mobile .sk-topic-card{flex:0 0 168px;padding:11px 12px}
 html.is-mobile .sk-tc-score{font-size:21px}
+
+/* ============ UV Tab: Fitzpatrick Gradient, Sunburn Timer, Advisory & Charts ============ */
+.uv-pane{display:grid;gap:16px;max-width:980px;margin:0 auto}
+.uv-hero{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+  background:linear-gradient(135deg,rgba(255,255,255,.9) 0%,rgba(240,246,252,.85) 100%);
+  border-left:5px solid var(--uv-col, var(--acc));
+  padding:24px;
+}
+.uv-hero-left{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1}
+.uv-hero-tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.uv-hero-score{display:flex;align-items:baseline;gap:14px}
+.uv-hero-num{font-family:'Instrument Serif',serif;font-size:68px;line-height:1;font-weight:400;color:var(--ink)}
+.uv-hero-cat{display:flex;flex-direction:column}
+.uv-hero-cat b{font-size:22px;font-weight:750;letter-spacing:-.02em}
+.uv-hero-cat small{font-size:12px;color:var(--mut)}
+.uv-hero-meta{margin:0;font-size:13px;color:var(--mut);line-height:1.4}
+.uv-hero-meta b{color:var(--ink)}
+.uv-hero-right{flex-shrink:0}
+.uv-sun-gauge{position:relative;width:88px;height:88px;display:grid;place-items:center}
+.uv-ring-svg{width:100%;height:100%}
+.uv-sun-icon{position:absolute;inset:0;display:grid;place-items:center}
+
+/* Card Header */
+.uv-card{padding:20px;display:flex;flex-direction:column;gap:16px}
+.uv-card-h{display:flex;align-items:center;gap:12px;position:relative}
+.uv-card-ico{width:36px;height:36px;border-radius:10px;background:rgba(20,49,79,.07);color:var(--acc);display:grid;place-items:center;flex-shrink:0}
+.uv-card-h h4{margin:0;font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.uv-card-sub{display:block;font-size:12px;color:var(--mut);margin-top:2px}
+.uv-card-pill{margin-left:auto;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+
+/* Fitzpatrick Gradient & Swatch Bar */
+.uv-grad-wrap{position:relative;width:100%;height:18px;margin:6px 0 10px}
+.uv-grad-bar{width:100%;height:100%;border-radius:9px;background:linear-gradient(to right, #fde8d7 0%, #f7d8bb 20%, #e8be96 40%, #c99368 60%, #8d5633 80%, #422818 100%);box-shadow:inset 0 1px 3px rgba(0,0,0,.2),0 1px 2px rgba(255,255,255,.6)}
+.uv-grad-indicator{position:absolute;top:-4px;width:12px;height:26px;border-radius:6px;border:2.5px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.35);transform:translateX(-50%);transition:left .3s cubic-bezier(.3,1.3,.4,1)}
+
+/* Phototypes Grid */
+.uv-pt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.uv-pt-card{
+  background:rgba(255,255,255,.8);
+  border:1.5px solid rgba(20,49,79,.1);
+  border-radius:14px;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  text-align:left;
+  cursor:pointer;
+  transition:all .2s ease;
+  position:relative;
+}
+.uv-pt-card:hover{border-color:var(--pt-col);transform:translateY(-2px);box-shadow:0 6px 14px -6px rgba(0,0,0,.15)}
+.uv-pt-card.on{
+  border-color:var(--acc);
+  background:color-mix(in srgb, var(--acc) 6%, #fff);
+  box-shadow:0 0 0 2px var(--acc),0 8px 18px -6px rgba(20,49,79,.2);
+}
+.uv-pt-swatch{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);margin-bottom:6px}
+.uv-pt-num{font-family:'Instrument Serif',serif;font-size:18px;color:var(--ink)}
+.uv-pt-name{font-size:12px;font-weight:700;color:var(--ink);margin-top:2px;line-height:1.2}
+.uv-pt-desc{font-size:10.5px;color:var(--mut);margin-top:4px;line-height:1.3}
+
+/* Sunburn Timer */
+.uv-timer-body{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:24px;padding:10px 0}
+.uv-timer-clock-wrap{position:relative;width:180px;height:180px;display:grid;place-items:center}
+.uv-clock-ring{width:100%;height:100%}
+.uv-clock-center{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px}
+.uv-timer-val{display:flex;flex-direction:column;align-items:center}
+.uv-timer-digits{font-family:'Instrument Serif',serif;font-size:38px;font-weight:400;color:var(--ink);line-height:1}
+.uv-timer-val.safe span{font-family:'Instrument Serif',serif;font-size:32px;color:#2fb34a}
+.uv-timer-val small{font-size:11px;color:var(--mut);line-height:1.3;max-width:140px;margin-top:4px}
+.uv-timer-ctrls{display:flex;flex-direction:column;gap:10px;min-width:200px}
+.uv-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:10px 18px;
+  border-radius:12px;
+  border:1px solid rgba(20,49,79,.15);
+  background:rgba(255,255,255,.9);
+  color:var(--ink);
+  font-size:13px;
+  font-weight:650;
+  cursor:pointer;
+  transition:all .2s ease;
+}
+.uv-btn:hover{background:#fff;border-color:var(--acc);transform:translateY(-1px)}
+.uv-btn.solid{background:var(--acc);color:#fff;border-color:transparent}
+.uv-btn.solid:hover{background:color-mix(in srgb,var(--acc) 85%,#000)}
+
+/* Gear & Advisory Grid */
+.uv-gear-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.uv-gear-item{background:rgba(255,255,255,.8);border:1px solid rgba(20,49,79,.1);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.uv-gear-item.alert{border-color:rgba(239,68,68,.3);background:linear-gradient(170deg,rgba(255,245,245,.8) 0%,rgba(255,255,255,.9) 100%)}
+.uv-gi-top{display:flex;align-items:center;justify-content:space-between}
+.uv-gi-icon{width:40px;height:40px;border-radius:12px;background:rgba(20,49,79,.06);color:var(--ink);display:grid;place-items:center}
+.uv-gi-badge{font-size:11px;font-weight:750;padding:3px 9px;border-radius:12px}
+.uv-gi-badge.rec{background:rgba(239,68,68,.12);color:#ef4444}
+.uv-gi-badge.opt{background:rgba(20,49,79,.08);color:var(--mut)}
+.uv-gi-badge.spf{background:#2563eb;color:#fff}
+.uv-gi-title{font-size:14px;font-weight:700;color:var(--ink)}
+.uv-gi-desc{margin:0;font-size:12px;color:var(--mut);line-height:1.45}
+
+/* Hourly UV Chart */
+.uv-chart-wrap{position:relative;padding-top:20px}
+.uv-chart-thresh{position:absolute;left:0;right:0;bottom:54px;border-top:1.5px dashed #f97316;pointer-events:none;z-index:2}
+.uv-thresh-lbl{position:absolute;right:0;top:-18px;font-size:10px;font-weight:700;color:#ea580c;background:rgba(255,255,255,.85);padding:1px 6px;border-radius:6px}
+.uv-chart-bars{display:flex;gap:8px;align-items:flex-end;overflow-x:auto;padding-bottom:8px}
+.uv-hbar{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:32px}
+.uv-hbar.now .uv-htime{font-weight:800;color:var(--acc)}
+.uv-hval{font-size:10.5px;font-weight:700;color:var(--ink);height:14px}
+.uv-hpillar{width:18px;height:100px;background:rgba(20,49,79,.06);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden}
+.uv-hpillar i{width:100%;border-radius:6px 6px 0 0;transition:height .4s ease}
+.uv-htime{font-size:11px;color:var(--mut)}
+
+/* Vit D Card */
+.uv-vitd-p{margin:0;font-size:13px;color:var(--ink);line-height:1.5}
+.uv-vitd-bar{width:100%;height:24px;border-radius:12px;background:rgba(20,49,79,.08);display:flex;overflow:hidden;margin-top:6px}
+.uv-vb-good{background:#2fb34a;color:#fff;display:grid;place-items:center;font-size:10.5px;font-weight:700;overflow:hidden;white-space:nowrap;padding:0 8px}
+.uv-vb-burn{background:#ef4444;color:#fff;display:grid;place-items:center;font-size:10.5px;font-weight:700;overflow:hidden;white-space:nowrap;padding:0 8px}
+
+/* Mobile adjustments */
+html.is-mobile .uv-hero{flex-direction:column;align-items:flex-start}
+html.is-mobile .uv-sun-gauge{align-self:center;margin-top:10px}
+html.is-mobile .uv-pt-grid{grid-template-columns:repeat(2,1fr)}
+
