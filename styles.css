@@ -1966,8 +1966,8 @@ html.is-mobile #offBar{z-index:1300;top:calc(env(safe-area-inset-top,0px) + 8px)
 .why-i{flex:none;font-size:20px;line-height:1.3}
 .why-g{margin-top:8px;border-top:1px solid rgba(20,49,79,.12);padding-top:8px}
 .why-h{font-size:12px;opacity:.65;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
-.why-r{display:grid;grid-template-columns:42px 22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(20,49,79,.07);font-size:13.5px}
-.why-r b{text-transform:capitalize}
+.why-r{display:grid;grid-template-columns:78px 22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(20,49,79,.07);font-size:13.5px}
+.why-r b{text-transform:capitalize;white-space:nowrap}
 .why-a{display:inline-block;width:20px;text-align:center;font-weight:700;color:var(--acc)}
 .why-s{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .why-n{font-variant-numeric:tabular-nums;opacity:.75;white-space:nowrap}
@@ -2027,3 +2027,11 @@ html.is-mobile .xt-state span,html.is-mobile .xt-state small{color:var(--m-mut)}
 /* Folha dos avisos IPMA (telemóvel): por cima de tudo e sem a barra inferior a tapar */
 html.is-mobile .wpop{z-index:1400}
 html.is-mobile.wpop-open .m-nav,html.is-mobile.wpop-open .m-nav.show{display:none!important}
+
+/* Próximas 24 h (telemóvel): o encaixe (scroll-snap) ignorava o padding e colava a 1.ª hora à parede do cartão,
+   sendo impossível voltar ao verdadeiro início. scroll-padding diz ao encaixe onde começa a área útil. */
+.m-hours .m-hs{scroll-padding-inline:12px}
+.m-hours .m-hs::after{content:"";flex:none;width:12px}
+/* Próximas 24 h (PC): barra de deslocamento escondida, como no resto da app */
+.hours{scrollbar-width:none;-ms-overflow-style:none}
+.hours::-webkit-scrollbar{display:none}
