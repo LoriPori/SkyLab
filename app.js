@@ -695,8 +695,8 @@ async function getWeather(lat,lon){
   bt.used=true;
   try{const j=await bootWait(bt.p);if(j&&j.data&&j.data.current&&j.data.hourly)return j.data}catch(e){}
  }
- const cur = 'temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,dew_point_2m,pressure_msl,wind_gusts_10m,wind_speed_80m,wind_direction_80m,shortwave_radiation,direct_normal_irradiance,diffuse_radiation,vapor_pressure_deficit';
- const hourly = 'temperature_2m,weather_code,precipitation_probability,is_day,surface_pressure,dew_point_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,shortwave_radiation,direct_normal_irradiance,diffuse_radiation,vapor_pressure_deficit,boundary_layer_height';
+ const cur = 'temperature_2m,apparent_temperature,relative_humidity_2m,is_day,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,dew_point_2m,pressure_msl,wind_gusts_10m,wind_speed_80m,wind_direction_80m,shortwave_radiation,direct_normal_irradiance,diffuse_radiation,uv_index,vapor_pressure_deficit';
+ const hourly = 'temperature_2m,weather_code,precipitation_probability,is_day,surface_pressure,dew_point_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,shortwave_radiation,direct_normal_irradiance,diffuse_radiation,uv_index,vapor_pressure_deficit,boundary_layer_height';
  const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${cur}&hourly=${hourly}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max&minutely_15=precipitation&forecast_minutely_15=8&timezone=auto&forecast_days=7`;
  const r=await fetch(u);if(!r.ok)throw new Error('Weather service unavailable');return r.json();
 }
@@ -1828,7 +1828,7 @@ function paintFav(){
 }
 
 /* ============ tabs ============ */
-const TABS=[['today','Today'],['week','Week'],['radar','Radar'],['air','Air & pollen'],['sky','Sky Explained'],['sci','Science']];
+const TABS=[['today','Today'],['week','Week'],['radar','Radar'],['uv','UV'],['air','Air & pollen'],['sky','Sky Explained'],['sci','Science']];
 function shell(){
  return`<div class="tabs" role="tablist" id="tabs"><i class="ind" id="ind"></i>${TABS.map(([k,n])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${k==tab}">${n}</button>`).join('')}</div><div id="pane"></div>`;
 }
@@ -1836,7 +1836,7 @@ function moveInd(){
  const b=$('.tab[aria-selected=true]'),i=$('#ind');if(!b||!i)return;
  i.style.left=b.offsetLeft+'px';i.style.width=b.offsetWidth+'px';
 }
-const PANES={today:()=>todayPane(),week:()=>weekPane(),radar:()=>radarPane(),air:()=>airPane(),sky:()=>skyPane(),sci:()=>sciPane()};
+const PANES={today:()=>todayPane(),week:()=>weekPane(),radar:()=>radarPane(),uv:()=>uvPane(),air:()=>airPane(),sky:()=>skyPane(),sci:()=>sciPane()};
 const INIT={today:()=>scrub(),radar:()=>radarInit()};
 function setTab(k){
  radarStop();
@@ -1997,6 +1997,56 @@ function scrub(){
  };
  svg.addEventListener('pointermove',mv);svg.addEventListener('pointerdown',mv);
  svg.addEventListener('pointerleave',()=>{ln.style.opacity=0;tip.style.opacity=0});
+}
+
+/* --- UV: proteção solar personalizada --- */
+const UV_PHOTOTYPES=[
+ {n:1,med:200,col:'#fde8d7',en:'Very fair',pt:'Muito clara',enDesc:'Always burns, never tans',ptDesc:'Queima sempre, não bronzeia'},
+ {n:2,med:250,col:'#f7d8bb',en:'Fair',pt:'Clara',enDesc:'Usually burns, tans a little',ptDesc:'Queima facilmente, bronzeia pouco'},
+ {n:3,med:350,col:'#e8be96',en:'Medium',pt:'Média',enDesc:'May burn, gradually tans',ptDesc:'Pode queimar, bronzeia gradualmente'},
+ {n:4,med:500,col:'#c99368',en:'Olive',pt:'Oliva',enDesc:'Rarely burns, tans easily',ptDesc:'Raramente queima, bronzeia facilmente'},
+ {n:5,med:650,col:'#8d5633',en:'Brown',pt:'Castanha',enDesc:'Very rarely burns',ptDesc:'Muito raramente queima'},
+ {n:6,med:1000,col:'#422818',en:'Dark brown',pt:'Castanho-escura',enDesc:'Rarely burns',ptDesc:'Raramente queima'}
+];
+function uvLevel(u){return u<3?T2('Low','Baixo'):u<6?T2('Moderate','Moderado'):u<8?T2('High','Alto'):u<11?T2('Very high','Muito alto'):T2('Extreme','Extremo')}
+function uvColour(u){return u<3?'#2fb34a':u<6?'#e6a317':u<8?'#e56d2f':u<11?'#d64343':'#7c3db8'}
+function uvBurnMinutes(u,photo){return u>.1?Math.max(1,Math.round(photo.med/(u/40)/60)):null}
+function uvDuration(min){if(min==null)return T2('No measurable UV','Sem UV mensurável');if(min<60)return `${min} ${T2('min','min')}`;const h=Math.floor(min/60),m=min%60;return `${h} ${T2('h','h')}${m?` ${m} ${T2('min','min')}`:''}`}
+function uvHourly(){
+ const h=data.hourly||{},start=idx0(),out=[];
+ for(let i=start;i<Math.min(h.time.length,start+13);i++){
+  const direct=Number(h.uv_index&&h.uv_index[i]);
+  const estimate=Number(h.shortwave_radiation&&h.shortwave_radiation[i]);
+  out.push({i,time:h.time[i],uvi:Number.isFinite(direct)?Math.max(0,direct):Math.max(0,estimate/100),live:Number.isFinite(direct),day:!!(h.is_day&&h.is_day[i])});
+ }
+ return out;
+}
+function uvPane(){
+ const c=data.current,d=data.daily,types=UV_PHOTOTYPES;
+ const saved=+lsGet('uvPhototype')||3,photo=types.find(x=>x.n===saved)||types[2];
+ const hours=uvHourly(),hourNow=hours[0];
+ const live=Number(c.uv_index),peak=Math.max(0,Number(d.uv_index_max&&d.uv_index_max[0])||0);
+ const shownUV=c.is_day&&(Number.isFinite(live)?live:(hourNow&&hourNow.uvi)||0);
+ const burn=uvBurnMinutes(shownUV,photo),risk=shownUV||peak,colour=uvColour(risk);
+ const spf=peak>=6||photo.n<=2?'SPF 50+':peak>=3?'SPF 30+':T2('SPF 30 for extended time','FPS 30 para exposição prolongada');
+ const shades=peak>=3?T2('Take UV400 sunglasses','Leva óculos de sol UV400'):T2('Useful in bright conditions','Úteis com muita luminosidade');
+ const safe=hours.find((x,n)=>n>0&&x.day&&x.uvi<3),sunset=hours.find((x,n)=>n>0&&!x.day);
+ const safeText=safe?T2(`UV drops below 3 around ${safe.time.slice(11,16)}.`, `O UV baixa de 3 por volta das ${safe.time.slice(11,16)}.`):sunset?T2(`Sunset is around ${sunset.time.slice(11,16)}.`, `O pôr do sol é por volta das ${sunset.time.slice(11,16)}.`):T2('No lower-UV daylight window appears in the next 12 hours.','Não há uma janela diurna de UV baixo nas próximas 12 horas.');
+ const ring=Math.min(1,risk/12),dash=(2*Math.PI*38).toFixed(1),offset=(2*Math.PI*38*(1-ring)).toFixed(1);
+ const timerOffset=(2*Math.PI*77*(1-Math.min(1,Math.max(.08,90/(burn||90))))).toFixed(1);
+ const timerText=shownUV>.1?uvDuration(burn):T2('Sun is low','Sol baixo');
+ const bars=hours.map((x,n)=>{const v=Math.min(12,x.uvi),now=n===0?' now':'',label=x.time.slice(11,16),h=Math.max(3,v/12*100);return`<div class="uv-hbar${now}"><span class="uv-hval">${x.uvi.toFixed(1)}</span><span class="uv-hpillar"><i style="height:${h}%;background:${uvColour(v)}"></i></span><span class="uv-htime">${n===0?T2('Now','Agora'):label}</span></div>`}).join('');
+ const cards=types.map(x=>`<button type="button" class="uv-pt-card${x.n===photo.n?' on':''}" data-uv-type="${x.n}" aria-pressed="${x.n===photo.n}" style="--pt-col:${x.col}"><i class="uv-pt-swatch" style="background:${x.col}"></i><b class="uv-pt-num">${T2('Type','Tipo')} ${x.n}</b><span class="uv-pt-name">${T2(x.en,x.pt)}</span><small class="uv-pt-desc">${T2(x.enDesc,x.ptDesc)}</small></button>`).join('');
+ return`<div class="uv-pane" style="--uv-col:${colour}">
+  <section class="card uv-hero">
+   <div class="uv-hero-left"><span class="uv-hero-tag">${T2('Sun protection planner','Planeador de proteção solar')}</span><div class="uv-hero-score"><b class="uv-hero-num">${shownUV.toFixed(1)}</b><span class="uv-hero-cat"><b>${uvLevel(risk)}</b><small>${T2('UV now','UV agora')} · ${T2('peak','máximo')} ${peak.toFixed(1)}</small></span></div><p class="uv-hero-meta">${T2('For','Para')} <b>${escH(place.name)}</b> · ${c.is_day?T2('live forecast conditions','condições previstas em tempo real'):T2('the Sun is below the horizon','o Sol está abaixo do horizonte')}</p></div>
+   <div class="uv-hero-right"><div class="uv-sun-gauge"><svg class="uv-ring-svg" viewBox="0 0 88 88" aria-hidden="true"><circle cx="44" cy="44" r="38" fill="none" stroke="rgba(20,49,79,.1)" stroke-width="8"/><circle cx="44" cy="44" r="38" fill="none" stroke="${colour}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${dash}" stroke-dashoffset="${offset}" transform="rotate(-90 44 44)"/></svg><span class="uv-sun-icon" aria-hidden="true">☀️</span></div></div>
+  </section>
+  <section class="card uv-card"><div class="uv-card-h"><span class="uv-card-ico">◐</span><div><h4>${T2('Choose your skin type','Escolhe o teu tipo de pele')}</h4><span class="uv-card-sub">${T2('A personal estimate uses your selected phototype.','A estimativa pessoal usa o fotótipo selecionado.')}</span></div></div><div class="uv-grad-wrap" aria-hidden="true"><div class="uv-grad-bar"></div><i class="uv-grad-indicator" style="left:${(photo.n-1)/5*100}%;background:${photo.col}"></i></div><div class="uv-pt-grid" role="group" aria-label="${T2('Skin phototype','Fotótipo de pele')}">${cards}</div></section>
+  <section class="card uv-card"><div class="uv-card-h"><span class="uv-card-ico">◷</span><div><h4>${T2('Time until burn','Tempo até queimar')}</h4><span class="uv-card-sub">${T2('Estimated time until unprotected skin could start to redden at the UV level now.','Tempo estimado até a pele desprotegida poder começar a ficar vermelha com o UV atual.')}</span></div></div><div class="uv-timer-body"><div class="uv-timer-clock-wrap"><svg class="uv-clock-ring" viewBox="0 0 180 180" aria-hidden="true"><circle cx="90" cy="90" r="77" fill="none" stroke="rgba(20,49,79,.09)" stroke-width="10"/><circle cx="90" cy="90" r="77" fill="none" stroke="${colour}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(2*Math.PI*77).toFixed(1)}" stroke-dashoffset="${timerOffset}" transform="rotate(-90 90 90)"/></svg><div class="uv-clock-center"><div class="uv-timer-val"><b class="uv-timer-digits">${timerText}</b><small>${shownUV>.1?T2('without sunscreen','sem protetor solar'):T2('no burn timer while UV is near zero','sem temporizador com UV perto de zero')}</small></div></div></div><div class="uv-timer-ctrls"><p class="uv-vitd-p">${T2(`Based on skin type ${photo.n} and UVI ${shownUV.toFixed(1)}. This is a cautious guide, not a guarantee: water, altitude, medicines and reflection can shorten it.`, `Baseado no tipo de pele ${photo.n} e UV ${shownUV.toFixed(1)}. É uma orientação cautelosa, não uma garantia: água, altitude, medicamentos e reflexão podem encurtar o tempo.`)}</p><p class="uv-vitd-p"><b>${T2('Formula','Fórmula')}:</b> ${T2('typical redness threshold ÷ (UVI ÷ 40).','limiar típico de vermelhidão ÷ (UV ÷ 40).')}</p></div></div></section>
+  <section class="card uv-card"><div class="uv-card-h"><span class="uv-card-ico">✓</span><div><h4>${T2('What to take','O que levar')}</h4><span class="uv-card-sub">${T2('Recommendations reflect today’s forecast peak.','As recomendações refletem o máximo previsto para hoje.')}</span></div></div><div class="uv-gear-grid"><article class="uv-gear-item${peak>=3?' alert':''}"><div class="uv-gi-top"><span class="uv-gi-icon">🧴</span><b class="uv-gi-badge spf">${spf}</b></div><b class="uv-gi-title">${T2('Sunscreen','Protetor solar')}</b><p class="uv-gi-desc">${T2('Broad-spectrum, water-resistant. Reapply every 2 hours and after swimming or sweating.','Espetro amplo e resistente à água. Reaplica de 2 em 2 horas e depois de nadar ou transpirar.')}</p></article><article class="uv-gear-item${peak>=3?' alert':''}"><div class="uv-gi-top"><span class="uv-gi-icon">🕶️</span><b class="uv-gi-badge ${peak>=3?'rec':'opt'}">${peak>=3?T2('Recommended','Recomendado'):T2('Optional','Opcional')}</b></div><b class="uv-gi-title">${T2('Sunglasses','Óculos de sol')}</b><p class="uv-gi-desc">${shades}. ${T2('Look for a CE mark and 100% UVA/UVB or UV400 protection.','Procura marcação CE e 100% de proteção UVA/UVB ou UV400.')}</p></article><article class="uv-gear-item"><div class="uv-gi-top"><span class="uv-gi-icon">🧢</span><b class="uv-gi-badge opt">${T2('Best extra','Melhor extra')}</b></div><b class="uv-gi-title">${T2('Shade and cover','Sombra e cobertura')}</b><p class="uv-gi-desc">${peak>=6?T2('Use shade, a wide-brim hat and covering clothing, especially from late morning to mid-afternoon.','Usa sombra, chapéu de aba larga e roupa que cubra a pele, sobretudo entre o fim da manhã e meio da tarde.'):T2('A hat and shade still reduce exposure, even when the index is moderate.','Um chapéu e a sombra continuam a reduzir a exposição, mesmo com índice moderado.')}</p></article></div></section>
+  <section class="card uv-card"><div class="uv-card-h"><span class="uv-card-ico">⌁</span><div><h4>${T2('UV forecast and safer hours','Previsão UV e horas mais seguras')}</h4><span class="uv-card-sub">${safeText}</span></div><span class="uv-card-pill" style="background:${colour}20;color:${colour}">${T2('Next 12 h','Próximas 12 h')}</span></div><div class="uv-chart-wrap"><div class="uv-chart-bars" role="img" aria-label="${T2('Hourly UV forecast','Previsão UV por hora')}">${bars}</div></div><p class="uv-vitd-p">${T2('This is an extra planning tool: UV can still cause damage on cloudy days, and snow, sand and water reflect it.','Esta é uma ferramenta extra de planeamento: o UV pode causar danos mesmo com nuvens, e a neve, areia e água refletem-no.')}</p></section>
+ </div>`;
 }
 
 /* --- Week --- */
@@ -3118,6 +3168,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search'))closeSg()}
 /* ============ events ============ */
 main.addEventListener('click',e=>{
  const t=e.target.closest('.tab');if(t)return setTab(t.dataset.t);
+  const uvType=e.target.closest('[data-uv-type]');if(uvType){lsSet('uvPhototype',+uvType.dataset.uvType);return setTab('uv')}
  const s=e.target.closest('[data-s]');if(s){sciMode=s.dataset.s;$$('.sw button').forEach(b=>b.setAttribute('aria-pressed',b===s));return drawSci()}
  const f=e.target.closest('[data-f]');if(f){factI+=+f.dataset.f;return drawSci()}
  const a=e.target.closest('[data-a]');
@@ -3203,7 +3254,7 @@ document.addEventListener('keydown',e=>{
  if(e.key=='r'&&place){toast('Refreshing…');show(place.lat,place.lon,place.name,place.sub)}
  if(e.key=='l')locate();
  if(e.key=='h'){lsSet('place',null);landing()}
- if(data&&'123456'.includes(e.key)&&e.key)setTab(TABS[+e.key-1][0]);
+ if(data&&'1234567'.includes(e.key)&&e.key)setTab(TABS[+e.key-1][0]);
 });
 addEventListener('load',moveInd);
 setInterval(()=>{if(place&&!document.hidden&&navigator.onLine&&tab!='radar')show(place.lat,place.lon,place.name,place.sub)},6e5);   // não reconstrói o radar a meio
@@ -7950,6 +8001,7 @@ if(IS_MOBILE)(function(){
   now:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   week:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+   uv:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   air:'<path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/>',
   sci:'<path d="M9 3h6M10 3v6l-5.5 9.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3"/><path d="M7.5 15h9"/>',
   user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
@@ -7969,9 +8021,9 @@ if(IS_MOBILE)(function(){
   nav:'<path d="M12 3l5 9h-4v9h-2v-9H7z"/>'
  };
  const fN=(v,d=1)=>{const s=(+v).toFixed(d);return LANG==='pt'?s.replace('.',','):s};
- const G={today:'now',week:'week',radar:'map',air:'air',sky:'sci',sci:'sci'};
- const NAV_L=()=>[T2('Now','Agora'),T2('Week','Semana'),T2('Maps','Mapas'),T2('Air','Ar'),T2('Science','Ciência')];
- const NAV=[['now','today'],['week','week'],['map','radar'],['air','air'],['sci','sky']];
+ const G={today:'now',week:'week',radar:'map',uv:'uv',air:'air',sky:'sci',sci:'sci'};
+ const NAV_L=()=>[T2('Now','Agora'),T2('Week','Semana'),T2('Maps','Mapas'),'UV',T2('Air','Ar'),T2('Science','Ciência')];
+ const NAV=[['now','today'],['week','week'],['map','radar'],['uv','uv'],['air','air'],['sci','sky']];
  const root=document.documentElement;
 
  /* ---------- séries e matemática ---------- */
