@@ -4772,11 +4772,10 @@ async function hurrFetch() {
             });
         }
         return { storms: [...by.values()].map(x => hClean(x.s)).filter(Boolean).sort((a, b) => (b.windKt || 0) - (a.windKt || 0)), at: Date.now() };
-    } catch (err) {
-        // Return existing cache or empty dataset instead of crashing AutoStorms
-        if (hurrD) return hurrD;
-        return { storms: [], at: Date.now() };
-    }
+      } catch (err) {
+        if (hurrD) return hurrD;                  // stale cache is OK
+        throw err;                                // ✅ UI shows "couldn't load, retry"
+      }
 }
 function hurrGet(force){
  if(!force&&hurrD&&Date.now()-hurrAt<6e5)return Promise.resolve(hurrD);
@@ -4810,8 +4809,16 @@ function hurrPaint(){
  if(hMap){try{hMap.remove()}catch(e){}hMap=null}hMk=[];
  const D=hurrD,list=D?D.storms:[];
  if(hSel>=list.length)hSel=0;
+ const staleNote = D && D.stale
+  ? ' · ' + hT('stale, '+Math.round(D.staleAge/6e4)+' min old','desatualizado, há '+Math.round(D.staleAge/6e4)+' min')
+  : '';
+ const partialNote = D && D.partial
+  ? ' · ' + (D.partial === 'nhc-only' ? hT('GDACS unreachable','GDACS inacessível')
+       : D.partial === 'gdacs-only' ? hT('NHC unreachable','NHC inacessível')
+       : hT('partial data','dados parciais'))
+  : '';
  const sub=!D?(hView=='load'?hT('Loading storms…','A carregar tempestades…'):hT('Storm data unavailable','Dados indisponíveis')):
-  list.length?`${list.length} ${list.length==1?hT('active storm','tempestade ativa'):hT('active storms','tempestades ativas')} · ${hT('updated','atualizado')} ${hAgo(D.at)}`:hT('All quiet for now','Tudo calmo por agora');
+  list.length?`${list.length} ${list.length==1?hT('active storm','tempestade ativa'):hT('active storms','tempestades ativas')} · ${hT('updated','atualizado')} ${hAgo(D.at)}${staleNote}${partialNote}`:hT('All quiet for now','Tudo calmo por agora');
  let h=`<div class="hh"><div class="hht"><span class="hico">${hImg()}</span><div><h2 id="htt">${hT('Hurricane tracker','Seguimento de furacões')}</h2><p>${sub}</p></div></div><button class="hx" data-hx aria-label="${hT('Close','Fechar')}">✕</button></div>`;
  if(!D&&hView=='load')h+=`<p class="note sk">${hT('Fetching the latest advisories…','A obter os boletins mais recentes…')}</p>`;
  else if(!D)h+=`<div class="hempty"><span class="hico">${hImg()}</span><h3>${hT('Couldn’t load the storms','Não foi possível carregar as tempestades')}</h3><p>${hT('The data sources didn’t answer. Check your connection and try again.','As fontes de dados não responderam. Verifica a ligação e tenta outra vez.')}</p><button class="pill dk" data-hr>${hT('Try again','Tentar outra vez')}</button></div>`;
@@ -4951,17 +4958,70 @@ function authLoadThirdParty(){
 }
 
 /* ============ Cloudflare Turnstile (anti-robôs) ============ */
-let tsWidgetId = null;
+let tsWidgetId = null;        // widget do formulário email/password
+let tsGoogleId = null;        // widget invisível do botão Google
+
 function tsActive(){ return !!AUTH_CONFIG.turnstileSiteKey && AUTH_CONFIG.turnstileSiteKey !== 'COLA_AQUI_A_SITE_KEY'; }
 function tsEnsure(tries){
   tries = tries || 0;
-  if(!tsActive() || tsWidgetId !== null) return;
-  const box = document.getElementById('authTurnstile');
-  if(!box || !window.turnstile){ if(tries < 25) setTimeout(()=>tsEnsure(tries+1), 600); return; }   // o script ainda está a carregar
-  tsWidgetId = window.turnstile.render(box, { sitekey: AUTH_CONFIG.turnstileSiteKey, theme: 'auto', size: 'flexible' });
+  if(!tsActive()) return;
+
+  // Widget do formulário (visível / managed)
+  if(tsWidgetId === null){
+    const box = document.getElementById('authTurnstile');
+    if(box && window.turnstile){
+      tsWidgetId = window.turnstile.render(box, {
+        sitekey: AUTH_CONFIG.turnstileSiteKey,
+        theme: 'auto',
+        size: 'flexible'
+      });
+    }
+  }
+
+  // Widget do Google (invisível). Só é executado depois do clique no botão.
+  if(tsGoogleId === null){
+    const gbox = document.getElementById('authGoogleTurnstile');
+    if(gbox && window.turnstile){
+      tsGoogleId = window.turnstile.render(gbox, {
+        sitekey: AUTH_CONFIG.turnstileSiteKey,
+        theme: 'auto',
+        size: 'flexible',
+        appearance: 'execute',          // fica escondido até chamarmos turnstile.execute()
+        execution: 'execute',           // só corre quando pedimos o token
+        'refresh-expired': 'auto'
+      });
+    }
+  }
+
+  // Se algum dos dois ainda não tem o script carregado, tenta de novo.
+  if((tsWidgetId === null || tsGoogleId === null) && tries < 25){
+    setTimeout(() => tsEnsure(tries + 1), 600);
+  }
 }
 function tsToken(){ try{ return tsWidgetId !== null ? (window.turnstile.getResponse(tsWidgetId) || '') : ''; }catch(e){ return ''; } }
+// Devolve uma Promise<string> com o token do widget Google.
+// Se o widget ainda não existir, resolve com '' (o chamador mostra erro).
+function tsGoogleToken(){
+  return new Promise(resolve => {
+    if(!tsActive()) return resolve('');
+    if(tsGoogleId === null) return resolve('');
+
+    let done = false;
+    const finish = t => { if(!done){ done = true; resolve(t || ''); } };
+
+    try{
+      window.turnstile.execute(tsGoogleId, {
+        action: 'google_signin',
+        callback: token => finish(token)
+      });
+    }catch(e){ finish(''); return; }
+
+    // Rede de segurança: se o callback nunca disparar (raro), resolve vazio após 15 s.
+    setTimeout(() => finish(''), 15000);
+  });
+}
 function tsReset(){ try{ if(tsWidgetId !== null) window.turnstile.reset(tsWidgetId); }catch(e){} }   // cada token só serve uma vez
+function tsResetGoogle(){ try{ if(tsGoogleId !== null) window.turnstile.reset(tsGoogleId); }catch(e){} }
 
 /* Sessão revogada no servidor (ex.: lockdown ou sessão expirada): sai localmente, sem apagar favoritos/preferências */
 function authSessionDead(){
@@ -5329,6 +5389,8 @@ function authShell(){
      <img src="imgs/icons/google.png" alt="" width="19" height="19" data-fb="Google">
      <span id="googleBtnTxt">Continuar com o Google</span>
     </button>
+    <!-- Turnstile invisível para o botão Google. Só é executado depois do clique. -->
+    <div id="authGoogleTurnstile" hidden></div>
    </div>
 
    <div class="auth-divider">
@@ -5723,62 +5785,93 @@ function initAuthInputs(){
 }
 
 // Fluxo de Autenticação com Google (Google Identity Services)
-function authTriggerGoogle(){
+async function authTriggerGoogle(){
   authClearAlert();
   const rawInput = $('#authUsername') ? $('#authUsername').value.trim() : '';
   const chosenUsername = (rawInput && rawInput.length <= 15 && /^[a-zA-Z0-9_-]+$/.test(rawInput)) ? rawInput : '';
 
-  if(window.google && window.google.accounts && window.google.accounts.oauth2 && AUTH_CONFIG.googleClientId){
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: AUTH_CONFIG.googleClientId,
-      scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-      callback: async (tokenResponse) => {
-        if (!tokenResponse || !tokenResponse.access_token) return;
-        try {
-          authShowAlert(LANG==='pt'?'A autenticar com a Google…':'Signing in with Google…','ok');
-          const gUserInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-          }).then(r => r.json());
-
-          const defaultName = (gUserInfo.name || gUserInfo.email || 'user').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 15) || 'google_user';
-          const finalUsername = chosenUsername || defaultName;
-
-          const res = await fetch(`${AUTH_CONFIG.apiUrl}/google`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              credential: tokenResponse.access_token,
-              email: gUserInfo.email,
-              google_id: gUserInfo.sub,
-              username: finalUsername,
-              picture: gUserInfo.picture
-            })
-          });
-          const data = await res.json();
-          if(!res.ok || !data.success) throw new Error(data.error || 'Erro Google Sign-In');
-          currentUser = data.user;
-          currentToken = data.token;
-          lsSet('skylab_auth_user', currentUser);
-          lsSet('skylab_auth_token', currentToken);
-          updateAuthUI();
-          startUserWeatherLoop();
-          await prefsAfterLogin();
-          toast(LANG==='pt'?`Autenticado como ${currentUser.username}!`:`Signed in as ${currentUser.username}!`);
-          authClose();
-        } catch(e) {
-          authShowAlert(e.message || 'Erro ao autenticar com a Google.');
-        }
-      }
-    });
-    client.requestAccessToken({ prompt: 'select_account' });
-  } else if(AUTH_CONFIG.googleClientId){
-    authLoadThirdParty();
-    authShowAlert(LANG==='pt'?'A carregar o início de sessão Google… carrega no botão outra vez dentro de um instante.':'Loading Google sign-in… press the button again in a moment.','ok');
-  } else {
-    authShowAlert(LANG==='pt'
-      ?'Para ativar o início de sessão Google, configure o Google Client ID no AUTH_CONFIG (ou utilize o registo com email/palavra-passe).'
-      :'To enable Google Sign-In, add your Google Client ID to AUTH_CONFIG (or use email/password sign-in).');
+  if(!(window.google && window.google.accounts && window.google.accounts.oauth2 && AUTH_CONFIG.googleClientId)){
+    if(AUTH_CONFIG.googleClientId){
+      authLoadThirdParty();
+      authShowAlert(LANG==='pt'?'A carregar o início de sessão Google… carrega no botão outra vez dentro de um instante.':'Loading Google sign-in… press the button again in a moment.','ok');
+    }else{
+      authShowAlert(LANG==='pt'
+        ?'Para ativar o início de sessão Google, configure o Google Client ID no AUTH_CONFIG (ou utilize o registo com email/palavra-passe).'
+        :'To enable Google Sign-In, add your Google Client ID to AUTH_CONFIG (or use email/password sign-in).');
+    }
+    return;
   }
+
+  // 1) Pede o token Turnstile ANTES de tocar no Google.
+  const btn = $('#authGoogleBtn');
+  if(btn) btn.disabled = true;
+  authShowAlert(LANG==='pt'?'A confirmar que és humano…':'Verifying you are human…','ok');
+
+  let cfToken = '';
+  try{
+    cfToken = await tsGoogleToken();
+  }finally{
+    if(btn) btn.disabled = false;
+  }
+
+  if(tsActive() && !cfToken){
+    authShowAlert(LANG==='pt'
+      ? 'Não foi possível concluir a verificação anti-robôs. Desativa bloqueadores de anúncios e recarrega a página.'
+      : 'Could not complete the anti-bot check. Disable ad blockers and reload the page.');
+    tsResetGoogle();
+    return;
+  }
+
+  // 2) Só agora abrimos o popup do Google.
+  const client = window.google.accounts.oauth2.initTokenClient({
+    client_id: AUTH_CONFIG.googleClientId,
+    scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+    callback: async (tokenResponse) => {
+      if(!tokenResponse || !tokenResponse.access_token){
+        tsResetGoogle();
+        return;
+      }
+      try{
+        authShowAlert(LANG==='pt'?'A autenticar com a Google…':'Signing in with Google…','ok');
+        const gUserInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+        }).then(r => r.json());
+
+        const defaultName = (gUserInfo.name || gUserInfo.email || 'user').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,15) || 'google_user';
+        const finalUsername = chosenUsername || defaultName;
+
+        const res = await fetch(`${AUTH_CONFIG.apiUrl}/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            credential: tokenResponse.access_token,
+            email: gUserInfo.email,
+            google_id: gUserInfo.sub,
+            username: finalUsername,
+            picture: gUserInfo.picture,
+            cf_turnstile: cfToken              // ← enviado para o worker verificar
+          })
+        });
+        const data = await res.json();
+        if(!res.ok || !data.success) throw new Error(data.error || 'Erro Google Sign-In');
+
+        currentUser = data.user;
+        currentToken = data.token;
+        lsSet('skylab_auth_user', currentUser);
+        lsSet('skylab_auth_token', currentToken);
+        updateAuthUI();
+        startUserWeatherLoop();
+        await prefsAfterLogin();
+        toast(LANG==='pt'?`Autenticado como ${currentUser.username}!`:`Signed in as ${currentUser.username}!`);
+        authClose();
+      }catch(e){
+        authShowAlert(e.message || 'Erro ao autenticar com a Google.');
+      }finally{
+        tsResetGoogle();                        // token é de uso único
+      }
+    }
+  });
+  client.requestAccessToken({ prompt: 'select_account' });
 }
 
 addEventListener('keydown',e=>{
@@ -8569,7 +8662,23 @@ function orbHTML(){return(typeof data!=='undefined'&&data&&window.SkyOrb)?SkyOrb
  <div class="orb-b pop" id="orbB" role="status" aria-live="polite"><p id="orbT">${esc(a.text)}</p></div></section>`
  }
  window.SkyOrb={html,mount};
- const _st=setTab;setTab=function(k){_st(k);if(k==='today')mount()};
+ /* mount() para e recria o motor 3D do orbe (rAF, canvas, paleta). Antes
+    corria em cada setTab('today') — incluindo o re-tap no separador "Agora"
+    que o handler da nav móvel faz para fazer scroll-to-top, e as várias
+    chamadas a setTab() dentro de render(). Cada rebuild reiniciava o rAF
+    e reaquecia o orbe sem necessidade. Agora o motor só é reconstruído
+    quando o `data.current.time` muda (ou seja, quando chega uma previsão
+    nova), que é a única coisa que o plan() precisa de recalcular. */
+ let _orbMountedFor = null;
+ const _st = setTab;
+ setTab = function (k) {
+   _st(k);
+   if (k !== 'today') return;
+   const stamp = data && data.current ? data.current.time : null;
+   if (stamp && stamp === _orbMountedFor) return;
+   _orbMountedFor = stamp;
+   mount();
+ };
 })();
 /* ═══════════ SKYSCORE — motor de pontuação (colar IGUAL no app.js e no worker.js) ═══════════ */
 const SKY_ACTS=['run','bike','hike','allergy','photo','surf','stars'];
@@ -8781,7 +8890,26 @@ function skyEditHTML(cfg){
 }
 function skyCardHTML(){return data?`<section class="card xt sky" id="sky">${skyInner()}</section>`:''}
 function skyPaint(){const el=$('#sky');if(!el||!data)return;el.innerHTML=skyInner();runCounters(el)}
-{const _ca=checkAlerts;checkAlerts=function(){_ca.apply(this,arguments);try{skyPaint()}catch(e){}}}
+/* checkAlerts() corre em cada render. skyPaint() reconstrói o cartão SkyScore
+   inteiro (7 atividades × 7 dias × 24 h ≈ 1 200 iterações + rebuild do DOM),
+   o que dava ~80–150 ms de main-thread em Android médio a cada refresh.
+   Debounce de 350 ms + só quando a aba Hoje está visível: quando o utilizador
+   está noutra aba o cartão não está no DOM, e quando está nela o rebuild só
+   é preciso uma vez por render. */
+{
+  const _ca = checkAlerts;
+  let _skyT = 0;
+  checkAlerts = function () {
+    _ca.apply(this, arguments);
+    clearTimeout(_skyT);
+    _skyT = setTimeout(() => {
+      if (!data || tab !== 'today' || document.hidden) return;
+      const el = $('#sky');
+      if (!el) return;                       // cartão já saiu do DOM
+      try { skyPaint(); } catch (e) { console.warn('[skyPaint]', e); }
+    }, 350);
+  };
+}
 
 document.addEventListener('click',async e=>{
  const b=e.target.closest('[data-sk]');if(!b)return;
