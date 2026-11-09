@@ -2245,7 +2245,7 @@ html.is-mobile .sk-topic-card{flex:0 0 168px;padding:11px 12px}
 html.is-mobile .sk-tc-score{font-size:21px}
 
 /* ============ UV Tab: Fitzpatrick Gradient, Sunburn Timer, Advisory & Charts ============ */
-.uv-pane{display:grid;gap:16px;max-width:980px;margin:0 auto}
+.uv-pane{display:grid;gap:16px;width:100%;max-width:none;margin:0}
 .uv-hero{
   display:flex;
   justify-content:space-between;
