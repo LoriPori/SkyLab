@@ -435,9 +435,9 @@ const xtArrow=d=>`<svg class="xt-arr" style="--r:${Math.round(d)+180}deg" viewBo
 /* Marés a partir do nível do mar horário (Open-Meteo: sea_level_height_msl). Preia-mar/baixa-mar = máximos/mínimos locais,
    com o instante refinado por uma parábola nos 3 pontos à volta (precisão de minutos, não de horas). Modelo global: orientativo, não serve para navegação. */
 function tideInfo(s){
- const L=s.tl;if(!L||!L.v||L.v.filter(v=>v!=null).length<12)return null;
+ const L=s&&s.tl;if(!L||!L.v||L.v.filter(v=>v!=null).length<12)return{none:'data'};
  const v=L.v,ms=L.t.map(t=>Date.parse(t+':00Z')),now=Date.parse(data.current.time.slice(0,16)+':00Z'),ok=v.filter(x=>x!=null);
- if(Math.max(...ok)-Math.min(...ok)<.15)return null;             // sem maré apreciável (mar quase sem amplitude)
+ if(Math.max(...ok)-Math.min(...ok)<.15)return{none:'flat'};     // sem maré apreciável (mar quase sem amplitude)
  const ex=[];
  for(let k=1;k<v.length-1;k++){
   const a=v[k-1],b=v[k],c=v[k+1];if(a==null||b==null||c==null)continue;
@@ -446,8 +446,21 @@ function tideInfo(s){
   ex.push({hi,t:ms[k]+x*36e5,h:den?b-(a-c)*(a-c)/(8*den):b});
  }
  const nxt=ex.filter(e=>e.t>now),h=nxt.find(e=>e.hi),l=nxt.find(e=>!e.hi);
- if(!nxt.length||(!h&&!l))return null;
+ if(!nxt.length||(!h&&!l))return{none:'data'};
  return{rising:nxt[0].hi,high:h||null,low:l||null,now};
+}
+/* Se o worker não trouxer o nível do mar (ex.: /marine ainda sem sea_level_height_msl), pede-o 1 vez ao Open-Meteo Marine e guarda em XT.tide */
+const tideOk=s=>!!(s&&s.tl&&s.tl.v&&s.tl.v.filter(v=>v!=null).length>=12);
+function tideFallback(){
+ const s=xtGet('sea');if(!s||!data||!place||tideOk(s)||xtGet('tide')!==undefined||XT.busy.tide)return;
+ const key=XT.key,from=data.current.time.slice(0,13)+':00';
+ XT.busy.tide=true;
+ fetchJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${(+place.lat).toFixed(3)}&longitude=${(+place.lon).toFixed(3)}&hourly=sea_level_height_msl&timezone=auto&forecast_days=3`,undefined,15000)
+  .then(j=>{const h=j&&j.hourly;if(!h||!h.sea_level_height_msl)return false;
+   let i0=h.time.findIndex(t=>t>=from);if(i0<0)i0=0;const a0=Math.max(0,i0-3);
+   return{t:h.time.slice(a0,i0+50),v:h.sea_level_height_msl.slice(a0,i0+50).map(v=>v==null?null:+v)}})
+  .catch(e=>{console.info('[tide]',e.message);return false})
+  .then(v=>{if(XT.key!==key)return;XT.busy.tide=false;XT.tide=v;XT.t.tide=Date.now();paintXtra()});
 }
 const xtSigned=m=>(m<0?'−':'+')+xtLen(Math.abs(m));
 function xtWhen(t,now){                                         // "hoje 14:32" / "amanhã 02:14" (hora local do ponto)
@@ -457,13 +470,27 @@ function xtWhen(t,now){                                         // "hoje 14:32" 
 }
 function tideTiles(td,tile){                                     // 3 cartões iguais aos das ondas: estado da maré + preia-mar + baixa-mar
  if(!td)return'';
+ const L=T2('Tide','Maré');
+ if(td.none)return tile(L,td.none==='load'?'…':'—',td.none==='load'?T2('loading tide data','a carregar dados de maré'):td.none==='flat'?T2('no noticeable tide here','sem maré apreciável aqui'):T2('no tide data for this point','sem dados de maré para este ponto'));
  const up=td.rising,arrow=`<svg class="xt-arr" style="--r:${up?0:180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>`;
  const nx=up?td.high:td.low;
- const st=tile(T2('Tide','Maré'),arrow+(up?T2('Rising','A encher'):T2('Falling','A vazar')),(up?T2('flood tide','enchente'):T2('ebb tide','vazante'))+(nx?' · '+T2('until ','até às ')+xtWhen(nx.t,td.now).hm:''));
+ const st=tile(L,arrow+(up?T2('Rising','A encher'):T2('Falling','A vazar')),(up?T2('flood tide','enchente'):T2('ebb tide','vazante'))+(nx?' · '+(up?T2('high tide at ','preia-mar às '):T2('low tide at ','baixa-mar às '))+xtWhen(nx.t,td.now).hm:''));
  const ev=(e,l)=>{if(!e)return'';const w=xtWhen(e.t,td.now),m=Math.max(0,Math.round((e.t-td.now)/6e4));
   return tile(l,w.hm+' <small class="xt-deg">'+xtSigned(e.h)+'</small>',w.day+' · '+T2('in ','em ')+hm(m))};
  return st+ev(td.high,T2('High tide','Preia-mar'))+ev(td.low,T2('Low tide','Baixa-mar'));
 }
+/* Completa a última linha do grid: o último cartão estica-se até ao fim (nº de colunas lido do CSS, PC e telemóvel) */
+function xtFill(){
+ $$('#sea .xt-grid').forEach(g=>{
+  const t=[...g.children].filter(x=>x.classList.contains('xt-m'));
+  t.forEach(x=>{x.style.gridColumn=''});
+  if(t.length<2||!g.clientWidth)return;
+  const cols=(getComputedStyle(g).gridTemplateColumns||'').split(/\s+(?![^(]*\))/).filter(x=>x&&x!=='none').length,rem=cols>1?t.length%cols:0;
+  if(rem)t[t.length-1].style.gridColumn='span '+(cols-rem+1);
+ });
+}
+const xtRO=typeof ResizeObserver!=='undefined'?new ResizeObserver(()=>{clearTimeout(xtRO._t);xtRO._t=setTimeout(xtFill,30)}):null;
+function xtWatch(){const e=$('#sea');if(e){if(xtRO){xtRO.disconnect();xtRO.observe(e)}xtFill()}}
 
 function seaInner(){
  const s=xtGet('sea');if(!s)return'';
@@ -472,10 +499,11 @@ function seaInner(){
  // período que descreve o mar: o da ondulação, se ela domina; senão o das ondas de vento
  const swellRules=Hs!=null&&Ts!=null&&Hs>=.6*H,Tk=swellRules?Ts:Tm;
  const P=Tm!=null?.49*H*H*Tm:null;                     // fluxo de energia das ondas em águas profundas: P ≈ ρg²/(64π)·H²·T ≈ 0,49·H²·T  [kW/m]
+ const tile=(l,v,sub)=>`<div class="xt-m"><span>${l}</span><b>${v}</b>${sub?`<small>${sub}</small>`:''}</div>`;
  const mx=Math.max(...s.wh.filter(v=>v!=null)),iMx=s.wh.indexOf(mx);
  const bars=s.wh.map((v,i)=>{const hh=v==null?0:Math.max(2,v/Math.max(mx,.5)*44);return`<rect x="${i*10+1}" y="${(48-hh).toFixed(1)}" width="8" height="${hh.toFixed(1)}" rx="2"${i===iMx?' class="pk"':''}/>`}).join('');
- const td=tideInfo(s);
- const tile=(l,v,sub)=>`<div class="xt-m"><span>${l}</span><b>${v}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+ tideFallback();
+ const pend=!tideOk(s)&&xtGet('tide')===undefined,td=pend?{none:'load'}:tideInfo(tideOk(s)?s:{tl:xtGet('tide')||null}),tl=tideTiles(td,tile),mob=document.documentElement.classList.contains('is-mobile');
  return`<h3>${T2('Sea & surf','Mar e surf')}</h3>
  <div class="xt-head"><b class="xt-big">${xtLen(H)}</b><span class="xt-tag t-sea">${seaState(H)}</span></div>
  <div class="xt-grid">
@@ -483,11 +511,12 @@ function seaInner(){
   ${Ds!=null?tile(T2('Swell from','Ondulação de'),xtArrow(Ds)+xtCompass(Ds)+' <small class="xt-deg">'+Math.round(Ds)+'°</small>',Hs!=null&&Ts!=null?xtLen(Hs)+' · '+dcm(Ts,0)+' s':''):''}
   ${sst!=null?tile(T2('Sea temperature','Temp. do mar'),T(sst)+'°'):''}
   ${P!=null?tile(T2('Wave power','Energia das ondas'),'≈ '+(P<10?dcm(P,1):String(Math.round(P)))+' <small>kW/m</small>'):''}
-  ${tideTiles(td,tile)}
+  ${mob?'':tl}
   ${s.km!=null?tile(T2('Model point','Ponto do modelo'),s.km<1?T2('at the spot','no local'):xtDist(s.km),T2('open-sea grid cell','célula de mar aberto')):''}
  </div>
  <div class="xt-bars"><svg viewBox="0 0 250 48" preserveAspectRatio="none" role="img" aria-label="${T2('Wave height, next 24 hours','Altura das ondas, próximas 24 horas')}">${bars}</svg>
   <div class="xt-ax"><span>${T2('Now','Agora')}</span><span>+12 h</span><span>+24 h</span></div></div>
+ ${mob?`<div class="xt-grid xt-tides">${tl}</div>`:''}
  <p class="note">${T2('Biggest','Maior')}: ${xtLen(mx)} ${iMx?T2('around','por volta das')+' '+s.t[iMx].slice(11,13)+'h':T2('right now','agora')}. ${T2('Direction is where the swell comes from.','A direção indica de onde vem a ondulação.')}</p>
  <p class="xt-src">${T2('Waves and sea temperature: Open-Meteo Marine API, which blends wave models (Météo-France MFWAM ≈8 km, ECMWF WAM, NCEP GFS Wave, DWD EWAM over Europe). Values are for the nearest open-sea grid cell shown above, not a buoy or beach measurement, so surf at your beach can differ. Tides: modelled sea level (tide + air pressure), heights relative to mean sea level; indicative only, not for navigation.','Ondas e temperatura do mar: Open-Meteo Marine API, que junta modelos de ondas (MFWAM da Météo-France ≈8 km, ECMWF WAM, NCEP GFS Wave e DWD EWAM na Europa). Os valores são da célula de mar aberto mais próxima indicada acima, não de uma bóia nem da tua praia, por isso a rebentação aí pode ser diferente. Marés: nível do mar modelado (maré + pressão atmosférica), alturas relativas ao nível médio; apenas indicativo, não serve para navegação.')}</p>`;
 }
@@ -527,6 +556,7 @@ function anomInner(){
 const xtSea=()=>{const i=seaInner();return i?`<section class="card xt" id="sea">${i}</section>`:''};
 function xtraHTML(){
  if(!data||!place)return'';
+ requestAnimationFrame(()=>requestAnimationFrame(xtWatch));
  return`<div class="pane xtra" id="xtra"><section class="card xt" id="anom">${anomInner()}</section>${xtSea()}</div>`;
 }
 function paintXtra(){
@@ -536,6 +566,7 @@ function paintXtra(){
  if(!i){if(sc)sc.remove()}
  else if(sc)sc.innerHTML=i;
  else box.insertAdjacentHTML('beforeend',`<section class="card xt" id="sea">${i}</section>`);
+ xtWatch();
  try{skyPaint()}catch(e){}
 }
 

@@ -2,16 +2,15 @@
 /* ═══════════ SKYSCORE — motor de pontuação (colar IGUAL no app.js e no worker.js) ═══════════ */
 const SKY_ACTS=['run','bike','hike','allergy','photo','surf','stars'];
 const SKY_ICONS={
- run:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4a2 2 0 1 0-4 0 2 2 0 0 0 4 0z"/><path d="M14 8l-4 3 3 4-2 5M10 11l-3 4-4-1M13 15l4 4 4-2"/></svg>',
- bike:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5l3.5-7.5H19M12 17.5l-3-6 4-3.5 2 2M5.5 17.5l4-8"/></svg>',
- hike:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/><path d="M18 10l-2 3M7 16l3-2"/></svg>',
- allergy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 4 5 2-2 4-3 4-5a4 4 0 0 0-4-4zM12 22a4 4 0 0 0 4-4c0-2-2-3-4-5-2 2-4 3-4 5a4 4 0 0 0 4 4zM2 12a4 4 0 0 0 4 4c2 0 3-2 5-4-2-2-3-4-5-4a4 4 0 0 0-4 4zM22 12a4 4 0 0 0-4-4c-2 0-3 2-5 4 2 2 3 4 5 4a4 4 0 0 0 4-4z"/></svg>',
- photo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
- surf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18c3-3 6-3 9 0 3 3 6 3 9 0 1-1 1.5-1.5 2-1.5M2 12c3-3 6-3 9 0 3 3 6 3 9 0 1-1 1.5-1.5 2-1.5M2 6c3-3 6-3 9 0 3 3 6 3 9 0 1-1 1.5-1.5 2-1.5"/></svg>',
- stars:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 2.4 5 5.6.8-4 4 1 5.7-5-2.6-5 2.6 1-5.7-4-4 5.6-.8z"/><path d="M19 17v4M17 19h4M5 5v2M4 6h2"/></svg>'
-};
+ run:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="15.5" cy="4.5" r="2"/><path d="M13.5 8.5 11 13.5l3.5 2.5 1 4.5"/><path d="M11 13.5 8 18l-3.5.5"/><path d="M13.5 8.5 9.5 10 8 13"/><path d="M13.5 8.5l3.5 2.5 3-1"/></svg>',
+ bike:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17" r="3.5"/><circle cx="18.5" cy="17" r="3.5"/><path d="M5.5 17 9 9h5.5l4 8M9 9l3.5 8h-7M14.5 9 13 6h2.5"/></svg>',
+ hike:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 9.5 7l3.5 7 2-3.5L21 20z"/><path d="M8 11l1.5 1.5L11 11"/></svg>',
+ allergy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.4"/><path d="M12 9.6C10.2 8 10.2 4.5 12 3c1.8 1.5 1.8 5 0 6.6zM14.4 12c1.6-1.8 5.1-1.8 6.6 0-1.5 1.8-5 1.8-6.6 0zM12 14.4c1.8 1.6 1.8 5.1 0 6.6-1.8-1.5-1.8-5 0-6.6zM9.6 12C8 13.8 4.5 13.8 3 12c1.5-1.8 5-1.8 6.6 0z"/></svg>',
+ photo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5h3L8.7 5h6.6L17 7.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>',
+ surf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0c1.6-1.6 3.2-2.2 5-2"/><path d="M2 12c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0c1.6-1.6 3.2-2.2 5-2"/><path d="M5 7.5c2.5-2.5 5-2.5 7.5 0"/></svg>',
+ stars:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 3.5v4M16.5 5.5h4M5.5 15.5v3M4 17h3"/><path d="m11 4 1.8 4.4 4.7.4-3.6 3.1 1.1 4.6L11 13.4l-4 2.1 1.1-4.6-3.6-3.1 4.7-.4z" transform="translate(1 3) scale(.9)"/></svg>'};
 const SKY_NAME={run:['Running','Corrida'],bike:['Cycling','Ciclismo'],hike:['Hiking','Caminhada'],allergy:['Allergies','Alergias'],photo:['Photography','Fotografia'],surf:['Surf','Surf'],stars:['Stargazing','Astronomia']};
-const SKY_WHY={cold:['Too cold','Frio demais'],hot:['Too hot','Calor a mais'],humid:['Muggy air','Ar abafado'],rain:['Rain risk','Risco de chuva'],storm:['Thunderstorms','Trovoadas'],wind:['Strong wind','Vento forte'],air:['Poor air quality','Ar poluído'],pollen:['Pollen','Pólen'],dispersal:['Dry wind spreads pollen','Vento seco espalha pólen'],mold:['Damp air (mould)','Ar húmido (bolores)'],dark:['Outside the best light','Fora da melhor luz'],cloud:['Cloud cover','Nebulosidade'],haze:['Hazy air','Ar enevoado'],small:['Waves too small','Ondas pequenas'],big:['Waves too big','Ondas grandes'],short:['Short-period swell','Período curto'],moon:['Bright moon','Lua brilhante'],daylight:['Not dark yet','Ainda não é de noite']};
+const SKY_WHY={cold:['Too cold','Frio demais'],hot:['Too hot','Calor a mais'],humid:['Muggy air','Ar abafado'],rain:['Rain risk','Risco de chuva'],storm:['Thunderstorms','Trovoadas'],wind:['Strong wind','Vento forte'],air:['Poor air quality','Ar poluído'],pollen:['Pollen','Pólen'],dispersal:['Dry wind spreads pollen','Vento seco espalha pólen'],mold:['Damp air (mould)','Ar húmido (bolores)'],dark:['Outside the best light','Fora da melhor luz'],cloud:['Cloud cover','Nebulosidade'],haze:['Hazy air','Ar enevoado'],small:['Waves too small','Ondas pequenas'],big:['Waves too big','Ondas grandes'],short:['Short-period swell','Período curto'],alert:['Weather alert','Aviso meteorológico']};
 const SKY_POS={temp:['Ideal temperature','Temperatura ideal'],dry:['Dry','Sem chuva'],calm:['Light wind','Vento fraco'],air:['Clean air','Ar limpo'],pol:['Low pollen','Pólen baixo'],waves:['Good waves','Boas ondas'],sky:['Good light','Boa luz'],dark:['Dark sky','Céu escuro']};
 const SKY_SAY={
  run:[[90,'A day for personal bests.','Dia para bater recordes.'],[75,'Great running weather.','Ótimo tempo para correr.'],[55,'Fine for a run, with a catch.','Dá para correr, com um senão.'],[35,'Not ideal for running.','Não é o ideal para correr.'],[0,'Skip the run today.','Hoje é melhor não correr.']],
@@ -34,7 +33,12 @@ function skyHour(a,f){
   if(!f.day)add('dark',a==='hike'?60:25);
   if(t<lo)add('cold',(lo-t)*(a==='bike'?4:3.5));else if(t>hi)add('hot',(t-hi)*(a==='run'?3.5:3));
   if(f.dp!=null&&f.dp>16)add('humid',(f.dp-16)*3);
-  add('rain',pop*(a==='hike'?.45:.55)+(wet?15:0));
+  if(wet){
+    const heavy=c===65||c===82, violent=c===67||c===86;
+    add('rain',pop*(a==='hike'?.6:.75)+(violent?45:heavy?32:20));
+  }else{
+    add('rain',pop*(a==='hike'?.45:.55));
+  }
   if(storm)add('storm',60);
   add('wind',Math.max(0,g-(a==='bike'?18:30))*(a==='bike'?1.4:.9));
   if(f.aqi!=null)add('air',Math.max(0,f.aqi-30)*(a==='hike'?.4:.7));
@@ -78,6 +82,10 @@ function skyHour(a,f){
  let sum=0;for(const k in p)sum+=p[k];
  let s=skyClamp(Math.round(100-sum),0,100);
  if(storm&&a!=='allergy'&&s>15)s=15;
+ if(f.alert&&a!=='allergy'){
+  const cap=f.alert>=3?8:f.alert===2?25:55;      // red / orange / yellow
+  if(s>cap){p.alert=(p.alert||0)+(s-cap);s=cap}
+ }
  return{s,p};
 }
 /* H: {time,t,pop,code,day,wind,gust,rh,dp}; ctx: {today,nowIdx,sr[],ss[],pol[],aqi,allergy,sea}; d = 0..6 */
@@ -91,10 +99,13 @@ function skyDay(a,H,d,ctx){
  const rows=[];
  for(const j of idx){
   const hr=+H.time[j].slice(11,13);
+  if(a==='stars'&&H.day[j])continue;
+  if((a==='run'||a==='bike'||a==='hike'||a==='surf')&&(hr<6||hr>=22))continue;
   const gold=ss!=null&&sr!=null&&(hr===Math.floor((ss-25)/60)||hr===Math.floor((sr+20)/60));
   let wh=null,wp=null;
   if(a==='surf'&&ctx.sea){const k=ctx.sea.idx[H.time[j]];if(k!=null){wh=ctx.sea.wh[k];wp=ctx.sea.wp[k]}}
-  const r=skyHour(a,{t:H.t[j],pop:H.pop[j],code:H.code[j],day:!!H.day[j],wind:H.wind[j],gust:H.gust[j],rh:H.rh[j],dp:H.dp[j],hr,aqi,pol,allergy:ctx.allergy,moon,gold,wh,wp});
+  const alert=ctx.alerts&&ctx.alerts[d]!=null?ctx.alerts[d]:0;
+  const r=skyHour(a,{t:H.t[j],pop:H.pop[j],code:H.code[j],day:!!H.day[j],wind:H.wind[j],gust:H.gust[j],rh:H.rh[j],dp:H.dp[j],hr,aqi,pol,allergy:ctx.allergy,moon,gold,wh,wp,alert});
   if(r&&!(a==='photo'&&!gold)&&!(a==='allergy'&&!H.day[j]))rows.push({j,hr,r});
  }
  if(!rows.length)return{a,d,date,s:null,over};
@@ -104,7 +115,7 @@ function skyDay(a,H,d,ctx){
   const avg=win.reduce((x,y)=>x+y.r.s,0)/win.length;
   if(!best||avg>best.avg)best={avg,win};
  }
- const p={};for(const w of best.win)for(const k in w.r.p)p[k]=(p[k]||0)+w.r.p[k]/best.win.length;
+ const p={};for(const w of rows)for(const k in w.r.p)p[k]=(p[k]||0)+w.r.p[k]/rows.length;
  const why=Object.entries(p).filter(e=>e[1]>=5).sort((x,y)=>y[1]-x[1]).slice(0,3).map(e=>e[0]);
  const pos=[];
  if(a==='run'||a==='bike'||a==='hike'){
@@ -115,7 +126,7 @@ function skyDay(a,H,d,ctx){
  else if(a==='stars'){if(!p.cloud&&!p.daylight)pos.push('dark')}
  const h0=best.win[0],h1=best.win[best.win.length-1];
  const win=a==='photo'&&ss!=null?[skyHM(ss-45),skyHM(ss)]:[String(h0.hr).padStart(2,'0')+':00',String((h1.hr+1)%24).padStart(2,'0')+':00'];
- const s=Math.round(best.avg);
+ const s=Math.round(rows.reduce((x,y)=>x+y.r.s,0)/rows.length);
  const pts={};for(const k of why)pts[k]=Math.round(p[k]);
  return{a,d,date,s,win,t:H.t[h0.j],pop:H.pop[h0.j],why:why.filter(k=>!(s>=90)),pts,pos:pos.slice(0,2),over,pol,hrs:rows.map(x=>[x.hr,x.r.s])};
 }
@@ -131,8 +142,27 @@ function skyCompute(a){
  const sea=xtGet('sea'),pol=[];
  if(pollenOutlook&&pollenOutlook.length)pollenOutlook.forEach((o,i)=>pol[i]=o.lvl);else if(sig.pollen&&RISK[sig.pollen.risk]!=null)pol[0]=RISK[sig.pollen.risk];
  const ctx={today:data.current.time.slice(0,10),nowIdx:idx0(),sr:data.daily.sunrise,ss:data.daily.sunset,pol,aqi:sig.aqi,allergy:skyCfg().acts.includes('allergy'),
+  alerts:skyAlertLevels(sig,data),
   sea:sea&&sea.t&&sea.wh?{idx:Object.fromEntries(sea.t.map((x,i)=>[x,i])),wh:sea.wh,wp:sea.wp||[]}:null};
  const out=[];for(let d=0;d<7;d++)out.push(skyDay(a,H,d,ctx));return out;
+}
+// 0=sem aviso · 1=amarelo · 2=laranja · 3=vermelho — um valor por dia (0..6)
+function skyAlertLevels(sig,data){
+  const w=sig&&(sig.warnings||sig.alerts);
+  if(!w)return[0,0,0,0,0,0,0];
+  if(Array.isArray(w)&&typeof w[0]==='number')return w.slice(0,7).concat([0,0,0,0,0,0,0]).slice(0,7);
+  const LV={yellow:1,amarelo:1,orange:2,laranja:2,red:3,vermelho:3};
+  const dates=data.daily.time,out=dates.map(()=>0);
+  for(const x of w){
+    const lvl=LV[String(x.level||x.awarenessLevelID||x.awareness_level||'').toLowerCase()]||0;
+    if(!lvl)continue;
+    const st=Date.parse(x.startTime||x.start||x.start_time||''),en=Date.parse(x.endTime||x.end||x.end_time||'');
+    for(let i=0;i<dates.length;i++){
+      const dt=Date.parse(dates[i]+'T12:00:00');
+      if((isNaN(st)||dt>=st)&&(isNaN(en)||dt<=en)&&lvl>out[i])out[i]=lvl;
+    }
+  }
+  return out;
 }
 function skyBook(all){                                  // sequência de dias e recordes (guardados e sincronizados)
  const n=new Date(),k=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');

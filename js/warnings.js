@@ -6,6 +6,71 @@ let ipmaAreas=null,ipmaWarn=null,ipmaT=0,ipmaTok=0,ipmaCur=null,ipmaPl=null;
 const hav=(a,b,c,d)=>{const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742*Math.asin(Math.sqrt(x))};
 const escH=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+
+/* ============ Recomendações por aviso (tipo + gravidade) ============ */
+const IPMA_HEAD={1:['Be aware','Atenção'],2:['Be prepared','Prepara-te'],3:['Take action','Age já']};
+const IPMA_TIPS={
+ rain:{re:/precip|chuv/,t:{
+  1:[['Carry an umbrella and drive carefully on wet roads.','Leva guarda-chuva e conduz com cuidado em estrada molhada.']],
+  2:[['Avoid low-lying areas, underpasses and riverbanks.','Evita zonas baixas, passagens inferiores e margens de rios.'],['Leave extra time for trips and keep nearby drains clear.','Prevê mais tempo nas viagens e mantém os ralos próximos desimpedidos.']],
+  3:[['Never cross flooded roads, on foot or by car.','Nunca atravesses estradas inundadas, a pé ou de carro.'],['Postpone non-essential trips and move valuables off the ground floor.','Adia deslocações não essenciais e leva os objetos de valor para andares altos.']]}},
+ storm:{re:/trov/,t:{
+  1:[['Keep an eye on the sky and go indoors at the first thunder.','Vai observando o céu e abriga-te ao primeiro trovão.']],
+  2:[['Stay away from open ground, water and isolated tall trees.','Afasta-te de zonas abertas, da água e de árvores altas isoladas.'],['Do not shelter under trees; unplug sensitive devices.','Não te abrigues debaixo de árvores; desliga equipamentos sensíveis.']],
+  3:[['Stay indoors and away from windows until the storm passes.','Fica em casa, longe das janelas, até a trovoada passar.'],['Avoid showers and taps during lightning; postpone any trip.','Evita duches e torneiras durante os relâmpagos; adia qualquer viagem.']]}},
+ wind:{re:/vent/,t:{
+  1:[['Secure light objects on balconies and terraces.','Prende objetos leves em varandas e terraços.']],
+  2:[['Avoid walking under trees, scaffolding and signs.','Evita passar debaixo de árvores, andaimes e placas.'],['Bring in or tie down outdoor furniture; take care with high-sided vehicles.','Recolhe ou prende o mobiliário exterior; cuidado com veículos altos.']],
+  3:[['Stay indoors, away from windows. Do not park under trees or near structures.','Fica em casa, longe das janelas. Não estaciones debaixo de árvores nem junto a estruturas.'],['Avoid the coast, ridges and any non-essential travel.','Evita o litoral, cumeadas e deslocações não essenciais.']]}},
+ heat:{re:/quent|calor|temperatura m[aá]x/,t:{
+  1:[['Drink water often and avoid effort between 11:00 and 17:00.','Bebe água com frequência e evita esforço entre as 11h e as 17h.']],
+  2:[['Check on older people, children and pets; wear light clothes and a hat.','Vê como estão idosos, crianças e animais; veste roupa leve e chapéu.'],['Never leave anyone in a parked car.','Nunca deixes ninguém dentro de um carro estacionado.']],
+  3:[['Avoid all outdoor effort and stay somewhere cool.','Evita qualquer esforço ao ar livre e fica num local fresco.'],['Dizziness, confusion or hot dry skin can be heat stroke: call 112.','Tonturas, confusão ou pele quente e seca podem ser golpe de calor: liga 112.']]}},
+ cold:{re:/frio|temperatura m[ií]n/,t:{
+  1:[['Dress in layers and protect hands, feet and head.','Veste-te em camadas e protege mãos, pés e cabeça.']],
+  2:[['Check on older people and anyone who sleeps or works outdoors.','Vê como estão idosos e quem dorme ou trabalha ao ar livre.'],['Never use barbecues or open-flame heaters in closed rooms.','Nunca uses braseiras ou aquecedores de chama em espaços fechados.']],
+  3:[['Limit time outside and cover exposed skin.','Limita o tempo no exterior e tapa a pele exposta.'],['Beware of ice on roads and paths; avoid long trips.','Cuidado com gelo nas estradas e caminhos; evita viagens longas.']]}},
+ snow:{re:/neve|nev[aã]o|nevad/,t:{
+  1:[['Drive carefully and check road conditions before leaving.','Conduz com cuidado e vê o estado das estradas antes de sair.']],
+  2:[['Carry snow chains and keep your phone charged.','Leva correntes de neve e mantém o telemóvel carregado.'],['Avoid mountain roads if you are not prepared.','Evita estradas de montanha se não estiveres preparado.']],
+  3:[['Do not travel unless it is essential.','Não viajes se não for essencial.'],['If you must go, take food, water, blankets and a full tank.','Se tiveres mesmo de ir, leva comida, água, cobertores e o depósito cheio.']]}},
+ fog:{re:/nevoeir/,t:{
+  1:[['Use dipped headlights and keep a longer following distance.','Usa médios e aumenta a distância de segurança.']],
+  2:[['Slow down, avoid overtaking and leave extra time.','Reduz a velocidade, evita ultrapassagens e prevê mais tempo.']],
+  3:[['Postpone the trip if you can; visibility may be near zero.','Adia a viagem se puderes; a visibilidade pode ser quase nula.'],['If you get caught, pull well off the road and use hazard lights.','Se fores apanhado, sai bem da estrada e liga os quatro piscas.']]}},
+ sea:{re:/mar[ií]tim|agita|ondula/,t:{
+  1:[['Take care on beaches, piers and coastal paths.','Cuidado em praias, molhes e caminhos junto à costa.']],
+  2:[['Stay away from rocks, breakwaters and cliff edges; no fishing from rocks.','Afasta-te de rochas, quebra-mares e arribas; não pesques das rochas.'],['Avoid swimming and small boats.','Evita nadar e sair em barcos pequenos.']],
+  3:[['Stay away from the shoreline and seafront; do not go to sea.','Afasta-te da orla costeira e da marginal; não vás para o mar.'],['Follow instructions from the maritime authorities.','Segue as indicações da autoridade marítima.']]}}
+};
+const IPMA_GEN={
+ 1:[['Keep an eye on the forecast and plan ahead.','Acompanha a previsão e planeia com antecedência.']],
+ 2:[['Reconsider outdoor plans and follow the official updates.','Reconsidera planos ao ar livre e acompanha as atualizações oficiais.']],
+ 3:[['Avoid unnecessary risks and stay informed.','Evita riscos desnecessários e mantém-te informado.']]};
+const IPMA_RED_EXTRA=[['Follow Proteção Civil instructions. Emergency: 112.','Segue as indicações da Proteção Civil. Emergência: 112.']];
+function ipmaTipsFor(w){
+ const lv=IPMA_LV[w.awarenessLevelID]||1,nm=String(w.awarenessTypeName||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const k=Object.keys(IPMA_TIPS).find(x=>IPMA_TIPS[x].re.test(nm)||IPMA_TIPS[x].re.test(String(w.awarenessTypeName||'').toLowerCase()));
+ let L=(k?IPMA_TIPS[k].t[lv]:IPMA_GEN[lv])||IPMA_GEN[lv];
+ if(lv==3)L=L.concat(IPMA_RED_EXTRA);
+ return{lv,head:IPMA_HEAD[lv],tips:L};
+}
+function ipmaTipsHTML(w){
+ const r=ipmaTipsFor(w),pt=LANG=='pt';
+ return`<div class="wtips lv${r.lv}"><b>${pt?r.head[1]:r.head[0]} · ${pt?'Recomendações':'Recommendations'}</b><ul>${r.tips.map(t=>`<li>${escH(pt?t[1]:t[0])}</li>`).join('')}</ul></div>`;
+}
+function ipmaTopTip(){                      // 1.ª recomendação do aviso mais grave (faixa do telemóvel)
+ const w=ipmaCur&&ipmaCur.list[0];if(!w)return null;
+ const r=ipmaTipsFor(w);return r.tips[0][LANG=='pt'?1:0];
+}
+if(!document.getElementById('wtipsCss')){const st=document.createElement('style');st.id='wtipsCss';
+ st.textContent='.wtips{margin:8px 0 4px;padding:9px 12px;border-radius:12px;border-left:3px solid var(--wc);background:color-mix(in srgb,var(--wc) 12%,transparent);font-size:.86em;line-height:1.4}'
+ +'.wtips.lv2{background:color-mix(in srgb,var(--wc) 17%,transparent);border-left-width:4px}'
+ +'.wtips.lv3{background:color-mix(in srgb,var(--wc) 24%,transparent);border-left-width:5px;font-weight:600}'
+ +'.wtips>b{display:block;margin-bottom:4px;font-size:.74em;letter-spacing:.06em;text-transform:uppercase}'
+ +'.wtips ul{margin:0;padding:0 0 0 17px}.wtips li{margin:2px 0}';
+ document.head.appendChild(st)}
+
 async function ipmaLoad(){
  if(!ipmaAreas){
   const j=await fetchJSON(WORKER+'/ipma-areas');
@@ -19,7 +84,7 @@ function ipmaPaint(){
  const fmt=s=>new Date(s).toLocaleString(LANG=='pt'?'pt-PT':'en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})
  const L=ipmaCur.list;
  p.innerHTML=`<div class="wh"><b>IPMA warnings</b><span>${escH(ipmaCur.area)}</span></div>`+
-  (L.length?L.map((w,i)=>`<div class="wi" style="--wc:${IPMA_COL[w.awarenessLevelID]||'#999'};--n:${i}"><i class="wdot"></i><div><b>${escH(w.awarenessTypeName)}</b><em>${escH(w.awarenessLevelID)}</em><p>${escH(w.text)}</p><small>${fmt(w.startTime)} → ${fmt(w.endTime)}</small></div></div>`).join(''):'<p class="wnone">No active warnings for this area. ☀️</p>')+
+  (L.length?L.map((w,i)=>`<div class="wi" style="--wc:${IPMA_COL[w.awarenessLevelID]||'#999'};--n:${i}"><i class="wdot"></i><div><b>${escH(w.awarenessTypeName)}</b><em>${escH(w.awarenessLevelID)}</em><p>${escH(w.text)}</p>${ipmaTipsHTML(w)}<small>${fmt(w.startTime)} → ${fmt(w.endTime)}</small></div></div>`).join(''):'<p class="wnone">No active warnings for this area. ☀️</p>')+
   '<a class="wsrc" href="https://www.ipma.pt/pt/otempo/prev.significativa/" target="_blank" rel="noopener">Source: IPMA ↗</a>';
 }
 async function ipmaUpdate(pl){

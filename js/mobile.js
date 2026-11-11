@@ -234,6 +234,7 @@ ${k==='uv'?`<div class="m-uvbar" style="margin:14px 0 8px" aria-hidden="true"><i
   b.hidden=!on;if(!on)return;
   b.style.setProperty('--wc',getComputedStyle(w).getPropertyValue('--wc')||'#e5532d');
   b.querySelector('b').textContent=w.textContent.trim();
+  {const sm=b.querySelector('small'),tp=typeof ipmaTopTip==='function'?ipmaTopTip():null;if(sm)sm.textContent=tp||T2('Official warning for your area','Aviso oficial para a tua zona')}
  }
  function hoursSync(){
   const tr=$('#tr');if(!tr)return;const v=+tr.value;
