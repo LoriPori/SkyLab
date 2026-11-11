@@ -418,7 +418,7 @@ function seaPrep(j){
  const h=j.hourly,from=data.current.time.slice(0,13)+':00';
  let i0=h.time.findIndex(t=>t>=from);if(i0<0)i0=0;
  const cut=k=>(h[k]||[]).slice(i0,i0+25).map(v=>v==null?null:+v);
- const a0=Math.max(0,i0-3),o={km:+j.km||0,tl:{t:h.time.slice(a0,i0+50),v:(h.sea_level_height_msl||[]).slice(a0,i0+50).map(v=>v==null?null:+v)},t:h.time.slice(i0,i0+25),wh:cut('wave_height'),wp:cut('wave_period'),wd:cut('wave_direction'),sh:cut('swell_wave_height'),sp:cut('swell_wave_period'),sd:cut('swell_wave_direction'),ww:cut('wind_wave_height'),sst:cut('sea_surface_temperature')};
+ const a0=Math.max(0,i0-3),o={km:+j.km||0,tl:{t:h.time.slice(a0,i0+50),v:(h.sea_level_height_msl||[]).slice(a0,i0+50).map(v=>v==null?null:+v)},t:h.time.slice(i0,i0+25),wh:cut('wave_height'),wp:cut('wave_period'),wd:cut('wave_direction'),sh:cut('swell_wave_height'),sp:cut('swell_wave_period'),sd:cut('swell_wave_direction'),ww:cut('wind_wave_height'),sst:cut('sea_surface_temperature'),cv:cut('ocean_current_velocity')};
  return o.wh.some(v=>v!=null)?o:false;
 }
 const xtDist=km=>unit=='c'?Math.round(km)+' km':Math.round(km*.621371)+' mi';
@@ -499,49 +499,80 @@ function svCSS(){
  if(document.getElementById('sv-css'))return;
  const st=document.createElement('style');st.id='sv-css';
  st.textContent=`
-#sea{--svl:rgba(20,49,79,.13);--svc:var(--acc,#2f6db5)}
-@supports(color:color-mix(in srgb,red,blue)){#sea{--svl:color-mix(in srgb,currentColor 14%,transparent)}}
-#sea .sv-top{display:flex;align-items:center;justify-content:space-between;gap:14px}
-#sea .sv-top>div:first-child{min-width:0}
-#sea .sv-top .xt-head{flex-wrap:wrap;row-gap:6px}
-#sea .sv-top .xt-big{white-space:nowrap}
-#sea .sv-sub{margin:6px 0 0;font-size:13.5px;opacity:.72}
-#sea .sv-dial{flex:none;text-align:center;font-size:11px;font-weight:600;letter-spacing:.05em;line-height:1.2;opacity:.9}
-#sea .sv-dial svg{display:block;width:62px;height:62px;margin:0 auto 3px}
-#sea .sv-leg{display:flex;flex-wrap:wrap;gap:4px 16px;margin:18px 0 0;font-size:11.5px;opacity:.72}
-#sea .sv-leg i{display:inline-block;vertical-align:middle;margin-right:6px}
-#sea .sv-leg .w i{width:13px;height:8px;border-radius:2px;background:currentColor;opacity:.4}
-#sea .sv-leg .t i{width:15px;height:0;border-top:2.5px solid var(--svc);border-radius:2px}
-#sea .sv-chart{position:relative;padding:22px 0 0}
-#sea .sv-plot{position:relative;height:108px;margin-bottom:24px}
-#sea .sv-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-#sea .sv-wa{fill:currentColor;fill-opacity:.15;stroke:none}
-#sea .sv-wl{fill:none;stroke:currentColor;stroke-opacity:.5;stroke-width:1.6;vector-effect:non-scaling-stroke}
-#sea .sv-tl{fill:none;stroke:var(--svc);stroke-width:2.5;stroke-linecap:round;vector-effect:non-scaling-stroke}
-#sea .sv-pin{position:absolute;width:0;height:0}
-#sea .sv-pin i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:#fff;border:2.5px solid var(--svc);box-sizing:border-box}
-#sea .sv-pin.now i{left:-4px;top:-4px;width:8px;height:8px;border-width:2px}
-#sea .sv-pin em{position:absolute;font-style:normal;font-size:11.5px;font-weight:600;white-space:nowrap;line-height:1}
-#sea .sv-pin.hi em{bottom:9px}
-#sea .sv-pin.lo em{top:9px}
-#sea .sv-pin .c{left:0;transform:translateX(-50%)}
-#sea .sv-pin .l{left:-4px}
-#sea .sv-pin .r{right:-4px}
-#sea .sv-ax{position:relative;height:14px;margin-top:-4px;font-size:11.5px;opacity:.65}
-#sea .sv-ax span{position:absolute;top:0;white-space:nowrap;transform:translateX(-50%)}
-#sea .sv-ax span.a{transform:none}#sea .sv-ax span.z{transform:translateX(-100%)}
-#sea .sv-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));column-gap:30px;margin:14px 0 0}
-#sea .sv-r{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:3px 12px;padding:11px 0;border-top:1px solid var(--svl)}
-#sea .sv-wide{grid-column:1/-1}
-#sea .sv-r dt{margin:0;font-size:12px;letter-spacing:.07em;text-transform:uppercase;opacity:.65}
-#sea .sv-r dd{margin:0;text-align:right;font-size:17px;font-weight:700}
-#sea .sv-r dd small{font-size:12.5px;font-weight:400;opacity:.7;margin-left:4px}
-#sea .sv-r dd.sv-s{grid-column:1/-1;text-align:left;font-size:13px;font-weight:400;line-height:1.55;opacity:.8}
-#sea .sv-r dd.sv-s b{font-weight:700}
-#sea .sv-r .xt-arr{display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:-1px;transform:rotate(var(--r,0deg))}
+.xt{--svl:rgba(20,49,79,.13);--svc:var(--acc,#2f6db5)}
+@supports(color:color-mix(in srgb,red,blue)){.xt{--svl:color-mix(in srgb,currentColor 14%,transparent)}}
+#xtra .xt{display:flex;flex-direction:column}
+#xtra .xt .xt-src{margin-top:auto;padding-top:12px}
+.xt .sv-top{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.xt .sv-top>div:first-child{min-width:0}
+.xt .sv-top .xt-head{flex-wrap:wrap;row-gap:6px}
+.xt .sv-top .xt-big{white-space:nowrap}
+.xt .sv-sub{margin:6px 0 0;font-size:13.5px;opacity:.72}
+.xt .sv-dial{flex:none;text-align:center;font-size:11px;font-weight:600;letter-spacing:.05em;line-height:1.2;opacity:.9}
+.xt .sv-dial svg{display:block;width:62px;height:62px;margin:0 auto 3px}
+.xt .sv-cap{display:flex;justify-content:space-between;gap:10px;margin:22px 0 0;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;opacity:.62}
+.xt .sv-tide{position:relative;padding:20px 0 0}
+.xt .sv-plot{position:relative;height:92px;margin-bottom:22px}
+.xt .sv-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.xt .sv-ta{fill:url(#svTg);stroke:none}
+.xt .sv-tl{fill:none;stroke:var(--svc);stroke-width:2.5;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.xt .sv-zero{fill:none;stroke:currentColor;stroke-opacity:.28;stroke-width:1;stroke-dasharray:3 4;vector-effect:non-scaling-stroke}
+.xt .sv-pin{position:absolute;width:0;height:0}
+.xt .sv-pin i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:#fff;border:2.5px solid var(--svc);box-sizing:border-box}
+.xt .sv-pin.now i{left:-4px;top:-4px;width:8px;height:8px;border-width:2px}
+.xt .sv-pin em{position:absolute;font-style:normal;font-size:11.5px;font-weight:600;white-space:nowrap;line-height:1}
+.xt .sv-pin.hi em{bottom:9px}
+.xt .sv-pin.lo em{top:9px}
+.xt .sv-pin .c{left:0;transform:translateX(-50%)}
+.xt .sv-pin .l{left:-4px}
+.xt .sv-pin .r{right:-4px}
+.xt .sv-bars{position:relative;display:flex;align-items:flex-end;gap:3px;height:54px;margin-top:24px}
+.xt .sv-bars i{flex:1;min-width:0;min-height:3px;border-radius:3px 3px 2px 2px;background:currentColor;opacity:.2}
+.xt .sv-bars i.pk{opacity:.55}
+.xt .sv-bv{position:absolute;top:-19px;font-size:11.5px;font-weight:600;white-space:nowrap;line-height:1}
+.xt .sv-bv.a{transform:none}.xt .sv-bv.z{transform:translateX(-100%)}.xt .sv-bv.c{transform:translateX(-50%)}
+.xt .sv-ax{position:relative;height:14px;margin-top:7px;font-size:11.5px;opacity:.65}
+.xt .sv-ax span{position:absolute;top:0;white-space:nowrap;transform:translateX(-50%)}
+.xt .sv-ax span.a{transform:none}.xt .sv-ax span.z{transform:translateX(-100%)}
+.xt .sv-rg{position:relative;height:12px;margin:40px 0 34px;border-radius:99px;background:var(--svl)}
+.xt .sv-rg i{position:absolute;top:0;bottom:0;border-radius:99px;background:currentColor}
+.xt .sv-rg i.a{opacity:.13}.xt .sv-rg i.b{opacity:.22}.xt .sv-rg i.c{opacity:.36}
+.xt .sv-rg i.m{width:2px;top:-4px;bottom:-4px;border-radius:1px;opacity:.65}
+.xt .sv-rg b{position:absolute;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:var(--svc);border:3px solid #fff;box-sizing:border-box;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.xt .sv-rl{position:absolute;font-size:11.5px;white-space:nowrap;line-height:1.25;opacity:.75}
+.xt .sv-rl.up{bottom:20px;opacity:1;font-weight:700;font-size:12.5px}
+.xt .sv-rl.dn{top:20px}
+.xt .sv-rl.a{transform:none}.xt .sv-rl.z{transform:translateX(-100%)}.xt .sv-rl.c{transform:translateX(-50%)}
+.xt .sv-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;margin:16px 0 0}
+.xt .sv-r{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:3px 12px;padding:11px 0;border-top:1px solid var(--svl)}
+.xt .sv-wide{grid-column:1/-1}
+.xt .sv-r:not(.sv-wide){display:block;padding:10px 0 11px}
+.xt .sv-r:not(.sv-wide) dd{text-align:left;font-size:18px;margin-top:4px;line-height:1.2}
+.xt .sv-r:not(.sv-wide) dd small{display:block;margin:3px 0 0;font-size:12px}
+.xt .sv-dens{position:relative;height:112px;margin:30px 0 0}
+#xtra #anom .sv-dens{flex:1 1 112px;height:auto;min-height:112px;max-height:300px}
+.xt .sv-dens svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.xt .sv-da{fill:currentColor;fill-opacity:.1;stroke:none}
+.xt .sv-db{fill:currentColor;fill-opacity:.2;stroke:none}
+.xt .sv-dl{fill:none;stroke:currentColor;stroke-opacity:.55;stroke-width:1.6;vector-effect:non-scaling-stroke}
+.xt .sv-dn{stroke:var(--svc);stroke-width:2;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.xt .sv-dd{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--svc);border:3px solid #fff;box-sizing:border-box;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.xt .sv-dv{position:absolute;top:-26px;font-size:12.5px;font-weight:700;white-space:nowrap;line-height:1}
+.xt .sv-dv.a{transform:none}.xt .sv-dv.z{transform:translateX(-100%)}.xt .sv-dv.c{transform:translateX(-50%)}
+.xt .sv-dx{position:relative;height:14px;margin-top:8px;font-size:11.5px;opacity:.7}
+.xt .sv-dx span{position:absolute;top:0;white-space:nowrap}
+.xt .sv-dx .a{transform:none}.xt .sv-dx .z{transform:translateX(-100%)}.xt .sv-dx .c{transform:translateX(-50%)}
+.xt .sv-r dt{margin:0;font-size:12px;letter-spacing:.07em;text-transform:uppercase;opacity:.65}
+.xt .sv-r dd{margin:0;text-align:right;font-size:17px;font-weight:700}
+.xt .sv-r dd small{font-size:12.5px;font-weight:400;opacity:.7;margin-left:4px}
+.xt .sv-r dd.sv-s{grid-column:1/-1;text-align:left;font-size:13px;font-weight:400;line-height:1.55;opacity:.8}
+.xt .sv-r dd.sv-s b{font-weight:700}
+.xt .sv-r .xt-arr{display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:-1px;transform:rotate(var(--r,0deg))}
 `;
  document.head.appendChild(st);
 }
+const svRow=(l,v)=>`<div class="sv-r"><dt>${l}</dt><dd>${v}</dd></div>`;
+const svAl=x=>x<14?'a':x>86?'z':'c';
 function svPath(p){                                              // curva suave (Catmull-Rom → Bézier) por pontos [x,y]
  if(p.length<2)return'';
  const f=n=>n.toFixed(2);let d='M'+f(p[0][0])+','+f(p[0][1]);
@@ -556,55 +587,64 @@ function seaInner(){
  const s=xtGet('sea');if(!s)return'';
  const H=xtFirst(s.wh);if(H==null)return'';
  svCSS();
- const Tm=xtFirst(s.wp),Hs=s.sh[0]!=null?s.sh[0]:xtFirst(s.sh),Ts=s.sp[0]!=null?s.sp[0]:xtFirst(s.sp),Ds=s.sd[0]!=null?s.sd[0]:xtFirst(s.sd),sst=xtFirst(s.sst);
+ const Tm=xtFirst(s.wp),Hs=s.sh[0]!=null?s.sh[0]:xtFirst(s.sh),Ts=s.sp[0]!=null?s.sp[0]:xtFirst(s.sp),Ds=s.sd[0]!=null?s.sd[0]:xtFirst(s.sd),sst=xtFirst(s.sst),Hw=s.ww[0]!=null?s.ww[0]:xtFirst(s.ww),Cv=s.cv?xtFirst(s.cv):null;
  // período que descreve o mar: o da ondulação, se ela domina; senão o das ondas de vento
  const swellRules=Hs!=null&&Ts!=null&&Hs>=.6*H,Tk=swellRules?Ts:Tm;
  const P=Tm!=null?.49*H*H*Tm:null;                     // fluxo de energia das ondas em águas profundas: P ≈ ρg²/(64π)·H²·T ≈ 0,49·H²·T  [kW/m]
  const mx=Math.max(...s.wh.filter(v=>v!=null)),iMx=s.wh.indexOf(mx);
  tideFallback();
  const pend=!tideOk(s)&&xtGet('tide')===undefined,src=tideOk(s)?s:{tl:xtGet('tide')||null},td=pend?{none:'load'}:tideInfo(src);
+ const N=Math.max(1,s.t.length-1),M=N+1,X=i=>(i+.5)/M*100;       // mesmas colunas para a maré e para as barras das ondas
 
- /* ---- gráfico: ondas (área) + maré (linha) nas próximas 24 h ---- */
- const N=Math.max(1,s.t.length-1),X=i=>i/N*100,vmax=Math.max(mx,.5),wy=v=>100-v/vmax*90;
- const wp=s.wh.map((v,i)=>v==null?null:[X(i),wy(v)]).filter(Boolean);
- const wl=svPath(wp),wa=wp.length>1?wl+'L'+wp[wp.length-1][0].toFixed(2)+',100L'+wp[0][0].toFixed(2)+',100Z':'';
- let tl='',pins='';
+ /* ---- maré: curva com água por baixo, preia-mar/baixa-mar marcadas ---- */
+ let tide='';
  if(td&&!td.none&&src.tl){
   const Lt=src.tl,mp=new Map(Lt.t.map((t,i)=>[t,Lt.v[i]])),ser=s.t.map(t=>{const v=mp.get(t);return v==null?null:v});
   const t0=Date.parse(s.t[0]+':00Z'),evs=[td.high,td.low].filter(e=>e&&e.t>=t0&&e.t<=t0+N*36e5);
   const all=ser.filter(v=>v!=null).concat(evs.map(e=>e.h));
   if(all.length>2){
-   const lo=Math.min(...all),rg=Math.max(Math.max(...all)-lo,.05),ty=v=>100-(v-lo)/rg*100;
+   const lo=Math.min(...all),hi=Math.max(...all),rg=Math.max(hi-lo,.05),ty=v=>100-(v-lo)/rg*100;
    const tp=ser.map((v,i)=>v==null?null:[X(i),ty(v)]).filter(Boolean);
    if(tp.length>1){
-    tl=`<path class="sv-tl" d="${svPath(tp)}"/>`;
-    pins+=`<span class="sv-pin now" style="left:${tp[0][0].toFixed(1)}%;top:${tp[0][1].toFixed(1)}%"><i></i></span>`;
+    const ln=svPath(tp),ar=ln+'L'+tp[tp.length-1][0].toFixed(2)+',100L'+tp[0][0].toFixed(2)+',100Z';
+    const z=lo<0&&hi>0?`<path class="sv-zero" d="M0,${ty(0).toFixed(1)}L100,${ty(0).toFixed(1)}"/>`:'';
+    let pins=`<span class="sv-pin now" style="left:${tp[0][0].toFixed(1)}%;top:${tp[0][1].toFixed(1)}%"><i></i></span>`;
     evs.forEach(e=>{
-     const x=(e.t-t0)/(N*36e5)*100,hi=e===td.high,al=x<20?'l':x>80?'r':'c';
-     pins+=`<span class="sv-pin ${hi?'hi':'lo'}" style="left:${x.toFixed(1)}%;top:${ty(e.h).toFixed(1)}%"><i></i><em class="${al}">${hi?T2('High','Preia-mar'):T2('Low','Baixa-mar')} ${xtWhen(e.t,td.now).hm}</em></span>`;
+     const x=((e.t-t0)/36e5+.5)/M*100,hiT=e===td.high;
+     pins+=`<span class="sv-pin ${hiT?'hi':'lo'}" style="left:${x.toFixed(1)}%;top:${ty(e.h).toFixed(1)}%"><i></i><em class="${x<20?'l':x>80?'r':'c'}">${hiT?T2('High','Preia-mar'):T2('Low','Baixa-mar')} ${xtWhen(e.t,td.now).hm}</em></span>`;
     });
+    tide=`<div class="sv-cap"><span>${T2('Tide','Maré')}</span><span>${td.rising?T2('rising','a encher'):T2('falling','a vazar')}</span></div>
+ <div class="sv-tide" role="img" aria-label="${T2('Tide level, next 24 hours','Nível da maré, próximas 24 horas')}"><div class="sv-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="svTg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--svc)" stop-opacity=".34"/><stop offset="1" style="stop-color:var(--svc)" stop-opacity=".04"/></linearGradient></defs>${z}<path class="sv-ta" d="${ar}"/><path class="sv-tl" d="${ln}"/></svg>${pins}</div></div>`;
    }
   }
  }
- const ax=[0,6,12,18,24].filter(i=>i<=N).map(i=>`<span class="${i===0?'a':i===N?'z':''}" style="left:${X(i).toFixed(1)}%">${i?s.t[i].slice(11,13)+'h':T2('Now','Agora')}</span>`).join('');
+
+ /* ---- ondas: barras das próximas 24 h, com o pico assinalado ---- */
+ const vmax=Math.max(mx,.5),bars=s.wh.map((v,i)=>`<i${i===iMx?' class="pk"':''} style="height:${v==null?0:Math.max(4,v/vmax*100).toFixed(1)}%"></i>`).join('');
+ const px=X(iMx),pk=`<span class="sv-bv ${svAl(px)}" style="left:${px.toFixed(1)}%">${xtLen(mx)}${iMx?' · '+s.t[iMx].slice(11,13)+'h':''}</span>`;
+ const ax=[0,6,12,18,24].filter(i=>i<=N).map(i=>`<span class="${i===0?'a':i===N?'z':''}" style="left:${i===0?0:i===N?100:X(i).toFixed(1)}%">${i?s.t[i].slice(11,13)+'h':T2('Now','Agora')}</span>`).join('');
  const dial=Ds!=null?`<div class="sv-dial" title="${T2('Direction the swell comes from','Direção de onde vem a ondulação')}"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="1.5"/><text x="32" y="11" text-anchor="middle" font-size="7.5" fill="currentColor" fill-opacity=".55">N</text><g transform="rotate(${Math.round(Ds)+180} 32 32)"><path d="M32 17l8 15h-5.5v15h-5V32H24z" fill="currentColor"/></g></svg>${xtCompass(Ds)} ${Math.round(Ds)}°</div>`:'';
 
- /* ---- lista de factos: linhas finas, sem caixas ---- */
- const row=(l,v)=>`<div class="sv-r"><dt>${l}</dt><dd>${v}</dd></div>`;
+ /* ---- lista de factos ---- */
+ const cur=Cv!=null&&Cv>=.1?svRow(T2('Current','Corrente'),unit=='c'?dcm(Cv,1)+'<small>km/h</small>':dcm(Cv*.621371,1)+'<small>mph</small>'):'';
  const facts=[
-  Hs!=null&&Ts!=null?row(T2('Swell','Ondulação'),xtLen(Hs)+' · '+dcm(Ts,0)+' s'+(Ds!=null?'<small>'+T2('from ','de ')+xtCompass(Ds)+'</small>':'')):'',
-  sst!=null?row(T2('Sea temperature','Temp. do mar'),T(sst)+'°'):'',
-  P!=null?row(T2('Wave power','Energia das ondas'),'≈ '+(P<10?dcm(P,1):String(Math.round(P)))+'<small>kW/m</small>'):'',
-  s.km!=null?row(T2('Model point','Ponto do modelo'),s.km<1?T2('at the spot','no local'):xtDist(s.km)+'<small>'+T2('open sea','mar aberto')+'</small>'):'',
+  Hs!=null&&Ts!=null?svRow(T2('Swell','Ondulação'),xtLen(Hs)+' · '+dcm(Ts,0)+' s'+(Ds!=null?'<small>'+T2('from ','de ')+xtCompass(Ds)+'</small>':'')):'',
+  Hw!=null&&Hw>0?svRow(T2('Wind sea','Mar de vento'),xtLen(Hw)):'',
+  sst!=null?svRow(T2('Sea temperature','Temp. do mar'),T(sst)+'°'):'',
+  P!=null?svRow(T2('Wave power','Energia das ondas'),'≈ '+(P<10?dcm(P,1):String(Math.round(P)))+'<small>kW/m</small>'):'',
+  cur,
+  s.km!=null?svRow(T2('Model point','Ponto do modelo'),s.km<1?T2('at the spot','no local'):xtDist(s.km)+'<small>'+T2('open sea','mar aberto')+'</small>'):'',
   tideRow(td)
  ].join('');
 
  return`<h3>${T2('Sea & surf','Mar e surf')}</h3>
  <div class="sv-top"><div><div class="xt-head"><b class="xt-big">${xtLen(H)}</b><span class="xt-tag t-sea">${seaState(H)}</span></div>${Tk!=null?`<p class="sv-sub">${swellType(Tk)} · ${T2('period','período')} ${dcm(Tk,0)} s</p>`:''}</div>${dial}</div>
- <div class="sv-leg"><span class="w"><i></i>${T2('Wave height','Altura das ondas')}</span>${tl?`<span class="t"><i></i>${T2('Tide level','Nível da maré')}</span>`:''}</div>
- <div class="sv-chart" role="img" aria-label="${T2('Wave height and tide, next 24 hours','Altura das ondas e maré, próximas 24 horas')}"><div class="sv-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sv-wa" d="${wa}"/><path class="sv-wl" d="${wl}"/>${tl}</svg>${pins}</div><div class="sv-ax">${ax}</div></div>
+ ${tide}
+ <div class="sv-cap"><span>${T2('Wave height','Altura das ondas')}</span><span>${T2('next 24 h','próximas 24 h')}</span></div>
+ <div class="sv-bars" role="img" aria-label="${T2('Wave height, next 24 hours','Altura das ondas, próximas 24 horas')}">${bars}${pk}</div>
+ <div class="sv-ax">${ax}</div>
  <dl class="sv-facts">${facts}</dl>
- <p class="note">${T2('Biggest','Maior')}: ${xtLen(mx)} ${iMx?T2('around','por volta das')+' '+s.t[iMx].slice(11,13)+'h':T2('right now','agora')}. ${T2('Direction is where the swell comes from.','A direção indica de onde vem a ondulação.')}</p>
+ <p class="note">${T2('Direction is where the swell comes from.','A direção indica de onde vem a ondulação.')}</p>
  <p class="xt-src">${T2('Waves and sea temperature: Open-Meteo Marine API, which blends wave models (Météo-France MFWAM ≈8 km, ECMWF WAM, NCEP GFS Wave, DWD EWAM over Europe). Values are for the nearest open-sea grid cell shown above, not a buoy or beach measurement, so surf at your beach can differ. Tides: modelled sea level (tide + air pressure), heights relative to mean sea level; indicative only, not for navigation.','Ondas e temperatura do mar: Open-Meteo Marine API, que junta modelos de ondas (MFWAM da Météo-France ≈8 km, ECMWF WAM, NCEP GFS Wave e DWD EWAM na Europa). Os valores são da célula de mar aberto mais próxima indicada acima, não de uma bóia nem da tua praia, por isso a rebentação aí pode ser diferente. Marés: nível do mar modelado (maré + pressão atmosférica), alturas relativas ao nível médio; apenas indicativo, não serve para navegação.')}</p>`;
 }
 
@@ -625,18 +665,26 @@ function anomInner(){
   :tm<q[0]?T2('Colder than any day around this date in 1991–2020.','Mais frio do que qualquer dia desta época em 1991–2020.')
   :p>=50?T2(`Warmer than about ${pc}% of days around this date in 1991–2020.`,`Mais quente do que cerca de ${pc}% dos dias desta época em 1991–2020.`)
   :T2(`Cooler than about ${pc}% of days around this date in 1991–2020.`,`Mais fresco do que cerca de ${pc}% dos dias desta época em 1991–2020.`);
- const mn=Math.min(q[0],tm),mx=Math.max(q[20],tm),pd=Math.max(.6,(mx-mn)*.1),lo=mn-pd,hi=mx+pd,X=v=>((v-lo)/(hi-lo)*100).toFixed(1);
+ svCSS();
+ const mn=Math.min(q[0],tm),mx=Math.max(q[20],tm),pd=Math.max(.6,(mx-mn)*.1),lo=mn-pd,hi=mx+pd,X=v=>+((v-lo)/(hi-lo)*100).toFixed(1);
  const dt=new Date(day+'T12:00:00').toLocaleDateString(LOC(),{day:'numeric',month:'long'});
+ const bar=(a,b,c)=>`<i class="${c}" style="left:${X(a)}%;width:${(X(b)-X(a)).toFixed(1)}%"></i>`;
+ const lab=(v,txt,cls)=>`<span class="sv-rl ${cls} ${svAl(X(v))}" style="left:${X(v)}%">${txt}</span>`;
+ // densidade de temperatura a partir dos 21 quantis (cada intervalo contém 5 % dos dias), alisada
+ const dRaw=[];for(let i=0;i<20;i++)dRaw.push([(q[i]+q[i+1])/2,.05/Math.max(q[i+1]-q[i],.05)]);
+ const dSm=dRaw.map((p,i)=>[p[0],(dRaw[Math.max(0,i-1)][1]+p[1]*2+dRaw[Math.min(19,i+1)][1])/4]);
+ const dmax=Math.max(...dSm.map(p=>p[1])),dy=v=>100-Math.min(1,v/dmax)*88;
+ const dpts=[[q[0],100]].concat(dSm.map(p=>[p[0],dy(p[1])]),[[q[20],100]]).map(p=>[X(p[0]),p[1]]);
+ const dL=svPath(dpts),dA=dL+'L'+dpts[dpts.length-1][0]+',100L'+dpts[0][0]+',100Z';
+ const bp=dpts.filter(p=>p[0]>=X(q[2])&&p[0]<=X(q[18])),dB=bp.length>1?svPath(bp)+'L'+bp[bp.length-1][0]+',100L'+bp[0][0]+',100Z':'';
+ const yT=(()=>{let k=0;while(k<dpts.length-2&&dpts[k+1][0]<X(tm))k++;const p=dpts[k],r=dpts[k+1],f=r[0]>p[0]?Math.min(1,Math.max(0,(X(tm)-p[0])/(r[0]-p[0]))):0;return p[1]+(r[1]-p[1])*f})();
+ const out=tm>q[20]?T2('above the 1991–2020 range','acima do intervalo de 1991–2020'):tm<q[0]?T2('below the 1991–2020 range','abaixo do intervalo de 1991–2020'):'';
  return ttl+`<div class="xt-head"><b class="xt-big">${sg}${dec1(Math.abs(dd))}°</b><span class="xt-tag t-${lv[0]>0?'hot':lv[0]<0?'cold':'mid'}${Math.abs(lv[0])}">${T2(lv[1],lv[2])}</span></div>
  <p class="note">${T2(`Today averages ${sT}°. The 1991–2020 normal for ${dt} is ${sN}°.`,`Hoje a média é ${sT}°. A normal de 1991–2020 para ${dt} é ${sN}°.`)} ${rank}</p>
- <div class="xt-rng" role="img" aria-label="${T2('Today compared with the usual range','Hoje comparado com o intervalo habitual')}">
-  <i class="xt-rec" style="left:${X(q[0])}%;width:${(X(q[20])-X(q[0])).toFixed(1)}%"></i>
-  <i class="xt-b90" style="left:${X(q[2])}%;width:${(X(q[18])-X(q[2])).toFixed(1)}%"></i>
-  <i class="xt-b50" style="left:${X(q[5])}%;width:${(X(q[15])-X(q[5])).toFixed(1)}%"></i>
-  <i class="xt-med" style="left:${X(q[10])}%"></i>
-  <i class="xt-now" style="left:${X(tm)}%"></i>
- </div>
- <div class="xt-leg"><span><i class="l1"></i>${T2('Usual (80% of days)','Habitual (80% dos dias)')}: ${T(q[2])}° – ${T(q[18])}°</span><span><i class="l2"></i>${T2('Today','Hoje')}${tm>q[20]?' ('+T2('above the 1991–2020 range','acima do intervalo de 1991–2020')+')':tm<q[0]?' ('+T2('below the 1991–2020 range','abaixo do intervalo de 1991–2020')+')':''}</span></div>
+ <div class="sv-cap"><span>${T2('Today vs. 30 years of this date','Hoje vs. 30 anos desta data')}</span><span>${out}</span></div>
+ <div class="sv-dens" role="img" aria-label="${T2('Today compared with the usual range','Hoje comparado com o intervalo habitual')}"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sv-da" d="${dA}"/><path class="sv-db" d="${dB}"/><path class="sv-dl" d="${dL}"/><path class="sv-dn" d="M${X(tm)},${(yT+2).toFixed(1)}L${X(tm)},100"/></svg><i class="sv-dd" style="left:${X(tm)}%;top:${yT.toFixed(1)}%"></i><span class="sv-dv ${svAl(X(tm))}" style="left:${X(tm)}%">${T2('Today','Hoje')} ${sT}°</span></div>
+ <div class="sv-dx"><span class="${svAl(X(q[0]))}" style="left:${X(q[0])}%">${T(q[0])}°</span><span class="${svAl(X(q[10]))}" style="left:${X(q[10])}%">${T2('normal','normal')} ${T(q[10])}°</span><span class="${svAl(X(q[20]))}" style="left:${X(q[20])}%">${T(q[20])}°</span></div>
+ <dl class="sv-facts">${svRow(T2('Today (mean)','Hoje (média)'),sT+'°')}${svRow(T2('Normal','Normal da data'),sN+'°')}${svRow(T2('Usual (80%)','Habitual (80%)'),T(q[2])+'° – '+T(q[18])+'°')}${svRow(T2('Record range','Extremos'),T(q[0])+'° / '+T(q[20])+'°')}</dl>
  <p class="xt-src">${T2('Normal = 1991–2020 daily mean, ±7 days around the date. ERA5 reanalysis (Copernicus / ECMWF) via Open-Meteo Historical Weather API.','Normal = média diária de 1991–2020, ±7 dias em torno da data. Reanálise ERA5 (Copernicus / ECMWF) via Open-Meteo Historical Weather API.')}</p>`;
 }
 
