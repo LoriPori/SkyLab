@@ -468,16 +468,18 @@ function xtWhen(t,now){                                         // "hoje 14:32" 
  const day=dd<=0?T2('today','hoje'):dd===1?T2('tomorrow','amanhã'):new Date(iso.slice(0,10)+'T12:00:00').toLocaleDateString(LOC(),{weekday:'short',day:'numeric'});
  return{hm:iso.slice(11,16),day};
 }
-function tideTiles(td,tile){                                     // 3 cartões iguais aos das ondas: estado da maré + preia-mar + baixa-mar
+function tideRow(td){                                            // linha "Maré" da lista de factos (sem cartões)
  if(!td)return'';
  const L=T2('Tide','Maré');
- if(td.none)return tile(L,td.none==='load'?'…':'—',td.none==='load'?T2('loading tide data','a carregar dados de maré'):td.none==='flat'?T2('no noticeable tide here','sem maré apreciável aqui'):T2('no tide data for this point','sem dados de maré para este ponto'));
+ if(td.none){
+  const m=td.none==='load'?T2('loading tide data','a carregar dados de maré'):td.none==='flat'?T2('no noticeable tide here','sem maré apreciável aqui'):T2('no tide data for this point','sem dados de maré para este ponto');
+  return`<div class="sv-r sv-wide"><dt>${L}</dt><dd>${td.none==='load'?'…':'—'}</dd><dd class="sv-s">${m}</dd></div>`;
+ }
  const up=td.rising,arrow=`<svg class="xt-arr" style="--r:${up?0:180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>`;
- const nx=up?td.high:td.low;
- const st=tile(L,arrow+(up?T2('Rising','A encher'):T2('Falling','A vazar')),(up?T2('flood tide','enchente'):T2('ebb tide','vazante'))+(nx?' · '+(up?T2('high tide at ','preia-mar às '):T2('low tide at ','baixa-mar às '))+xtWhen(nx.t,td.now).hm:''));
- const ev=(e,l)=>{if(!e)return'';const w=xtWhen(e.t,td.now),m=Math.max(0,Math.round((e.t-td.now)/6e4));
-  return tile(l,w.hm+' <small class="xt-deg">'+xtSigned(e.h)+'</small>',w.day+' · '+T2('in ','em ')+hm(m))};
- return st+ev(td.high,T2('High tide','Preia-mar'))+ev(td.low,T2('Low tide','Baixa-mar'));
+ const evs=[[td.high,T2('High tide','Preia-mar')],[td.low,T2('Low tide','Baixa-mar')]].filter(x=>x[0]).sort((a,b)=>a[0].t-b[0].t).map(([e,l])=>{
+  const w=xtWhen(e.t,td.now),m=Math.max(0,Math.round((e.t-td.now)/6e4));
+  return l+' <b>'+w.hm+'</b> ('+xtSigned(e.h)+') · '+(w.day===T2('today','hoje')?'':w.day+' · ')+T2('in ','em ')+hm(m)});
+ return`<div class="sv-r sv-wide"><dt>${L}</dt><dd>${arrow}${up?T2('Rising','A encher'):T2('Falling','A vazar')}</dd><dd class="sv-s">${evs.join('<br>')}</dd></div>`;
 }
 /* Completa a última linha do grid: o último cartão estica-se até ao fim (nº de colunas lido do CSS, PC e telemóvel) */
 function xtFill(){
@@ -492,31 +494,116 @@ function xtFill(){
 const xtRO=typeof ResizeObserver!=='undefined'?new ResizeObserver(()=>{clearTimeout(xtRO._t);xtRO._t=setTimeout(xtFill,30)}):null;
 function xtWatch(){const e=$('#sea');if(e){if(xtRO){xtRO.disconnect();xtRO.observe(e)}xtFill()}}
 
+/* Mar e surf v2 — sem cartões: cabeçalho + bússola da ondulação, UM gráfico (ondas + maré, com preia/baixa-mar marcadas) e uma lista de factos com linhas finas. */
+function svCSS(){
+ if(document.getElementById('sv-css'))return;
+ const st=document.createElement('style');st.id='sv-css';
+ st.textContent=`
+#sea{--svl:rgba(20,49,79,.13);--svc:var(--acc,#2f6db5)}
+@supports(color:color-mix(in srgb,red,blue)){#sea{--svl:color-mix(in srgb,currentColor 14%,transparent)}}
+#sea .sv-top{display:flex;align-items:center;justify-content:space-between;gap:14px}
+#sea .sv-top>div:first-child{min-width:0}
+#sea .sv-top .xt-head{flex-wrap:wrap;row-gap:6px}
+#sea .sv-top .xt-big{white-space:nowrap}
+#sea .sv-sub{margin:6px 0 0;font-size:13.5px;opacity:.72}
+#sea .sv-dial{flex:none;text-align:center;font-size:11px;font-weight:600;letter-spacing:.05em;line-height:1.2;opacity:.9}
+#sea .sv-dial svg{display:block;width:62px;height:62px;margin:0 auto 3px}
+#sea .sv-leg{display:flex;flex-wrap:wrap;gap:4px 16px;margin:18px 0 0;font-size:11.5px;opacity:.72}
+#sea .sv-leg i{display:inline-block;vertical-align:middle;margin-right:6px}
+#sea .sv-leg .w i{width:13px;height:8px;border-radius:2px;background:currentColor;opacity:.4}
+#sea .sv-leg .t i{width:15px;height:0;border-top:2.5px solid var(--svc);border-radius:2px}
+#sea .sv-chart{position:relative;padding:22px 0 0}
+#sea .sv-plot{position:relative;height:108px;margin-bottom:24px}
+#sea .sv-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#sea .sv-wa{fill:currentColor;fill-opacity:.15;stroke:none}
+#sea .sv-wl{fill:none;stroke:currentColor;stroke-opacity:.5;stroke-width:1.6;vector-effect:non-scaling-stroke}
+#sea .sv-tl{fill:none;stroke:var(--svc);stroke-width:2.5;stroke-linecap:round;vector-effect:non-scaling-stroke}
+#sea .sv-pin{position:absolute;width:0;height:0}
+#sea .sv-pin i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:#fff;border:2.5px solid var(--svc);box-sizing:border-box}
+#sea .sv-pin.now i{left:-4px;top:-4px;width:8px;height:8px;border-width:2px}
+#sea .sv-pin em{position:absolute;font-style:normal;font-size:11.5px;font-weight:600;white-space:nowrap;line-height:1}
+#sea .sv-pin.hi em{bottom:9px}
+#sea .sv-pin.lo em{top:9px}
+#sea .sv-pin .c{left:0;transform:translateX(-50%)}
+#sea .sv-pin .l{left:-4px}
+#sea .sv-pin .r{right:-4px}
+#sea .sv-ax{position:relative;height:14px;margin-top:-4px;font-size:11.5px;opacity:.65}
+#sea .sv-ax span{position:absolute;top:0;white-space:nowrap;transform:translateX(-50%)}
+#sea .sv-ax span.a{transform:none}#sea .sv-ax span.z{transform:translateX(-100%)}
+#sea .sv-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));column-gap:30px;margin:14px 0 0}
+#sea .sv-r{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:3px 12px;padding:11px 0;border-top:1px solid var(--svl)}
+#sea .sv-wide{grid-column:1/-1}
+#sea .sv-r dt{margin:0;font-size:12px;letter-spacing:.07em;text-transform:uppercase;opacity:.65}
+#sea .sv-r dd{margin:0;text-align:right;font-size:17px;font-weight:700}
+#sea .sv-r dd small{font-size:12.5px;font-weight:400;opacity:.7;margin-left:4px}
+#sea .sv-r dd.sv-s{grid-column:1/-1;text-align:left;font-size:13px;font-weight:400;line-height:1.55;opacity:.8}
+#sea .sv-r dd.sv-s b{font-weight:700}
+#sea .sv-r .xt-arr{display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:-1px;transform:rotate(var(--r,0deg))}
+`;
+ document.head.appendChild(st);
+}
+function svPath(p){                                              // curva suave (Catmull-Rom → Bézier) por pontos [x,y]
+ if(p.length<2)return'';
+ const f=n=>n.toFixed(2);let d='M'+f(p[0][0])+','+f(p[0][1]);
+ for(let i=0;i<p.length-1;i++){
+  const a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c;
+  d+='C'+f(b[0]+(c[0]-a[0])/6)+','+f(b[1]+(c[1]-a[1])/6)+' '+f(c[0]-(e[0]-b[0])/6)+','+f(c[1]-(e[1]-b[1])/6)+' '+f(c[0])+','+f(c[1]);
+ }
+ return d;
+}
+
 function seaInner(){
  const s=xtGet('sea');if(!s)return'';
  const H=xtFirst(s.wh);if(H==null)return'';
+ svCSS();
  const Tm=xtFirst(s.wp),Hs=s.sh[0]!=null?s.sh[0]:xtFirst(s.sh),Ts=s.sp[0]!=null?s.sp[0]:xtFirst(s.sp),Ds=s.sd[0]!=null?s.sd[0]:xtFirst(s.sd),sst=xtFirst(s.sst);
  // período que descreve o mar: o da ondulação, se ela domina; senão o das ondas de vento
  const swellRules=Hs!=null&&Ts!=null&&Hs>=.6*H,Tk=swellRules?Ts:Tm;
  const P=Tm!=null?.49*H*H*Tm:null;                     // fluxo de energia das ondas em águas profundas: P ≈ ρg²/(64π)·H²·T ≈ 0,49·H²·T  [kW/m]
- const tile=(l,v,sub)=>`<div class="xt-m"><span>${l}</span><b>${v}</b>${sub?`<small>${sub}</small>`:''}</div>`;
  const mx=Math.max(...s.wh.filter(v=>v!=null)),iMx=s.wh.indexOf(mx);
- const bars=s.wh.map((v,i)=>{const hh=v==null?0:Math.max(2,v/Math.max(mx,.5)*44);return`<rect x="${i*10+1}" y="${(48-hh).toFixed(1)}" width="8" height="${hh.toFixed(1)}" rx="2"${i===iMx?' class="pk"':''}/>`}).join('');
  tideFallback();
- const pend=!tideOk(s)&&xtGet('tide')===undefined,td=pend?{none:'load'}:tideInfo(tideOk(s)?s:{tl:xtGet('tide')||null}),tl=tideTiles(td,tile),mob=document.documentElement.classList.contains('is-mobile');
+ const pend=!tideOk(s)&&xtGet('tide')===undefined,src=tideOk(s)?s:{tl:xtGet('tide')||null},td=pend?{none:'load'}:tideInfo(src);
+
+ /* ---- gráfico: ondas (área) + maré (linha) nas próximas 24 h ---- */
+ const N=Math.max(1,s.t.length-1),X=i=>i/N*100,vmax=Math.max(mx,.5),wy=v=>100-v/vmax*90;
+ const wp=s.wh.map((v,i)=>v==null?null:[X(i),wy(v)]).filter(Boolean);
+ const wl=svPath(wp),wa=wp.length>1?wl+'L'+wp[wp.length-1][0].toFixed(2)+',100L'+wp[0][0].toFixed(2)+',100Z':'';
+ let tl='',pins='';
+ if(td&&!td.none&&src.tl){
+  const Lt=src.tl,mp=new Map(Lt.t.map((t,i)=>[t,Lt.v[i]])),ser=s.t.map(t=>{const v=mp.get(t);return v==null?null:v});
+  const t0=Date.parse(s.t[0]+':00Z'),evs=[td.high,td.low].filter(e=>e&&e.t>=t0&&e.t<=t0+N*36e5);
+  const all=ser.filter(v=>v!=null).concat(evs.map(e=>e.h));
+  if(all.length>2){
+   const lo=Math.min(...all),rg=Math.max(Math.max(...all)-lo,.05),ty=v=>100-(v-lo)/rg*100;
+   const tp=ser.map((v,i)=>v==null?null:[X(i),ty(v)]).filter(Boolean);
+   if(tp.length>1){
+    tl=`<path class="sv-tl" d="${svPath(tp)}"/>`;
+    pins+=`<span class="sv-pin now" style="left:${tp[0][0].toFixed(1)}%;top:${tp[0][1].toFixed(1)}%"><i></i></span>`;
+    evs.forEach(e=>{
+     const x=(e.t-t0)/(N*36e5)*100,hi=e===td.high,al=x<20?'l':x>80?'r':'c';
+     pins+=`<span class="sv-pin ${hi?'hi':'lo'}" style="left:${x.toFixed(1)}%;top:${ty(e.h).toFixed(1)}%"><i></i><em class="${al}">${hi?T2('High','Preia-mar'):T2('Low','Baixa-mar')} ${xtWhen(e.t,td.now).hm}</em></span>`;
+    });
+   }
+  }
+ }
+ const ax=[0,6,12,18,24].filter(i=>i<=N).map(i=>`<span class="${i===0?'a':i===N?'z':''}" style="left:${X(i).toFixed(1)}%">${i?s.t[i].slice(11,13)+'h':T2('Now','Agora')}</span>`).join('');
+ const dial=Ds!=null?`<div class="sv-dial" title="${T2('Direction the swell comes from','Direção de onde vem a ondulação')}"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="1.5"/><text x="32" y="11" text-anchor="middle" font-size="7.5" fill="currentColor" fill-opacity=".55">N</text><g transform="rotate(${Math.round(Ds)+180} 32 32)"><path d="M32 17l8 15h-5.5v15h-5V32H24z" fill="currentColor"/></g></svg>${xtCompass(Ds)} ${Math.round(Ds)}°</div>`:'';
+
+ /* ---- lista de factos: linhas finas, sem caixas ---- */
+ const row=(l,v)=>`<div class="sv-r"><dt>${l}</dt><dd>${v}</dd></div>`;
+ const facts=[
+  Hs!=null&&Ts!=null?row(T2('Swell','Ondulação'),xtLen(Hs)+' · '+dcm(Ts,0)+' s'+(Ds!=null?'<small>'+T2('from ','de ')+xtCompass(Ds)+'</small>':'')):'',
+  sst!=null?row(T2('Sea temperature','Temp. do mar'),T(sst)+'°'):'',
+  P!=null?row(T2('Wave power','Energia das ondas'),'≈ '+(P<10?dcm(P,1):String(Math.round(P)))+'<small>kW/m</small>'):'',
+  s.km!=null?row(T2('Model point','Ponto do modelo'),s.km<1?T2('at the spot','no local'):xtDist(s.km)+'<small>'+T2('open sea','mar aberto')+'</small>'):'',
+  tideRow(td)
+ ].join('');
+
  return`<h3>${T2('Sea & surf','Mar e surf')}</h3>
- <div class="xt-head"><b class="xt-big">${xtLen(H)}</b><span class="xt-tag t-sea">${seaState(H)}</span></div>
- <div class="xt-grid">
-  ${Tk!=null?tile(T2('Period','Período'),dcm(Tk,0)+' s',swellType(Tk)):''}
-  ${Ds!=null?tile(T2('Swell from','Ondulação de'),xtArrow(Ds)+xtCompass(Ds)+' <small class="xt-deg">'+Math.round(Ds)+'°</small>',Hs!=null&&Ts!=null?xtLen(Hs)+' · '+dcm(Ts,0)+' s':''):''}
-  ${sst!=null?tile(T2('Sea temperature','Temp. do mar'),T(sst)+'°'):''}
-  ${P!=null?tile(T2('Wave power','Energia das ondas'),'≈ '+(P<10?dcm(P,1):String(Math.round(P)))+' <small>kW/m</small>'):''}
-  ${mob?'':tl}
-  ${s.km!=null?tile(T2('Model point','Ponto do modelo'),s.km<1?T2('at the spot','no local'):xtDist(s.km),T2('open-sea grid cell','célula de mar aberto')):''}
- </div>
- <div class="xt-bars"><svg viewBox="0 0 250 48" preserveAspectRatio="none" role="img" aria-label="${T2('Wave height, next 24 hours','Altura das ondas, próximas 24 horas')}">${bars}</svg>
-  <div class="xt-ax"><span>${T2('Now','Agora')}</span><span>+12 h</span><span>+24 h</span></div></div>
- ${mob?`<div class="xt-grid xt-tides">${tl}</div>`:''}
+ <div class="sv-top"><div><div class="xt-head"><b class="xt-big">${xtLen(H)}</b><span class="xt-tag t-sea">${seaState(H)}</span></div>${Tk!=null?`<p class="sv-sub">${swellType(Tk)} · ${T2('period','período')} ${dcm(Tk,0)} s</p>`:''}</div>${dial}</div>
+ <div class="sv-leg"><span class="w"><i></i>${T2('Wave height','Altura das ondas')}</span>${tl?`<span class="t"><i></i>${T2('Tide level','Nível da maré')}</span>`:''}</div>
+ <div class="sv-chart" role="img" aria-label="${T2('Wave height and tide, next 24 hours','Altura das ondas e maré, próximas 24 horas')}"><div class="sv-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sv-wa" d="${wa}"/><path class="sv-wl" d="${wl}"/>${tl}</svg>${pins}</div><div class="sv-ax">${ax}</div></div>
+ <dl class="sv-facts">${facts}</dl>
  <p class="note">${T2('Biggest','Maior')}: ${xtLen(mx)} ${iMx?T2('around','por volta das')+' '+s.t[iMx].slice(11,13)+'h':T2('right now','agora')}. ${T2('Direction is where the swell comes from.','A direção indica de onde vem a ondulação.')}</p>
  <p class="xt-src">${T2('Waves and sea temperature: Open-Meteo Marine API, which blends wave models (Météo-France MFWAM ≈8 km, ECMWF WAM, NCEP GFS Wave, DWD EWAM over Europe). Values are for the nearest open-sea grid cell shown above, not a buoy or beach measurement, so surf at your beach can differ. Tides: modelled sea level (tide + air pressure), heights relative to mean sea level; indicative only, not for navigation.','Ondas e temperatura do mar: Open-Meteo Marine API, que junta modelos de ondas (MFWAM da Météo-France ≈8 km, ECMWF WAM, NCEP GFS Wave e DWD EWAM na Europa). Os valores são da célula de mar aberto mais próxima indicada acima, não de uma bóia nem da tua praia, por isso a rebentação aí pode ser diferente. Marés: nível do mar modelado (maré + pressão atmosférica), alturas relativas ao nível médio; apenas indicativo, não serve para navegação.')}</p>`;
 }
