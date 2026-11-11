@@ -91,6 +91,15 @@ const PT={
  'Temperature data rate-limited — try again in a few minutes.':'Limite de pedidos atingido — tenta novamente dentro de alguns minutos.',
  'True-colour satellite · NASA VIIRS · global daily composite':'Satélite em cor real · NASA VIIRS · composição diária global',
  'Satellite rain estimate · worldwide · last ~6 h':'Estimativa de chuva por satélite · mundial · últimas ~6 h',
+ /* nowcast de radar (fluxo ótico) */
+ 'Nowcast':'Nowcast','Rain nowcast (optical flow)':'Nowcast de chuva (fluxo ótico)',
+ 'Extrapolate the radar 60 minutes with optical flow':'Extrapola o radar 60 minutos com fluxo ótico',
+ 'Loading radar frames':'A carregar imagens de radar','Tracking rain cells…':'A seguir as células de chuva…',
+ 'No rain around here to extrapolate.':'Sem chuva aqui para extrapolar.','Not enough texture to track the rain.':'Textura insuficiente para seguir a chuva.',
+ 'Nowcast unavailable right now.':'Nowcast indisponível neste momento.','Nowcast engine not loaded.':'Motor do nowcast não carregado.',
+ 'no verification':'sem verificação','radar nowcast':'nowcast de radar','Rain for the next hour':'Chuva na próxima hora',
+ 'motion not stable — field held':'movimento instável — campo parado',
+ 'Precipitation forecast for the next 60 minutes, extrapolated from the radar with optical flow':'Previsão de precipitação para os próximos 60 min, extrapolada do radar com fluxo ótico',
  /* alertas (notificações do navegador) */
  'High wind':'Vento forte','Extreme heat':'Calor extremo','Extreme cold':'Frio extremo','Very high UV':'UV muito alto','Rain approaching':'Chuva a aproximar-se',
  'Poor air quality':'Fraca qualidade do ar','High pollen':'Pólen elevado','Rain in the next hour':'Chuva na próxima hora',

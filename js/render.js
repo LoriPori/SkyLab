@@ -20,6 +20,7 @@ function render(){
  countUp($('#tn'),T(c.temperature_2m));
  setTab(tab);loadExtras();loadXtra();
  checkAlerts();
+ if(typeof ncHero==='function')setTimeout(ncHero,1400);   // o nowcast do radar chega depois do essencial
  document.title=`${T(c.temperature_2m)}° ${place.name} — Skylab`;
   if(fresh){
     window.scrollTo({ top: 0, behavior: 'instant' });

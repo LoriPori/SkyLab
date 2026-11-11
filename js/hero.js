@@ -4,7 +4,7 @@ function nowcastHTML(){
  const m=data.minutely_15,p=m&&m.precipitation?m.precipitation.slice(0,8).map(x=>x||0):null;
  if(!p||!p.length){
   const i0=idx0(),r=Math.max(...data.hourly.precipitation_probability.slice(i0,i0+3));
-  return`<div class="ncbox">${ic('drop')}<span>${r}% rain chance in the next 3 hours</span></div>`;
+  return`<div class="ncbox" id="ncbox">${ic('drop')}<span>${r}% rain chance in the next 3 hours</span></div>`;
  }
  const wet=x=>x>=.05,first=p.findIndex(wet),mx=Math.max(...p,.5),pk=Math.max(...p)*4;   // pico em mm/h
  const col=x=>!wet(x)?'rgba(255,255,255,.6)':x*4<.5?'#7fc1ff':x*4<4?'#3b8fe0':'#1d5fc4';
@@ -13,7 +13,38 @@ function nowcastHTML(){
  if(first<0){head='Dry for the next 2 hours';sub=`${r3}% rain chance in the next 3 hours`}
  else if(first==0){const end=p.findIndex(x=>!wet(x));head='Raining now';sub=end<0?'Rain for the next 2 hours':`Rain stops in about ${end*15} min`}
  else{head=`Rain in about ${first*15} min`;sub=pk<.5?'Light rain expected':pk<4?'Moderate rain expected':'Heavy rain expected'}
- return`<div class="ncbox" title="Precipitation forecast for the next 2 hours"><div class="nb">${p.map((x,i)=>`<i class="${wet(x)?'w':''}" style="height:${Math.max(14,x/mx*100)}%;animation-delay:${i*60}ms;background:${col(x)}"></i>`).join('')}</div><div class="nct"><b>${head}</b><small>${sub}</small></div></div>`;
+ return`<div class="ncbox" id="ncbox" title="Precipitation forecast for the next 2 hours"><div class="nb">${p.map((x,i)=>`<i class="${wet(x)?'w':''}" style="height:${Math.max(14,x/mx*100)}%;animation-delay:${i*60}ms;background:${col(x)}"></i>`).join('')}</div><div class="nct"><b>${head}</b><small>${sub}</small></div></div>`;
+}
+/* ---- nowcast de radar: substitui a caixa quando há chuva a caminho nos próximos 60 min ---- */
+let ncHeroTok=0;
+async function ncHero(){
+ const box=$('#ncbox');
+ if(!box||!data||!place||typeof NC==='undefined'||!navigator.onLine)return;
+ const p=data.minutely_15&&data.minutely_15.precipitation;
+ if(!p||!p.length||!p.some(x=>(x||0)>=.05))return;                 // nada a caminho: a API chega
+ if(navigator.connection&&navigator.connection.saveData)return;
+ const tok=++ncHeroTok,key=place.lat+','+place.lon;
+ let res;
+ try{res=await NC.forecast({lat:place.lat,lon:place.lon,grid:2,horizon:6,verify:true})}catch(e){return}
+ if(tok!==ncHeroTok||!res||!res.ok)return;
+ if(!place||place.lat+','+place.lon!==key)return;
+ const b=$('#ncbox');if(!b)return;
+ const r=NC.rainIn(res,place.lat,place.lon);
+ if(!r.wetNow&&!r.startMin)return;                                  // sem chuva nos 60 min: fica a versão da API
+ const vals=res.steps.map((s,i)=>{const v=NC.sampleArea(res,place.lat,place.lon,i);return v?v.mm:0});
+ const wet=x=>x>=.15,mx=Math.max(...vals,.5);
+ const col=x=>!wet(x)?'rgba(255,255,255,.6)':x<1?'#7fc1ff':x<4?'#3b8fe0':'#1d5fc4';
+ const light=T2('Light rain expected','Chuva fraca prevista'),mod=T2('Moderate rain expected','Chuva moderada prevista'),heavy=T2('Heavy rain expected','Chuva forte prevista');
+ let head,sub;
+ if(r.wetNow){
+  head=T2('Raining now','A chover agora');
+  sub=r.stopMin&&r.stopMin<=60?`Rain stops in about ${r.stopMin} min`:T2('Rain for the next hour','Chuva na próxima hora');
+ }else{
+  head=`Rain in about ${r.startMin} min`;
+  sub=r.peak<2?light:r.peak<10?mod:heavy;
+ }
+ b.title=T2('Precipitation forecast for the next 60 minutes, extrapolated from the radar with optical flow','Previsão de precipitação para os próximos 60 min, extrapolada do radar com fluxo ótico');
+ b.innerHTML=`<div class="nb">${vals.map((x,i)=>`<i class="${wet(x)?'w':''}" style="height:${Math.max(14,x/mx*100)}%;animation-delay:${i*60}ms;background:${col(x)}"></i>`).join('')}</div><div class="nct"><b>${head}</b><small>${sub}</small><small class="ncsrc">${T2('radar nowcast','nowcast de radar')}</small></div>`;
 }
 function heroHTML(){
  const c=data.current,d=data.daily;

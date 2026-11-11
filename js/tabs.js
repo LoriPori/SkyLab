@@ -552,8 +552,8 @@ function svCSS(){
 .xt .sv-dens{position:relative;height:112px;margin:30px 0 0}
 #xtra #anom .sv-dens{flex:1 1 112px;height:auto;min-height:112px;max-height:300px}
 .xt .sv-dens svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.xt .sv-da{fill:url(#svDg);fill-opacity:.12;stroke:none}
-.xt .sv-db{fill:url(#svDg);fill-opacity:.35;stroke:none}
+.xt .sv-da{fill:url(#svDg);fill-opacity:.10;stroke:none}
+.xt .sv-db{fill:url(#svDg);fill-opacity:.14;stroke:none}
 .xt .sv-dl{fill:none;stroke:url(#svDg);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .xt .sv-dn{stroke:currentColor;stroke-opacity:.7;stroke-width:1.8;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
 .xt .sv-meter{display:flex;gap:5px;margin:10px 0 0}

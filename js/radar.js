@@ -297,7 +297,7 @@ function radarPane(){
   <span class="rnow" id="rnote"></span>
  </div>
  <div id="rmap" role="application" aria-label="Weather radar map">Loading map…</div>
- <div class="rctl"><button class="pill dk" id="rplay" aria-label="Pause">❚❚</button><input type="range" id="rsl" min="0" max="0" value="0" aria-label="Radar time"><span class="rtime" id="rtime"></span></div>
+ <div class="rctl"><button class="pill dk" id="rplay" aria-label="Pause">❚❚</button><button type="button" class="ncbtn" id="rnc" aria-pressed="false" aria-label="${tr('Rain nowcast (optical flow)')}" title="${tr('Extrapolate the radar 60 minutes with optical flow')}" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.4V12l3 1.9"/></svg><span>${tr('Nowcast')}</span></button><input type="range" id="rsl" min="0" max="0" value="0" aria-label="Radar time"><span class="rtime" id="rtime"></span></div>
  <div class="rleg" id="rleg"><span>Light</span><i></i><span>Heavy</span></div>
  <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">— mm/h</span><i id="rlbar"></i><span id="rlmax">— mm/h</span><span id="rlsrc" style="margin-left:8px;font-size:10px;opacity:.7"></span></div>
   <div class="rleg rleg3" id="rleg3" hidden><span class="tunit" id="tunit">°C</span><div class="tscale"><div class="tbar" id="tbar"></div><div class="tticks" id="tticks"></div></div><a class="tsrc" href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a></div>
@@ -318,6 +318,7 @@ function clearRadarLayers(){
 
 function radarStop(){
  radarTok++;clearTimeout(radarTimer);
+ ncDrop();
  clearRadarLayers();
  if(radarMap){try{radarMap.remove()}catch(e){}radarMap=null}
  radarLayers=[];radarFrames=[];
@@ -422,6 +423,12 @@ const mapOpts = isPT
  };
  $('#rplay').onclick=()=>{radarPlay=!radarPlay;radarBtn();radarTick()};
  $('#rsl').oninput=e=>{radarPlay=false;radarBtn();clearTimeout(radarTimer);radarShow(+e.target.value)};
+ const rnc=$('#rnc');if(rnc)rnc.onclick=ncToggle;
+ radarMap.on('moveend',()=>{                                        // saiu da área do nowcast: volta ao radar
+  if(!ncPrev||!ncRes)return;
+  const c=radarMap.getCenter(),b=ncRes.llBounds;
+  if(c.lat<b[0][0]||c.lat>b[1][0]||c.lng<b[0][1]||c.lng>b[1][1])ncOff();
+ });
  radarBtn();
  radarLoadKind(radarKind);
 }
@@ -528,6 +535,7 @@ async function radarLoadKind(k){
   const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
 
   clearTimeout(radarTimer);
+  ncDrop();
   clearRadarLayers();
   radarLayers=[];radarFrames=[];
   radarKind=k;
@@ -599,7 +607,100 @@ async function loadRainGlobal(stale){
   $('#rlmax').textContent='> '+rateS(50);
   $('#rlbar').style.background='linear-gradient(90deg,#88ddee,#36bae5,#00a3e0,#007fb4,#005588,#c2b482,#cec087,#ffee00,#ffd200,#ffaa00,#ff8100,#ff4400)';
   $('#rlsrc').textContent='RainViewer · 10 min';
+  const nb=$('#rnc');if(nb){nb.hidden=false;nb.disabled=false}
   radarShow(0);radarWarm();radarBtn();radarTick();
+}
+
+/* ---- Nowcast: extrapola o radar com fluxo ótico (Lucas-Kanade) ---- */
+/* A matemática vive no worker (nowcast_worker.js) e o motor de dados em nowcast.js. Aqui só há camada,
+   estados do botão e conversa com o mapa. As 6 frames de previsão (+10 … +60 min) são canvases locais,
+   por isso entram no mapa como qualquer outra camada e o slider/play existentes funcionam sem alterações. */
+let ncRes=null,ncLayers=[],ncUrls=[],ncPrev=null,ncTok=0,ncBusy=false;
+
+function ncZoom(){const z=radarMap?radarMap.getZoom():7;return Math.max(6,Math.min(8,Math.round(z)))}
+function ncCompass(d){
+ const a=LANG=='pt'?['N','NNE','NE','ENE','L','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO']
+                   :['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+ return a[Math.round(((d%360)+360)%360/22.5)%16];
+}
+function ncLine(res){
+ const sk=res.skill,csi=sk&&sk.t15?sk.t15.csi:null,per=sk&&sk.p15?sk.p15.csi:null;
+ const bits=[tr('Nowcast')];
+ bits.push(res.damp<0.05?T2('motion not stable — field held','movimento instável — campo parado')
+   :Math.round(res.speed)+' km/h '+ncCompass(res.bearing));
+ bits.push(csi!=null&&per!=null?'CSI '+csi.toFixed(2)+T2(' · persistence ',' · persistência ')+per.toFixed(2)
+   :T2('no verification','sem verificação'));
+ return bits.join(' · ');
+}
+function ncDrop(){                                                    // esquece tudo (mudança de camada/aba)
+ ncTok++;
+ if(radarMap)ncLayers.forEach(l=>{try{radarMap.removeLayer(l)}catch(e){}});
+ ncUrls.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});
+ ncLayers=[];ncUrls=[];ncPrev=null;ncRes=null;ncBusy=false;
+ const b=$('#rnc');if(b){b.disabled=false;b.setAttribute('aria-pressed','false');b.hidden=true}
+}
+function ncOff(){                                                     // volta às observações, mantém o botão
+ if(!ncPrev)return;
+ ncTok++;
+ ncLayers.forEach(l=>{try{radarMap.removeLayer(l)}catch(e){}});
+ ncUrls.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});
+ radarLayers=ncPrev.layers;radarFrames=ncPrev.frames;
+ const sl=$('#rsl');if(sl){sl.max=ncPrev.max;sl.value=ncPrev.idx}
+ const b=$('#rnc');if(b){b.setAttribute('aria-pressed','false');b.disabled=false}
+ radarShow(ncPrev.idx);radarPlay=false;radarBtn();
+ if($('#rnote'))$('#rnote').textContent=ncPrev.note;
+ if($('#rlsrc'))$('#rlsrc').textContent='RainViewer · 10 min';
+ ncPrev=null;ncRes=null;ncLayers=[];ncUrls=[];ncBusy=false;
+}
+async function ncToggle(){
+ if(ncBusy||!radarMap||radarKind!=='rain')return;
+ if(typeof NC==='undefined'){const n=$('#rnote');if(n)n.textContent=T2('Nowcast engine not loaded.','Motor do nowcast não carregado.');return}
+ if(ncPrev){ncOff();return}
+ const tok=++ncTok,btn=$('#rnc'),note=$('#rnote'),sl=$('#rsl'),prevNote=note?note.textContent:'';
+ ncBusy=true;if(btn){btn.disabled=true;btn.setAttribute('aria-pressed','true')}
+ const c=radarMap.getCenter();
+ const stage=(s,a,b)=>{
+  if(tok!==ncTok||!note)return;
+  note.textContent=s==='tiles'?T2('Loading radar frames','A carregar imagens de radar')+' '+a+'/'+b+'…'
+   :s==='flow'?T2('Tracking rain cells…','A seguir as células de chuva…')
+   :T2('Loading radar frames…','A carregar imagens de radar…');
+ };
+ stage('frames');
+ try{
+  const res=await NC.forecast({lat:c.lat,lon:c.lng,grid:3,z:ncZoom(),horizon:6,verify:true,onStage:stage});
+  if(tok!==ncTok||!radarMap)return;
+  if(!res.ok){
+   if(note)note.textContent=res.why==='dry'?T2('No rain around here to extrapolate.','Sem chuva aqui para extrapolar.')
+    :T2('Not enough texture to track the rain.','Textura insuficiente para seguir a chuva.');
+   btn.setAttribute('aria-pressed','false');btn.disabled=false;ncBusy=false;return;
+  }
+  const urls=[],layers=[],nframes=[];
+  for(let i=0;i<res.steps.length;i++){
+   const url=await NC.blobURL(NC.canvas(res,i));
+   if(!url)continue;
+   urls.push(url);
+   nframes.push({time:res.steps[i].time,fc:i>0});
+   layers.push(L.imageOverlay(url,res.llBounds,{pane:'radar',opacity:0,interactive:false,className:'rlayer ncfc'}));
+  }
+  if(!layers.length)throw new Error('could not rasterise the forecast frames');
+  if(tok!==ncTok||!radarMap){urls.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});return}
+  ncPrev={layers:radarLayers,frames:radarFrames,idx:radarIdx,max:sl?sl.max:0,note:prevNote};
+  ncRes=res;ncLayers=layers;ncUrls=urls;
+  radarLayers.forEach(l=>{try{l.setOpacity(0)}catch(e){}});           // as observações saem de baixo do nowcast
+  radarLayers=layers;radarFrames=nframes;
+  layers.forEach(l=>{l.setOpacity(0);l.addTo(radarMap)});
+  if(sl){sl.max=layers.length-1;sl.value=0;sl.disabled=false}
+  radarPlay=false;radarBtn();radarShow(0);
+  if(note)note.textContent=ncLine(res);
+  if($('#rlsrc'))$('#rlsrc').textContent='RainViewer · nowcast';
+ }catch(e){
+  console.warn('[Nowcast]',e.message);
+  if(tok===ncTok&&note)note.textContent=T2('Nowcast unavailable right now.','Nowcast indisponível neste momento.');
+  const b=$('#rnc');if(b)b.setAttribute('aria-pressed','false');
+ }finally{
+  ncBusy=false;
+  if(tok===ncTok){const b=$('#rnc');if(b)b.disabled=false}
+ }
 }
 
 /* ---- Wind (OpenWeatherMap + ECMWF particles) ---- */
