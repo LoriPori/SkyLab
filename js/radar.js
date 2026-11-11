@@ -299,7 +299,7 @@ function radarPane(){
  <div id="rmap" role="application" aria-label="Weather radar map">Loading map…</div>
  <div class="rctl"><button class="pill dk" id="rplay" aria-label="Pause">❚❚</button><button type="button" class="ncbtn" id="rnc" aria-pressed="false" aria-label="${tr('Rain nowcast (optical flow)')}" title="${tr('Extrapolate the radar 60 minutes with optical flow')}" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.4V12l3 1.9"/></svg><span>${tr('Nowcast')}</span></button><input type="range" id="rsl" min="0" max="0" value="0" aria-label="Radar time"><span class="rtime" id="rtime"></span></div>
  <div class="rleg" id="rleg"><span>Light</span><i></i><span>Heavy</span></div>
- <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">— mm/h</span><i id="rlbar"></i><span id="rlmax">— mm/h</span><span id="rlsrc" style="margin-left:8px;font-size:10px;opacity:.7"></span></div>
+ <div class="rleg rleg2" id="rleg2" hidden><span>Rain rate</span><span id="rlmin">— mm/h</span><i id="rlbar"></i><span id="rlmax">— mm/h</span><span id="rlsrc"></span></div>
   <div class="rleg rleg3" id="rleg3" hidden><span class="tunit" id="tunit">°C</span><div class="tscale"><div class="tbar" id="tbar"></div><div class="tticks" id="tticks"></div></div><a class="tsrc" href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a></div>
  </section></div>`;
 }
@@ -606,8 +606,9 @@ async function loadRainGlobal(stale){
   $('#rlmin').textContent=rateS(.1);
   $('#rlmax').textContent='> '+rateS(50);
   $('#rlbar').style.background='linear-gradient(90deg,#88ddee,#36bae5,#00a3e0,#007fb4,#005588,#c2b482,#cec087,#ffee00,#ffd200,#ffaa00,#ff8100,#ff4400)';
-  $('#rlsrc').textContent='RainViewer · 10 min';
-  const nb=$('#rnc');if(nb){nb.hidden=false;nb.disabled=false}
+  $('#rlsrc').textContent=NC_SRC;                                    // rodapé: há nowcast + previsão LK
+  const nb=$('#rnc');if(nb){nb.hidden=false;nb.disabled=false;nb.title=NC_TITLE}
+  ncEngineLoad();                                                    // deixa o motor pronto para o 1.º clique
   radarShow(0);radarWarm();radarBtn();radarTick();
 }
 
@@ -617,19 +618,40 @@ async function loadRainGlobal(stale){
    por isso entram no mapa como qualquer outra camada e o slider/play existentes funcionam sem alterações. */
 let ncRes=null,ncLayers=[],ncUrls=[],ncPrev=null,ncTok=0,ncBusy=false;
 
+/* O motor tem de estar carregado. Se o index.html não tiver a tag (acontece), carrega-se daqui:
+   o caminho sai do próprio radar.js, por isso vale em js/ ou na raiz, sem tocar no index. */
+const RADAR_SELF=(document.currentScript&&document.currentScript.src)||'';
+let ncEngineP=null;
+function ncEngineLoad(){
+ if(typeof NC!=='undefined')return Promise.resolve(true);
+ if(ncEngineP)return ncEngineP;
+ ncEngineP=new Promise(res=>{
+  let dir='js/';
+  try{if(RADAR_SELF)dir=new URL('.',RADAR_SELF).href}catch(e){}
+  const s=document.createElement('script');
+  s.src=dir+'nowcast.js';s.async=true;
+  s.onload=()=>res(typeof NC!=='undefined');
+  s.onerror=()=>{ncEngineP=null;res(false)};
+  document.head.appendChild(s);
+ });
+ return ncEngineP;
+}
+
 function ncZoom(){const z=radarMap?radarMap.getZoom():7;return Math.max(6,Math.min(8,Math.round(z)))}
 function ncCompass(d){
  const a=LANG=='pt'?['N','NNE','NE','ENE','L','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO']
                    :['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
  return a[Math.round(((d%360)+360)%360/22.5)%16];
 }
-function ncLine(res){
+/* só para o tooltip: o rodapé do card fica com a etiqueta fixa e curta */
+const NC_SRC='RainViewer · nowcast Lucas–Kanade +60 min';
+const NC_TITLE='Extrapolate the radar 60 minutes with optical flow (Lucas–Kanade)';
+function ncTip(res){
  const sk=res.skill,csi=sk&&sk.t15?sk.t15.csi:null,per=sk&&sk.p15?sk.p15.csi:null;
- const bits=[tr('Nowcast')];
+ const bits=[T2('Rain nowcast: Lucas–Kanade optical flow, 60 min ahead','Nowcast de chuva: fluxo ótico Lucas–Kanade, 60 min à frente')];
  bits.push(res.damp<0.05?T2('motion not stable — field held','movimento instável — campo parado')
-   :Math.round(res.speed)+' km/h '+ncCompass(res.bearing));
- bits.push(csi!=null&&per!=null?'CSI '+csi.toFixed(2)+T2(' · persistence ',' · persistência ')+per.toFixed(2)
-   :T2('no verification','sem verificação'));
+  :Math.round(res.speed)+' km/h '+ncCompass(res.bearing));
+ if(csi!=null)bits.push('CSI '+csi.toFixed(2)+(per!=null?' / '+per.toFixed(2):''));
  return bits.join(' · ');
 }
 function ncDrop(){                                                    // esquece tudo (mudança de camada/aba)
@@ -649,15 +671,22 @@ function ncOff(){                                                     // volta �
  const b=$('#rnc');if(b){b.setAttribute('aria-pressed','false');b.disabled=false}
  radarShow(ncPrev.idx);radarPlay=false;radarBtn();
  if($('#rnote'))$('#rnote').textContent=ncPrev.note;
- if($('#rlsrc'))$('#rlsrc').textContent='RainViewer · 10 min';
+ if($('#rlsrc'))$('#rlsrc').textContent=NC_SRC;
+ const b2=$('#rnc');if(b2)b2.title=NC_TITLE;
  ncPrev=null;ncRes=null;ncLayers=[];ncUrls=[];ncBusy=false;
 }
 async function ncToggle(){
  if(ncBusy||!radarMap||radarKind!=='rain')return;
- if(typeof NC==='undefined'){const n=$('#rnote');if(n)n.textContent=T2('Nowcast engine not loaded.','Motor do nowcast não carregado.');return}
  if(ncPrev){ncOff();return}
  const tok=++ncTok,btn=$('#rnc'),note=$('#rnote'),sl=$('#rsl'),prevNote=note?note.textContent:'';
  ncBusy=true;if(btn){btn.disabled=true;btn.setAttribute('aria-pressed','true')}
+ /* o motor pode ainda não estar cá: carrega-se agora, sem depender do index.html */
+ if(typeof NC==='undefined'&&note)note.textContent=T2('Loading the nowcast engine…','A carregar o motor do nowcast…');
+ if(!(await ncEngineLoad())||tok!==ncTok){ 
+  if(tok===ncTok){if(note)note.textContent=T2('Nowcast engine unavailable (js/nowcast.js).','Motor do nowcast indisponível (js/nowcast.js).');
+   if(btn){btn.setAttribute('aria-pressed','false');btn.disabled=false}}
+  ncBusy=false;return;
+ }
  const c=radarMap.getCenter();
  const stage=(s,a,b)=>{
   if(tok!==ncTok||!note)return;
@@ -672,7 +701,8 @@ async function ncToggle(){
   if(!res.ok){
    if(note)note.textContent=res.why==='dry'?T2('No rain around here to extrapolate.','Sem chuva aqui para extrapolar.')
     :T2('Not enough texture to track the rain.','Textura insuficiente para seguir a chuva.');
-   btn.setAttribute('aria-pressed','false');btn.disabled=false;ncBusy=false;return;
+   if(btn){btn.setAttribute('aria-pressed','false');btn.disabled=false}
+   ncBusy=false;return;
   }
   const urls=[],layers=[],nframes=[];
   for(let i=0;i<res.steps.length;i++){
@@ -691,8 +721,9 @@ async function ncToggle(){
   layers.forEach(l=>{l.setOpacity(0);l.addTo(radarMap)});
   if(sl){sl.max=layers.length-1;sl.value=0;sl.disabled=false}
   radarPlay=false;radarBtn();radarShow(0);
-  if(note)note.textContent=ncLine(res);
-  if($('#rlsrc'))$('#rlsrc').textContent='RainViewer · nowcast';
+  if(note)note.textContent=prevNote;                               // a nota fica como estava: sem bloco de texto
+  if(btn)btn.title=ncTip(res);
+  if($('#rlsrc'))$('#rlsrc').textContent=NC_SRC;
  }catch(e){
   console.warn('[Nowcast]',e.message);
   if(tok===ncTok&&note)note.textContent=T2('Nowcast unavailable right now.','Nowcast indisponível neste momento.');

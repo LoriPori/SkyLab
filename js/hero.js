@@ -19,7 +19,10 @@ function nowcastHTML(){
 let ncHeroTok=0;
 async function ncHero(){
  const box=$('#ncbox');
- if(!box||!data||!place||typeof NC==='undefined'||!navigator.onLine)return;
+ if(!box||!data||!place||!navigator.onLine)return;
+ if(typeof NC==='undefined'){                                       // motor pode não estar no index: carrega-se
+  if(typeof ncEngineLoad!=='function'||!(await ncEngineLoad()))return;
+ }
  const p=data.minutely_15&&data.minutely_15.precipitation;
  if(!p||!p.length||!p.some(x=>(x||0)>=.05))return;                 // nada a caminho: a API chega
  if(navigator.connection&&navigator.connection.saveData)return;

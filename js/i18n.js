@@ -99,6 +99,9 @@ const PT={
  'Nowcast unavailable right now.':'Nowcast indisponível neste momento.','Nowcast engine not loaded.':'Motor do nowcast não carregado.',
  'no verification':'sem verificação','radar nowcast':'nowcast de radar','Rain for the next hour':'Chuva na próxima hora',
  'motion not stable — field held':'movimento instável — campo parado',
+ 'Loading the nowcast engine…':'A carregar o motor do nowcast…',
+ 'Nowcast engine unavailable (js/nowcast.js).':'Motor do nowcast indisponível (js/nowcast.js).',
+ 'Rain nowcast: Lucas–Kanade optical flow, 60 min ahead':'Nowcast de chuva: fluxo ótico Lucas–Kanade, 60 min à frente',
  'Precipitation forecast for the next 60 minutes, extrapolated from the radar with optical flow':'Previsão de precipitação para os próximos 60 min, extrapolada do radar com fluxo ótico',
  /* alertas (notificações do navegador) */
  'High wind':'Vento forte','Extreme heat':'Calor extremo','Extreme cold':'Frio extremo','Very high UV':'UV muito alto','Rain approaching':'Chuva a aproximar-se',
