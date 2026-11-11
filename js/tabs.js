@@ -659,59 +659,82 @@ function anomInner(){
  const day=data.current.time.slice(0,10),h=data.hourly;let sum=0,k=0;
  for(let i=0;i<h.time.length&&k<24;i++)if(h.time[i].startsWith(day)&&h.temperature_2m[i]!=null){sum+=h.temperature_2m[i];k++}
  if(!n||k<20)return ttl+`<p class="note">${T2('Not available for this place right now.','Indisponível para este local de momento.')}</p>`;
+ 
  const tm=sum/k,q=n.q,d=tm-n.mean;
- let p;                                               // percentil de hoje na distribuição da data (interpolado entre os 21 quantis)
+ let p; // percentil de hoje na distribuição da data (interpolado entre os 21 quantis)
  if(tm<=q[0])p=0;else if(tm>=q[20])p=100;else{let j=0;while(q[j+1]<tm)j++;p=(j+(q[j+1]>q[j]?(tm-q[j])/(q[j+1]-q[j]):0))*5}
+ 
  const lv=p>=98?[3,'Exceptionally warm','Excecionalmente quente']:p>=90?[2,'Much warmer than usual','Muito mais quente do que o normal']:p>=70?[1,'Warmer than usual','Mais quente do que o normal']
   :p>30?[0,'Typical for this date','Típico para esta data']:p>10?[-1,'Cooler than usual','Mais fresco do que o normal']:p>2?[-2,'Much cooler than usual','Muito mais frio do que o normal']:[-3,'Exceptionally cold','Excecionalmente frio'];
- const num=x=>parseFloat(x.replace(',','.')),sT=decT(tm),sN=decT(n.mean),dd=Math.round((num(sT)-num(sN))*10)/10,sg=dd===0?'±':dd>0?'+':'−',pc=Math.round(p>=50?p:100-p);   // a diferença sai dos números que o cartão mostra (22,4 − 19,3 = 3,1)
+  
+ const num=x=>parseFloat(x.replace(',','.')),sT=decT(tm),sN=decT(n.mean),dd=Math.round((num(sT)-num(sN))*10)/10,sg=dd===0?'±':dd>0?'+':'−',pc=Math.round(p>=50?p:100-p);
+ 
  const rank=tm>q[20]?T2('Warmer than any day around this date in 1991–2020.','Mais quente do que qualquer dia desta época em 1991–2020.')
   :tm<q[0]?T2('Colder than any day around this date in 1991–2020.','Mais frio do que qualquer dia desta época em 1991–2020.')
   :p>=50?T2(`Warmer than about ${pc}% of days around this date in 1991–2020.`,`Mais quente do que cerca de ${pc}% dos dias desta época em 1991–2020.`)
   :T2(`Cooler than about ${pc}% of days around this date in 1991–2020.`,`Mais fresco do que cerca de ${pc}% dos dias desta época em 1991–2020.`);
+  
  svCSS();
+ 
  const mn=Math.min(q[0],tm),mx=Math.max(q[20],tm),pd=Math.max(.6,(mx-mn)*.1),lo=mn-pd,hi=mx+pd,X=v=>+((v-lo)/(hi-lo)*100).toFixed(1);
  const dt=new Date(day+'T12:00:00').toLocaleDateString(LOC(),{day:'numeric',month:'long'});
  const bar=(a,b,c)=>`<i class="${c}" style="left:${X(a)}%;width:${(X(b)-X(a)).toFixed(1)}%"></i>`;
  const lab=(v,txt,cls)=>`<span class="sv-rl ${cls} ${svAl(X(v))}" style="left:${X(v)}%">${txt}</span>`;
- // densidade de temperatura a partir dos 21 quantis (cada intervalo contém 5 % dos dias), alisada
-// densidade de temperatura a partir dos 21 quantis, com forte alisamento Gaussiano
-const dRaw=[];for(let i=0;i<20;i++)dRaw.push([(q[i]+q[i+1])/2,.05/Math.max(q[i+1]-q[i],.05)]);
-const dSm = dRaw.map((p, i) => {
-    let sum = 0, wsum = 0;
-    for (let j = -4; j <= 4; j++) {
-        const idx = i + j;
-        if (idx >= 0 && idx < dRaw.length) {
-            const w = Math.exp(-0.5 * Math.pow(j / 1.5, 2));
-            sum += dRaw[idx][1] * w;
-            wsum += w;
-        }
-    }
-    return [p[0], sum / wsum];
-});
-const dmax=Math.max(...dSm.map(p=>p[1])),dy=v=>100-Math.min(1,v/dmax)*85;
+ 
+ // densidade de temperatura a partir dos 21 quantis, com forte alisamento Gaussiano
+ const dRaw=[];for(let i=0;i<20;i++)dRaw.push([(q[i]+q[i+1])/2,.05/Math.max(q[i+1]-q[i],.05)]);
+ const dSm = dRaw.map((p, i) => {
+     let sum = 0, wsum = 0;
+     for (let j = -4; j <= 4; j++) {
+         const idx = i + j;
+         if (idx >= 0 && idx < dRaw.length) {
+             const w = Math.exp(-0.5 * Math.pow(j / 1.5, 2));
+             sum += dRaw[idx][1] * w;
+             wsum += w;
+         }
+     }
+     return [p[0], sum / wsum];
+ });
+ const dmax=Math.max(...dSm.map(p=>p[1])),dy=v=>100-Math.min(1,v/dmax)*85;
 
-// Adicionar pontos de "fantasma" nas pontas para uma transição suave até zero
-const ext = (q[20] - q[0]) * 0.1;
-const dpts = [[X(q[0] - ext), 100]].concat(dSm.map(p=>[X(p[0]),dy(p[1])])).concat([[X(q[20] + ext), 100]]);
+ // Adicionar pontos de "fantasma" nas pontas para uma transição suave até zero
+ const ext = (q[20] - q[0]) * 0.1;
+ const dpts = [[X(q[0] - ext), 100]].concat(dSm.map(p=>[X(p[0]),dy(p[1])])).concat([[X(q[20] + ext), 100]]);
 
-const dL=svPath(dpts), dA=dL+`L${dpts[dpts.length-1][0]},100L${dpts[0][0]},100Z`;
-const clipW = Math.max(0, X(q[18]) - X(q[2]));
+ const dL=svPath(dpts), dA=dL+`L${dpts[dpts.length-1][0]},100L${dpts[0][0]},100Z`;
+ const clipW = Math.max(0, X(q[18]) - X(q[2]));
+ 
  const yT=(()=>{let k=0;while(k<dpts.length-2&&dpts[k+1][0]<X(tm))k++;const p=dpts[k],r=dpts[k+1],f=r[0]>p[0]?Math.min(1,Math.max(0,(X(tm)-p[0])/(r[0]-p[0]))):0;return p[1]+(r[1]-p[1])*f})();
+ 
  const tcol=v=>typeof tempColor==='function'?tempColor(v):'#2f6db5';
  const gstops=q.map(v=>`<stop offset="${(X(v)/100).toFixed(3)}" style="stop-color:${tcol(v)}"/>`).join('');
- // quão raro: fração de dias desta época, nos dois sentidos, tão extremos ou mais do que hoje
+ 
  const rr=Math.max(.5,Math.min(100,Math.min(p,100-p)*2)),lvR=rr>60?0:rr>30?1:rr>10?2:rr>4?3:4,beyond=tm>q[20]||tm<q[0];
  const rN=[T2('Typical','Típico'),T2('Slightly unusual','Pouco invulgar'),T2('Unusual','Invulgar'),T2('Rare','Raro'),T2('Exceptional','Excepcional')][lvR],nn=Math.max(2,Math.round(100/rr));
  const rTxt=beyond?T2('More extreme than any day around this date in 1991–2020.','Mais extremo do que qualquer dia desta época em 1991–2020.')
   :rr>50?T2(`A typical day: about ${Math.round(rr)}% of days around this date are as extreme or more.`,`Um dia típico: cerca de ${Math.round(rr)}% dos dias desta época são tão extremos ou mais.`)
   :T2(`A day like this, or more extreme, happens about 1 in ${nn} days around this date.`,`Um dia assim, ou mais extremo, acontece em cerca de 1 em ${nn} dias nesta época.`);
+  
  const meter=[0,1,2,3,4].map(i=>`<i${i<=lvR?` class="on" style="background:${tcol(tm)}"`:''}></i>`).join('');
  const out=tm>q[20]?T2('above the 1991–2020 range','acima do intervalo de 1991–2020'):tm<q[0]?T2('below the 1991–2020 range','abaixo do intervalo de 1991–2020'):'';
+ 
  return ttl+`<div class="xt-head"><b class="xt-big">${sg}${dec1(Math.abs(dd))}°</b><span class="xt-tag t-${lv[0]>0?'hot':lv[0]<0?'cold':'mid'}${Math.abs(lv[0])}">${T2(lv[1],lv[2])}</span></div>
  <p class="note">${T2(`Today averages ${sT}°. The 1991–2020 normal for ${dt} is ${sN}°.`,`Hoje a média é ${sT}°. A normal de 1991–2020 para ${dt} é ${sN}°.`)} ${rank}</p>
  <div class="sv-cap"><span>${T2('Today vs. 30 years of this date','Hoje vs. 30 anos desta data')}</span><span>${out}</span></div>
- <div class="sv-dens" role="img" aria-label="${T2('Today compared with the usual range','Hoje comparado com o intervalo habitual')}"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="svDg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="0">${gstops}</linearGradient></defs><path class="sv-da" d="${dA}"/><path class="sv-db" d="${dB}"/><path class="sv-dl" d="${dL}"/><path class="sv-dn" d="M${X(tm)},${(yT+2).toFixed(1)}L${X(tm)},100"/></svg><i class="sv-dd" style="left:${X(tm)}%;top:${yT.toFixed(1)}%;background:${tcol(tm)}"></i><span class="sv-dv ${svAl(X(tm))}" style="left:${X(tm)}%;top:calc(${yT.toFixed(1)}% - 30px)">${T2('Today','Hoje')} ${sT}°</span></div>
+ <div class="sv-dens" role="img" aria-label="${T2('Today compared with the usual range','Hoje comparado com o intervalo habitual')}">
+  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+   <defs>
+    <linearGradient id="svDg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="0">${gstops}</linearGradient>
+    <clipPath id="svClip"><rect x="${X(q[2])}" y="0" width="${clipW}" height="100"/></clipPath>
+   </defs>
+   <path class="sv-da" d="${dA}"/>
+   <path class="sv-db" d="${dA}" clip-path="url(#svClip)"/>
+   <path class="sv-dl" d="${dL}"/>
+   <path class="sv-dn" d="M${X(tm)},${(yT+2).toFixed(1)}L${X(tm)},100"/>
+  </svg>
+  <i class="sv-dd" style="left:${X(tm)}%;top:${yT.toFixed(1)}%;background:${tcol(tm)}"></i>
+  <span class="sv-dv ${svAl(X(tm))}" style="left:${X(tm)}%;top:calc(${yT.toFixed(1)}% - 30px)">${T2('Today','Hoje')} ${sT}°</span>
+ </div>
  <div class="sv-dx"><span class="${svAl(X(q[0]))}" style="left:${X(q[0])}%">${T(q[0])}°</span><span class="${svAl(X(q[10]))}" style="left:${X(q[10])}%">${T2('normal','normal')} ${T(q[10])}°</span><span class="${svAl(X(q[20]))}" style="left:${X(q[20])}%">${T(q[20])}°</span></div>
  <div class="sv-cap"><span>${T2('How unusual','Quão invulgar')}</span><span>${rN}</span></div>
  <div class="sv-meter" role="img" aria-label="${rN}">${meter}</div>
@@ -719,7 +742,6 @@ const clipW = Math.max(0, X(q[18]) - X(q[2]));
  <dl class="sv-facts">${svRow(T2('Today (mean)','Hoje (média)'),sT+'°')}${svRow(T2('Normal','Normal da data'),sN+'°')}${svRow(T2('Usual (80%)','Habitual (80%)'),T(q[2])+'° – '+T(q[18])+'°')}${svRow(T2('Record range','Extremos'),T(q[0])+'° / '+T(q[20])+'°')}</dl>
  <p class="xt-src">${T2('Normal = 1991–2020 daily mean, ±7 days around the date. ERA5 reanalysis (Copernicus / ECMWF) via Open-Meteo Historical Weather API.','Normal = média diária de 1991–2020, ±7 dias em torno da data. Reanálise ERA5 (Copernicus / ECMWF) via Open-Meteo Historical Weather API.')}</p>`;
 }
-
 const xtSea=()=>{const i=seaInner();return i?`<section class="card xt" id="sea">${i}</section>`:''};
 function xtraHTML(){
  if(!data||!place)return'';
