@@ -761,6 +761,30 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .rleg2{flex-wrap:wrap}
 .rleg2 img{height:44px;max-width:100%;padding:4px 8px;border-radius:10px;background:#fff;border:1px solid rgba(20,49,79,.12)}
 .rleg2 img[hidden],.rlegfb[hidden]{display:none}
+/* indicador de origem no rodapé do card (nowcast, IPMA, NASA…) */
+#rlsrc{display:inline-flex;align-items:center;gap:5px;margin-left:auto;padding:2px 9px;border-radius:999px;
+ background:rgba(20,49,79,.055);border:1px solid rgba(20,49,79,.1);color:var(--ink);font-size:10.5px;
+ font-weight:650;letter-spacing:.01em;white-space:nowrap;opacity:.9}
+#rlsrc:empty{display:none}
+html.is-mobile #rlsrc{margin-left:0;white-space:normal}
+
+/* ==== nowcast de radar (fluxo ótico) ==== */
+.ncbtn{flex:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 11px;border-radius:11px;
+ border:1px solid rgba(20,49,79,.16);background:#fff;color:var(--ink);font:650 12.5px/1 inherit;letter-spacing:.01em;
+ cursor:pointer;transition:background .18s,color .18s,border-color .18s,box-shadow .18s,transform .18s}
+.ncbtn svg{width:14px;height:14px;opacity:.85}
+.ncbtn:hover{border-color:var(--acc);color:var(--acc);transform:translateY(-1px)}
+.ncbtn[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 6px 16px color-mix(in srgb,var(--acc) 38%,transparent)}
+.ncbtn[aria-pressed=true] svg{opacity:1}
+.ncbtn:disabled{opacity:.55;cursor:default;transform:none}
+.ncfc{image-rendering:auto}
+.ncsrc{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;opacity:.7;margin-top:2px}
+html.is-mobile .ncbox .nct small.ncsrc{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;opacity:.75;margin-top:2px}
+html.is-mobile .ncbtn{height:44px;min-width:44px;padding:0 10px;border-radius:14px;background:#eef4fb;border-color:rgba(20,49,79,.08);box-shadow:none}
+html.is-mobile .ncbtn span{display:none}
+html.is-mobile .ncbtn[aria-pressed=true]{background:var(--acc)}
+html.is-mobile .ncbtn svg{width:18px;height:18px}
+
 
 /* ---- globo ---- */
 /* ---- globo com halo atmosférico radiante ---- */
