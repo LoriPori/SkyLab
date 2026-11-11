@@ -1,5 +1,11 @@
-const C='skylab-v14';   // sobe sempre que mudares index.html / styles.css / app.js: apaga a cache antiga no 'activate'
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(['./','index.html','styles.css','early.js','app.js'])))});
+const C='skylab-v15';   // sobe sempre que mudares index.html / styles.css / js/: apaga a cache antiga no 'activate'
+/* A lista do 'install' tem de existir TODA, senão caches.addAll falha e o SW nunca activa (era o caso do app.js).
+   Por isso: poucos ficheiros essenciais, cada um tolerante a falha; o resto entra na cache à medida que é usado. */
+const SHELL=['./','index.html','styles.css','early.js','js/nowcast.js','js/nowcast_worker.js'];
+self.addEventListener('install',e=>{
+ self.skipWaiting();
+ e.waitUntil(caches.open(C).then(c=>Promise.all(SHELL.map(u=>c.add(u).catch(()=>{})))));
+});
 self.addEventListener('activate',e=>e.waitUntil(
   caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>clients.claim())
 ));
