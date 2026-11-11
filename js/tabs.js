@@ -552,10 +552,14 @@ function svCSS(){
 .xt .sv-dens{position:relative;height:112px;margin:30px 0 0}
 #xtra #anom .sv-dens{flex:1 1 112px;height:auto;min-height:112px;max-height:300px}
 .xt .sv-dens svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.xt .sv-da{fill:currentColor;fill-opacity:.1;stroke:none}
-.xt .sv-db{fill:currentColor;fill-opacity:.2;stroke:none}
-.xt .sv-dl{fill:none;stroke:currentColor;stroke-opacity:.55;stroke-width:1.6;vector-effect:non-scaling-stroke}
-.xt .sv-dn{stroke:var(--svc);stroke-width:2;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.xt .sv-da{fill:url(#svDg);fill-opacity:.4;stroke:none}
+.xt .sv-db{fill:url(#svDg);fill-opacity:.85;stroke:none}
+.xt .sv-dl{fill:none;stroke:url(#svDg);stroke-width:2.2;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.xt .sv-dn{stroke:currentColor;stroke-opacity:.7;stroke-width:1.8;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.xt .sv-meter{display:flex;gap:5px;margin:10px 0 0}
+.xt .sv-meter i{flex:1;height:10px;border-radius:99px;background:currentColor;opacity:.12}
+.xt .sv-meter i.on{opacity:.95}
+.xt .sv-mt{margin:9px 0 0;font-size:13.5px;line-height:1.5;opacity:.82}
 .xt .sv-dd{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--svc);border:3px solid #fff;box-sizing:border-box;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .xt .sv-dv{position:absolute;top:-26px;font-size:12.5px;font-weight:700;white-space:nowrap;line-height:1}
 .xt .sv-dv.a{transform:none}.xt .sv-dv.z{transform:translateX(-100%)}.xt .sv-dv.c{transform:translateX(-50%)}
@@ -678,12 +682,24 @@ function anomInner(){
  const dL=svPath(dpts),dA=dL+'L'+dpts[dpts.length-1][0]+',100L'+dpts[0][0]+',100Z';
  const bp=dpts.filter(p=>p[0]>=X(q[2])&&p[0]<=X(q[18])),dB=bp.length>1?svPath(bp)+'L'+bp[bp.length-1][0]+',100L'+bp[0][0]+',100Z':'';
  const yT=(()=>{let k=0;while(k<dpts.length-2&&dpts[k+1][0]<X(tm))k++;const p=dpts[k],r=dpts[k+1],f=r[0]>p[0]?Math.min(1,Math.max(0,(X(tm)-p[0])/(r[0]-p[0]))):0;return p[1]+(r[1]-p[1])*f})();
+ const tcol=v=>typeof tempColor==='function'?tempColor(v):'#2f6db5';
+ const gstops=q.map(v=>`<stop offset="${(X(v)/100).toFixed(3)}" style="stop-color:${tcol(v)}"/>`).join('');
+ // quão raro: fração de dias desta época, nos dois sentidos, tão extremos ou mais do que hoje
+ const rr=Math.max(.5,Math.min(100,Math.min(p,100-p)*2)),lvR=rr>60?0:rr>30?1:rr>10?2:rr>4?3:4,beyond=tm>q[20]||tm<q[0];
+ const rN=[T2('Typical','Típico'),T2('Slightly unusual','Pouco invulgar'),T2('Unusual','Invulgar'),T2('Rare','Raro'),T2('Exceptional','Excepcional')][lvR],nn=Math.max(2,Math.round(100/rr));
+ const rTxt=beyond?T2('More extreme than any day around this date in 1991–2020.','Mais extremo do que qualquer dia desta época em 1991–2020.')
+  :rr>50?T2(`A typical day: about ${Math.round(rr)}% of days around this date are as extreme or more.`,`Um dia típico: cerca de ${Math.round(rr)}% dos dias desta época são tão extremos ou mais.`)
+  :T2(`A day like this, or more extreme, happens about 1 in ${nn} days around this date.`,`Um dia assim, ou mais extremo, acontece em cerca de 1 em ${nn} dias nesta época.`);
+ const meter=[0,1,2,3,4].map(i=>`<i${i<=lvR?` class="on" style="background:${tcol(tm)}"`:''}></i>`).join('');
  const out=tm>q[20]?T2('above the 1991–2020 range','acima do intervalo de 1991–2020'):tm<q[0]?T2('below the 1991–2020 range','abaixo do intervalo de 1991–2020'):'';
  return ttl+`<div class="xt-head"><b class="xt-big">${sg}${dec1(Math.abs(dd))}°</b><span class="xt-tag t-${lv[0]>0?'hot':lv[0]<0?'cold':'mid'}${Math.abs(lv[0])}">${T2(lv[1],lv[2])}</span></div>
  <p class="note">${T2(`Today averages ${sT}°. The 1991–2020 normal for ${dt} is ${sN}°.`,`Hoje a média é ${sT}°. A normal de 1991–2020 para ${dt} é ${sN}°.`)} ${rank}</p>
  <div class="sv-cap"><span>${T2('Today vs. 30 years of this date','Hoje vs. 30 anos desta data')}</span><span>${out}</span></div>
- <div class="sv-dens" role="img" aria-label="${T2('Today compared with the usual range','Hoje comparado com o intervalo habitual')}"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="sv-da" d="${dA}"/><path class="sv-db" d="${dB}"/><path class="sv-dl" d="${dL}"/><path class="sv-dn" d="M${X(tm)},${(yT+2).toFixed(1)}L${X(tm)},100"/></svg><i class="sv-dd" style="left:${X(tm)}%;top:${yT.toFixed(1)}%"></i><span class="sv-dv ${svAl(X(tm))}" style="left:${X(tm)}%">${T2('Today','Hoje')} ${sT}°</span></div>
+ <div class="sv-dens" role="img" aria-label="${T2('Today compared with the usual range','Hoje comparado com o intervalo habitual')}"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="svDg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="0">${gstops}</linearGradient></defs><path class="sv-da" d="${dA}"/><path class="sv-db" d="${dB}"/><path class="sv-dl" d="${dL}"/><path class="sv-dn" d="M${X(tm)},${(yT+2).toFixed(1)}L${X(tm)},100"/></svg><i class="sv-dd" style="left:${X(tm)}%;top:${yT.toFixed(1)}%;background:${tcol(tm)}"></i><span class="sv-dv ${svAl(X(tm))}" style="left:${X(tm)}%;top:calc(${yT.toFixed(1)}% - 30px)">${T2('Today','Hoje')} ${sT}°</span></div>
  <div class="sv-dx"><span class="${svAl(X(q[0]))}" style="left:${X(q[0])}%">${T(q[0])}°</span><span class="${svAl(X(q[10]))}" style="left:${X(q[10])}%">${T2('normal','normal')} ${T(q[10])}°</span><span class="${svAl(X(q[20]))}" style="left:${X(q[20])}%">${T(q[20])}°</span></div>
+ <div class="sv-cap"><span>${T2('How unusual','Quão invulgar')}</span><span>${rN}</span></div>
+ <div class="sv-meter" role="img" aria-label="${rN}">${meter}</div>
+ <p class="sv-mt">${rTxt}</p>
  <dl class="sv-facts">${svRow(T2('Today (mean)','Hoje (média)'),sT+'°')}${svRow(T2('Normal','Normal da data'),sN+'°')}${svRow(T2('Usual (80%)','Habitual (80%)'),T(q[2])+'° – '+T(q[18])+'°')}${svRow(T2('Record range','Extremos'),T(q[0])+'° / '+T(q[20])+'°')}</dl>
  <p class="xt-src">${T2('Normal = 1991–2020 daily mean, ±7 days around the date. ERA5 reanalysis (Copernicus / ECMWF) via Open-Meteo Historical Weather API.','Normal = média diária de 1991–2020, ±7 dias em torno da data. Reanálise ERA5 (Copernicus / ECMWF) via Open-Meteo Historical Weather API.')}</p>`;
 }
