@@ -680,29 +680,40 @@ function anomInner(){
  const dt=new Date(day+'T12:00:00').toLocaleDateString(LOC(),{day:'numeric',month:'long'});
  const bar=(a,b,c)=>`<i class="${c}" style="left:${X(a)}%;width:${(X(b)-X(a)).toFixed(1)}%"></i>`;
  const lab=(v,txt,cls)=>`<span class="sv-rl ${cls} ${svAl(X(v))}" style="left:${X(v)}%">${txt}</span>`;
- 
- // densidade de temperatura a partir dos 21 quantis, com forte alisamento Gaussiano
- const dRaw=[];for(let i=0;i<20;i++)dRaw.push([(q[i]+q[i+1])/2,.05/Math.max(q[i+1]-q[i],.05)]);
- const dSm = dRaw.map((p, i) => {
-     let sum = 0, wsum = 0;
-     for (let j = -4; j <= 4; j++) {
-         const idx = i + j;
-         if (idx >= 0 && idx < dRaw.length) {
-             const w = Math.exp(-0.5 * Math.pow(j / 1.5, 2));
-             sum += dRaw[idx][1] * w;
-             wsum += w;
-         }
-     }
-     return [p[0], sum / wsum];
- });
- const dmax=Math.max(...dSm.map(p=>p[1])),dy=v=>100-Math.min(1,v/dmax)*85;
 
- // Adicionar pontos de "fantasma" nas pontas para uma transição suave até zero
- const ext = (q[20] - q[0]) * 0.1;
- const dpts = [[X(q[0] - ext), 100]].concat(dSm.map(p=>[X(p[0]),dy(p[1])])).concat([[X(q[20] + ext), 100]]);
+const numPts = 80;
+const rawD = [];
+for (let i = 0; i <= numPts; i++) {
+    const x = (i / numPts) * 100;
+    const T = lo + (x / 100) * (hi - lo);
+    let d = 0;
+    if (T >= q[0] && T <= q[20]) {
+        let j = 0;
+        while (j < 19 && T > q[j+1]) j++;
+        d = 0.05 / Math.max(q[j+1] - q[j], 0.05);
+    }
+    rawD.push({ x, d });
+}
+// Aplicar um filtro Gaussiano mais largo para uma curva super suave
+const dSm = rawD.map((p, i) => {
+    let sum = 0, wsum = 0;
+    for (let j = -8; j <= 8; j++) {
+        const idx = i + j;
+        if (idx >= 0 && idx < rawD.length) {
+            const w = Math.exp(-0.5 * Math.pow(j / 3, 2));
+            sum += rawD[idx].d * w;
+            wsum += w;
+        }
+    }
+    return [p.x, sum / wsum];
+});
+const dmax = Math.max(...dSm.map(p=>p[1]));
+const dy = v => 100 - Math.min(1, v/dmax)*85;
+const dpts = dSm.map(p => [p[0], dy(p[1])]);
 
- const dL=svPath(dpts), dA=dL+`L${dpts[dpts.length-1][0]},100L${dpts[0][0]},100Z`;
- const clipW = Math.max(0, X(q[18]) - X(q[2]));
+const dL = svPath(dpts);
+const dA = dL + `L100,100L0,100Z`;
+const clipW = Math.max(0, X(q[18]) - X(q[2]));
  
  const yT=(()=>{let k=0;while(k<dpts.length-2&&dpts[k+1][0]<X(tm))k++;const p=dpts[k],r=dpts[k+1],f=r[0]>p[0]?Math.min(1,Math.max(0,(X(tm)-p[0])/(r[0]-p[0]))):0;return p[1]+(r[1]-p[1])*f})();
  
