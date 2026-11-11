@@ -231,14 +231,14 @@ function orbHTML(){return(typeof data!=='undefined'&&data&&window.SkyOrb)?SkyOrb
     e reaquecia o orbe sem necessidade. Agora o motor só é reconstruído
     quando o `data.current.time` muda (ou seja, quando chega uma previsão
     nova), que é a única coisa que o plan() precisa de recalcular. */
- let _orbMountedFor = null;
+ let _orbCv = null;
  const _st = setTab;
  setTab = function (k) {
    _st(k);
    if (k !== 'today') return;
-   const stamp = data && data.current ? data.current.time : null;
-   if (stamp && stamp === _orbMountedFor) return;
-   _orbMountedFor = stamp;
+   const cv = $('#orbCv');
+   if (!cv || cv === _orbCv) return;   // mesmo canvas → motor já ligado
+   _orbCv = cv;
    mount();
  };
 })();

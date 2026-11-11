@@ -104,7 +104,7 @@ function skyDay(a,H,d,ctx){
   const gold=ss!=null&&sr!=null&&(hr===Math.floor((ss-25)/60)||hr===Math.floor((sr+20)/60));
   let wh=null,wp=null;
   if(a==='surf'&&ctx.sea){const k=ctx.sea.idx[H.time[j]];if(k!=null){wh=ctx.sea.wh[k];wp=ctx.sea.wp[k]}}
-  const alert=ctx.alerts&&ctx.alerts[d]!=null?ctx.alerts[d]:0;
+  const alert=skyAlertAt(ctx,d,H.time[j]);
   const r=skyHour(a,{t:H.t[j],pop:H.pop[j],code:H.code[j],day:!!H.day[j],wind:H.wind[j],gust:H.gust[j],rh:H.rh[j],dp:H.dp[j],hr,aqi,pol,allergy:ctx.allergy,moon,gold,wh,wp,alert});
   if(r&&!(a==='photo'&&!gold)&&!(a==='allergy'&&!H.day[j]))rows.push({j,hr,r});
  }
@@ -142,27 +142,41 @@ function skyCompute(a){
  const sea=xtGet('sea'),pol=[];
  if(pollenOutlook&&pollenOutlook.length)pollenOutlook.forEach((o,i)=>pol[i]=o.lvl);else if(sig.pollen&&RISK[sig.pollen.risk]!=null)pol[0]=RISK[sig.pollen.risk];
  const ctx={today:data.current.time.slice(0,10),nowIdx:idx0(),sr:data.daily.sunrise,ss:data.daily.sunset,pol,aqi:sig.aqi,allergy:skyCfg().acts.includes('allergy'),
-  alerts:skyAlertLevels(sig,data),
+  warns:skyWarnList(),
   sea:sea&&sea.t&&sea.wh?{idx:Object.fromEntries(sea.t.map((x,i)=>[x,i])),wh:sea.wh,wp:sea.wp||[]}:null};
  const out=[];for(let d=0;d<7;d++)out.push(skyDay(a,H,d,ctx));return out;
 }
 // 0=sem aviso · 1=amarelo · 2=laranja · 3=vermelho — um valor por dia (0..6)
-function skyAlertLevels(sig,data){
-  const w=sig&&(sig.warnings||sig.alerts);
-  if(!w)return[0,0,0,0,0,0,0];
-  if(Array.isArray(w)&&typeof w[0]==='number')return w.slice(0,7).concat([0,0,0,0,0,0,0]).slice(0,7);
-  const LV={yellow:1,amarelo:1,orange:2,laranja:2,red:3,vermelho:3};
-  const dates=data.daily.time,out=dates.map(()=>0);
-  for(const x of w){
-    const lvl=LV[String(x.level||x.awarenessLevelID||x.awareness_level||'').toLowerCase()]||0;
-    if(!lvl)continue;
-    const st=Date.parse(x.startTime||x.start||x.start_time||''),en=Date.parse(x.endTime||x.end||x.end_time||'');
-    for(let i=0;i<dates.length;i++){
-      const dt=Date.parse(dates[i]+'T12:00:00');
-      if((isNaN(st)||dt>=st)&&(isNaN(en)||dt<=en)&&lvl>out[i])out[i]=lvl;
-    }
-  }
-  return out;
+/* ═══ AVISOS IPMA → limite da pontuação (por hora) ═══ */
+const SKY_WROOT=AUTH_CONFIG.apiUrl.replace(/\/auth\/?$/,'');
+const skyWarn={key:'',at:0,busy:false,list:null};
+function skyWarnsFor(raw,areas,lat,lon){
+ const A=(areas&&areas.data)||(Array.isArray(areas)?areas:[]);let best=null,bd=1e9;
+ for(const a of A){const la=+a.latitude,lo=+a.longitude;if(!isFinite(la)||!isFinite(lo)||!a.idAreaAviso)continue;
+  const d=(la-lat)**2+((lo-lon)*Math.cos(lat*Math.PI/180))**2;if(d<bd){bd=d;best=a.idAreaAviso}}
+ if(!best||bd>2)return[];
+ const LV={yellow:1,orange:2,red:3};
+ return(Array.isArray(raw)?raw:[]).filter(w=>w.idAreaAviso===best&&LV[String(w.awarenessLevelID).toLowerCase()])
+  .map(w=>({lvl:LV[String(w.awarenessLevelID).toLowerCase()],st:Date.parse(w.startTime),en:Date.parse(w.endTime)}))
+  .filter(w=>isFinite(w.st)&&isFinite(w.en));
+}
+function skyAlertAt(ctx,d,time){
+ const W=ctx.warns;
+ if(W){const t=Date.parse(time),e=t+3600e3;let m=0;for(const w of W)if(w.st<e&&w.en>t&&w.lvl>m)m=w.lvl;return m}
+ return ctx.alerts&&ctx.alerts[d]!=null?ctx.alerts[d]:0;
+}
+function skyWarnList(){
+ if(typeof isPortugal==='function'&&!isPortugal(place.lat,place.lon))return[];
+ const key=place.lat.toFixed(2)+','+place.lon.toFixed(2);
+ if(skyWarn.key!==key){skyWarn.key=key;skyWarn.list=null;skyWarn.at=0}
+ if(!skyWarn.busy&&Date.now()-skyWarn.at>10*60e3){
+  skyWarn.busy=true;const k=key;
+  Promise.all([fetch(SKY_WROOT+'/ipma-warnings').then(r=>r.ok?r.json():[]),fetch(SKY_WROOT+'/ipma-areas').then(r=>r.ok?r.json():{})])
+   .then(([w,a])=>{if(skyWarn.key!==k)return;skyWarn.list=skyWarnsFor(w,a,place.lat,place.lon);skyWarn.at=Date.now();skyPaint()})
+   .catch(()=>{skyWarn.at=Date.now()-9*60e3})
+   .finally(()=>{skyWarn.busy=false});
+ }
+ return skyWarn.list;
 }
 function skyBook(all){                                  // sequência de dias e recordes (guardados e sincronizados)
  const n=new Date(),k=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
