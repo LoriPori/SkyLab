@@ -213,7 +213,7 @@ const mkLayer=(url,opts)=>{
 };
 
 const WORKER=ATMO.base.replace('/v1','');
-const SAT_ID='VIIRS_SNPP_CorrectedReflectance_TrueColor';
+/* (SAT_ID was a fixed layer; the satellite tab now picks the freshest product — see SAT_PREF) */
 
 function loadLeaflet(){
  if(window.L){installFourCorners();return Promise.resolve()}
@@ -492,7 +492,7 @@ async function satInfo(id){
     if(!v.found||!v.end||!v.stepMs||!v.tms)throw new Error('layer not found');
   }catch(e){
     console.warn('[SAT] worker lookup failed, using defaults:',e.message);
-    v={found:true,end:new Date().toISOString(),start:new Date(Date.now()-30*864e5).toISOString(),
+    v={found:true,fallback:true,end:new Date().toISOString(),start:new Date(Date.now()-30*864e5).toISOString(),
        stepMs:864e5,tms:'GoogleMapsCompatible_Level9',ext:'jpg'};
   }
   satCache[id]={at:Date.now(),v};return v;
@@ -638,6 +638,10 @@ function ncEngineLoad(){
 }
 
 function ncZoom(){const z=radarMap?radarMap.getZoom():7;return Math.max(6,Math.min(8,Math.round(z)))}
+/* o mosaico tem de cobrir o que se vê: 2–4 tiles por lado, no zoom que couber */
+function ncFit(){
+ try{return NC.fit(radarMap.getBounds())}catch(e){return {z:ncZoom(),grid:3}}
+}
 function ncCompass(d){
  const a=LANG=='pt'?['N','NNE','NE','ENE','L','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO']
                    :['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
@@ -687,7 +691,7 @@ async function ncToggle(){
    if(btn){btn.setAttribute('aria-pressed','false');btn.disabled=false}}
   ncBusy=false;return;
  }
- const c=radarMap.getCenter();
+ const c=radarMap.getCenter(), geom=ncFit();
  const stage=(s,a,b)=>{
   if(tok!==ncTok||!note)return;
   note.textContent=s==='tiles'?T2('Loading radar frames','A carregar imagens de radar')+' '+a+'/'+b+'…'
@@ -696,7 +700,7 @@ async function ncToggle(){
  };
  stage('frames');
  try{
-  const res=await NC.forecast({lat:c.lat,lon:c.lng,grid:3,z:ncZoom(),horizon:6,verify:true,onStage:stage});
+  const res=await NC.forecast({lat:c.lat,lon:c.lng,grid:geom.grid,z:geom.z,horizon:6,verify:true,onStage:stage});
   if(tok!==ncTok||!radarMap)return;
   if(!res.ok){
    if(note)note.textContent=res.why==='dry'?T2('No rain around here to extrapolate.','Sem chuva aqui para extrapolar.')
@@ -776,28 +780,60 @@ async function loadCloud(stale,isPT){
   radarShow(0);radarBtn();
 }
 
-/* ---- Satellite (NASA VIIRS, idêntico nos dois âmbitos) ---- */
+/* ---- Satellite (NASA GIBS true colour, idêntico nos dois âmbitos) ---- */
+/* Nenhum produto verdadeiro-cor está sempre fresco: a NASA atrasa um satélite durante dias (o Suomi NPP
+   ficou em 2026-11-02 com o resto do mundo em 11-11). Por isso não há um ID fixo: pede-se a disponibilidade
+   a vários satélites e usa-se o mais recente. */
+const SAT_PREF=[
+ ['VIIRS_NOAA20_CorrectedReflectance_TrueColor','NOAA-20 VIIRS'],
+ ['VIIRS_NOAA21_CorrectedReflectance_TrueColor','NOAA-21 VIIRS'],
+ ['MODIS_Terra_CorrectedReflectance_TrueColor','Terra MODIS'],
+ ['MODIS_Aqua_CorrectedReflectance_TrueColor','Aqua MODIS'],
+ ['VIIRS_SNPP_CorrectedReflectance_TrueColor','Suomi NPP VIIRS']
+];
+let satPick=null;
+async function satBest(){
+  if(satPick&&Date.now()-satPick.at<6e5)return satPick;
+  const all=await Promise.all(SAT_PREF.map(async([id,name])=>{
+    try{
+      const j=await satInfo(id);
+      /* o compósito do dia corrente ainda está a meio, por isso mostramos sempre o anterior:
+         é essa a data que conta para decidir qual o produto está mais fresco */
+      const eff=(Date.parse(j.end)||0)-(j.stepMs>=864e5?j.stepMs:0);
+      return {id,name,j,end:eff,fb:!!j.fallback};
+    }catch(e){return null}
+  }));
+  const good=all.filter(r=>r&&!r.fb&&r.end).sort((a,b)=>b.end-a.end);
+  let pick=good[0]||null;
+  if(!pick){                                                         // sem metadados: tenta o preferido
+    const [id,name]=SAT_PREF[0];
+    pick={id,name,j:await satInfo(id),end:0,fb:true};
+  }
+  satPick={at:Date.now(),...pick};
+  return satPick;
+}
 async function loadSat(stale){
   const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
   sl.disabled=true;pl.disabled=true;
   note.textContent='Loading satellite frames…';
-  let j;
-  try{j=await satInfo(SAT_ID)}catch(e){
+  let pick;
+  try{pick=await satBest()}catch(e){
     if(!stale()&&note)note.textContent='Satellite imagery unavailable right now.';
     return;
   }
   if(stale())return;
+  const j=pick.j;
   const daily=j.stepMs>=864e5;
   let end=Date.parse(j.end);
   const start=Date.parse(j.start),N=daily?7:12;
-  if(daily)end-=j.stepMs;
+  if(daily)end-=j.stepMs;                                            // o compósito de hoje ainda está a meio
   const times=Array.from({length:N},(_,i)=>end-(N-1-i)*j.stepMs).filter(t=>t>=start);
   const nz=+((j.tms.match(/Level(\d+)/)||[0,9])[1]);
   radarFrames=times.map(t=>({time:t/1000,fc:false,day:daily}));
-  radarLayers=times.map(t=>mkLayer(satURL(SAT_ID,j,t),{maxNativeZoom:nz,maxZoom:9}));
+  radarLayers=times.map(t=>mkLayer(satURL(pick.id,j,t),{maxNativeZoom:nz,maxZoom:9}));
   sl.disabled=false;pl.disabled=false;sl.max=times.length-1;
   sl.value=times.length-1;
-  note.textContent='NASA VIIRS true colour · '+(daily?'daily composite':'30 min frames');
+  note.textContent='NASA '+pick.name+' · '+T2('true colour','cor real')+' · '+(daily?T2('daily composite','compósito diário'):T2('30 min frames','imagens de 30 min'));
   radarShow(times.length-1);
   radarPlay=false;radarBtn();radarWarm();
 }

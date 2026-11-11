@@ -24,6 +24,9 @@ const ITER = 6;         // LK iterations per level
 const MIN_EIG = 0.003;  // min eigenvalue of the structure matrix, per window pixel (texture test)
 const MIN_MEAN = 0.04;  // min mean intensity in the window (needs some echo)
 const FILL_R = 8;       // fill radius for nodes without a measurement (in nodes)
+const MIX = 0.3;        // how much each node is pulled towards the domain-wide drift (kills warping)
+const SM = 3;           // smoothing passes over the motion field
+const TREND_CAP = 6;    // dBZ: growth/decay may move intensity by at most this much over the whole forecast
 
 /* ---------- image helpers ---------- */
 function down2(src, w, h) {                       // 2×2 block mean
@@ -169,7 +172,7 @@ function field(pyr, count) {
 /* nodes without a measurement take the weighted neighbourhood mean (plus a weak pull to the global median) */
 function fillField(f) {
   const { u, v, valid, gw, gh, gmed } = f;
-  if (!f.gmed) return { u, v, gw, gh };
+  if (!gmed || !valid) return { u, v, gw, gh, gmed };          // already filled on a previous pass
   const fu = new Float32Array(u), fv = new Float32Array(v);
   for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
     const q = j * gw + i; if (valid[q]) continue;
@@ -182,12 +185,14 @@ function fillField(f) {
     }
     fu[q] = su / sw; fv[q] = sv / sw;
   }
-  return { u: fu, v: fv, gw, gh };
+  return { u: fu, v: fv, gw, gh, gmed };
 }
-/* one light 3×3 pass over the filled field: removes single-node outliers that would smear the advection */
-function smoothField(f) {
+/* one 3×3 pass over the filled field, then a pull towards the domain-wide drift: a node that disagrees
+   with its neighbours by more than the field itself is noise, and advecting with it is what warps cells.
+   Repeated SM times — the kernel is small, so one pass only touches one node. */
+function smoothOnce(f) {
   const { u, v, gw, gh, gmed } = fillField(f);
-  if (!gmed) return { u, v, gw, gh };
+  if (!gmed) return { u, v, gw, gh, gmed };
   const ou = new Float32Array(gw * gh), ov = new Float32Array(gw * gh);
   for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
     let su = 0, sv = 0, sw = 0;
@@ -196,9 +201,15 @@ function smoothField(f) {
       const w = di || dj ? 1 : 2;
       const qq = jj * gw + ii; su += u[qq] * w; sv += v[qq] * w; sw += w;
     }
-    ou[j * gw + i] = su / sw; ov[j * gw + i] = sv / sw;
+    ou[j * gw + i] = (su / sw) * (1 - MIX) + gmed[0] * MIX;
+    ov[j * gw + i] = (sv / sw) * (1 - MIX) + gmed[1] * MIX;
   }
-  return { u: ou, v: ov, gw, gh };
+  return { u: ou, v: ov, gw, gh, gmed };
+}
+function smoothField(f) {
+  let cur = f;
+  for (let p = 0; p < SM; p++) cur = smoothOnce(cur);
+  return cur;
 }
 
 /* ---------- 2. intensity trend (growth / decay of the cells) ---------- */
@@ -242,6 +253,12 @@ function sample(img, S, x, y) {                     // bilinear, 0 outside (rain
   const a = img[i], b = img[i + x1], c = img[i + y1 * S], d = img[i + y1 * S + x1];
   return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;
 }
+/* nearest neighbour for the advected frame: bilinear averaging of a speckled radar field eats the light
+   rain every step (the edge of every cell gets mixed with dry air and drops below the 15 dBZ cut) */
+function sampleN(img, S, x, y) {
+  if (x < 0 || y < 0 || x > S - 1 || y > S - 1) return 0;
+  return img[(y + 0.5 | 0) * S + (x + 0.5 | 0)];
+}
 /* bilinear interpolation over the node grid; (x,y) in mosaic px */
 function nodeAt(arr, f, x, y) {
   const gw = f.gw, gh = f.gh;
@@ -263,16 +280,20 @@ function plan(S, f, trend) {
   }
   return { ox, oy, tr, S };
 }
-/* semi-Lagrangian backward advection of `base` by `lead` frame intervals; `damp` scales the motion */
+/* semi-Lagrangian backward advection of `base` by `lead` frame intervals; `damp` scales the motion.
+   The trend (growth/decay) saturates with lead time and is capped: a cell that grew for 10 minutes does
+   not keep growing for an hour, and the old linear form inflated the rain rate by a factor of ~5. */
 function advect(pl, base, lead, damp) {
   const { ox, oy, tr, S } = pl, out = new Uint8Array(S * S), k = damp == null ? 1 : damp;
+  const sat = Math.exp(-lead / 4);
   for (let y = 0; y < S; y++) {
     const row = y * S;
     for (let x = 0; x < S; x++) {
       const i = row + x;
-      const d = sample(base, S, x - ox[i] * lead * k, y - oy[i] * lead * k);
+      const d = sampleN(base, S, x - ox[i] * lead * k, y - oy[i] * lead * k);
       if (d <= 0) continue;
-      const z = d + tr[i] * lead;
+      const dz = tr[i] * lead * sat;
+      const z = d + (dz > TREND_CAP ? TREND_CAP : dz < -TREND_CAP ? -TREND_CAP : dz);
       if (z >= 15) out[i] = z > 65 ? 65 : Math.round(z);
     }
   }

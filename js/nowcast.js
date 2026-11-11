@@ -170,6 +170,24 @@ function decode(rgba, S, keepRGBA) {
   return { dbz: out, unknown, weak, wet, max, rgba: keepRGBA ? rgba : null };
 }
 
+/* pick zoom + mosaic size so the forecast patch covers the visible map (2–4 tiles a side) */
+function fit(b) {
+  if (!b) return { z: DEF_Z, grid: 3 };
+  const n = b.getNorth ? b.getNorth() : b.n, s = b.getSouth ? b.getSouth() : b.s;
+  const e = b.getEast ? b.getEast() : b.e, w = b.getWest ? b.getWest() : b.w;
+  const [x0, y0] = tileXY(n, w, 9), [x1, y1] = tileXY(s, e, 9);
+  const vw = Math.abs(x1 - x0), vh = Math.abs(y1 - y0);        // the view, measured in z9 tiles
+  for (let z = 8; z >= 5; z--) {
+    const k = Math.pow(2, 9 - z);
+    for (const g of [2, 3, 4]) {
+      /* TOL > 1 leaves room for the Mercator stretch: the patch may be a few percent smaller
+         than the view at the edges, which the soft border hides */
+      if (vw / k <= g * 1.08 && vh / k <= g * 1.08) return { z, grid: g };
+    }
+  }
+  return { z: 5, grid: 4 };
+}
+
 /* ---------- forecast ---------- */
 const cache = new Map(), inflight = new Map();
 
@@ -322,7 +340,7 @@ function canvasFrom(dbz, S) {
       const p = (y * S + x) * 4;
       o[p] = RGB[k * 3]; o[p + 1] = RGB[k * 3 + 1]; o[p + 2] = RGB[k * 3 + 2];
       const edge = Math.min(edgeY, Math.min(x, S - 1 - x) / fade);
-      o[p + 3] = Math.round((95 + k * 3.2) * clamp(edge * 1.6, 0, 1));
+      o[p + 3] = Math.round(255 * clamp(edge * 1.35, 0, 1));   // same opacity as the radar tiles
     }
   }
   ctx.putImageData(img, 0, 0);
@@ -337,7 +355,7 @@ function blobURL(cv) {
 }
 
 const NC = {
-  palette: PALETTE, mmh, tileXY, tileLat, decode, forecast, sample, sampleArea, rainIn, canvas, canvasFrom, blobURL, pxOf,
+  palette: PALETTE, mmh, tileXY, tileLat, decode, forecast, fit, sample, sampleArea, rainIn, canvas, canvasFrom, blobURL, pxOf,
   DBZ_MIN, DBZ_MAX, TILE, WURL
 };
 g.NC = NC;
