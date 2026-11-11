@@ -749,6 +749,13 @@ footer{margin-top:22px;font-size:12px;text-align:center;color:rgba(255,255,255,.
 .rpin i{display:block;position:relative;width:18px;height:18px;border-radius:50%;background:var(--acc);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .rpin i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--acc);animation:haloP 2.2s ease-out infinite}
 @media(max-width:860px){.rtime{min-width:0;font-size:12px}}
+/* o radar é a única coisa neste separador: dá-lhe espaço a sério */
+@media(min-width:861px){
+ #rmap{height:clamp(460px,66vh,780px)}
+ .card.radar{padding:14px;border-radius:24px}
+ .card.radar .rctl{margin-top:10px}
+ .card.radar .rleg{margin-top:8px}
+}
 
 /* ==== scope toggle: Portugal vs Mundo ==== */
 .rscope{background:rgba(20,49,79,.06);border-color:rgba(20,49,79,.12)}
@@ -1680,7 +1687,7 @@ html.is-mobile .wk.m-week{display:flex;flex-direction:column;gap:0;margin-top:10
 
 /* ---------- Mapas: o mapa ocupa o ecrã; controlos na zona do polegar ---------- */
 html.is-mobile[data-mt=map] .card.radar{padding:0;overflow:hidden;display:flex;flex-direction:column;border-radius:var(--m-r)}
-html.is-mobile #rmap{order:1;height:calc(100vh - var(--m-top) - var(--m-bar) - 300px)!important;height:calc(100dvh - var(--m-top) - var(--m-bar) - 300px)!important;min-height:300px;border-radius:0}
+html.is-mobile #rmap{order:1;height:calc(100vh - var(--m-top) - var(--m-bar) - 238px)!important;height:calc(100dvh - var(--m-top) - var(--m-bar) - 238px)!important;min-height:380px;border-radius:0}
 html.is-mobile .rtop{order:3;display:flex;flex-direction:column;gap:8px;padding:10px 12px 0}
 html.is-mobile .rtop .sw{display:flex;overflow-x:auto;scrollbar-width:none;margin:0;max-width:100%;padding:3px;border-radius:16px;background:#e9f0f9;-webkit-overflow-scrolling:touch}
 html.is-mobile .rtop .sw::-webkit-scrollbar{display:none}
