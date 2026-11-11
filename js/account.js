@@ -308,6 +308,15 @@ function stopUserWeatherLoop() {
 function authSetMode(mode){
   authMode=mode;
   const isUp=mode==='signup';
+  
+  // Traduzir os separadores e labels do formulário
+  if($('#authTabSignup')) $('#authTabSignup').textContent = isUp ? (LANG==='pt'?'Criar Conta':'Sign Up') : (LANG==='pt'?'Criar Conta':'Sign Up');
+  if($('#authTabSignin')) $('#authTabSignin').textContent = LANG==='pt'?'Iniciar Sessão':'Sign In';
+  if($('#googleBtnTxt')) $('#googleBtnTxt').textContent = LANG==='pt'?'Continuar com o Google':'Continue with Google';
+  if($('#authDividerTxt')) $('#authDividerTxt').textContent = LANG==='pt'?'ou com email':'or with email';
+  if($('#lblEmail')) $('#lblEmail').textContent = LANG==='pt'?'Email':'Email';
+  if($('#lblPassword')) $('#lblPassword').textContent = LANG==='pt'?'Palavra-passe':'Password';
+
   $('#authTabSignup').classList.toggle('active',isUp);
   $('#authTabSignup').setAttribute('aria-selected',isUp);
   $('#authTabSignin').classList.toggle('active',!isUp);
@@ -447,22 +456,22 @@ function authShell(){
   <!-- Auth Form View (When Logged Out) -->
   <div id="authLoggedOutView">
    <div class="auth-tabs" role="tablist">
-    <button type="button" id="authTabSignup" class="auth-tab active" role="tab" aria-selected="true">Criar Conta</button>
-    <button type="button" id="authTabSignin" class="auth-tab" role="tab" aria-selected="false">Iniciar Sessão</button>
+    <button type="button" id="authTabSignup" class="auth-tab active" role="tab" aria-selected="true">Sign Up</button>
+    <button type="button" id="authTabSignin" class="auth-tab" role="tab" aria-selected="false">Sign In</button>
    </div>
 
    <!-- Google Sign-In Button -->
    <div class="auth-google-wrap">
     <button type="button" class="auth-google-btn" id="authGoogleBtn">
      <img src="imgs/icons/google.png" alt="" width="19" height="19" data-fb="Google">
-     <span id="googleBtnTxt">Continuar com o Google</span>
+     <span id="googleBtnTxt">Continue with Google</span>
     </button>
     <!-- Turnstile invisível para o botão Google. Só é executado depois do clique. -->
     <div id="authGoogleTurnstile" hidden></div>
    </div>
 
    <div class="auth-divider">
-    <span id="authDividerTxt">ou com email</span>
+    <span id="authDividerTxt">or with email</span>
    </div>
 
    <div class="auth-alert" id="authAlert" hidden></div>
@@ -543,6 +552,7 @@ function authShell(){
   const pb=$('#progBtn');if(pb)pb.onclick=progToggle;
   const psb=$('#pushBtn');if(psb)psb.onclick=pushToggle;
   trTree(ov);
+  authSetMode(authMode); // Force immediate translation of the modal's text
   return ov;
 }
 

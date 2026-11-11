@@ -137,8 +137,8 @@ function todayPane(){
    <div class="mini"><span>Wind</span><b><svg class="wind" style="--r:${(c.wind_direction_10m||0)+180}deg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z" fill="currentColor"/></svg>${W(c.wind_speed_10m)}</b></div>
    <div class="mini"><span>Humidity</span><b>${c.relative_humidity_2m}%</b><div class="bar2"><i style="--w:${c.relative_humidity_2m}%"></i></div></div>
    <div class="mini"><span>UV · ${uvl}</span><b>${Math.round(uv)}</b><div class="bar2"><i style="--w:${Math.min(100,uv/11*100)}%"></i></div></div>
-   <div class="mini"><span>Pressure</span><b>${pN(c.surface_pressure)}<small>${pU()}</small></b><div class="bar2"><i style="--w:${Math.max(6,Math.min(100,(c.surface_pressure-970)/70*100))}%"></i></div></div>
-  </div>
+   <div class="mini"><span>Pressure</span><b>${pN(c.surface_pressure)}<small>${pU()}</small></b></div>
+   </div>
   ${chartSVG()}
  </section>
  <section class="card side">
@@ -552,9 +552,9 @@ function svCSS(){
 .xt .sv-dens{position:relative;height:112px;margin:30px 0 0}
 #xtra #anom .sv-dens{flex:1 1 112px;height:auto;min-height:112px;max-height:300px}
 .xt .sv-dens svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.xt .sv-da{fill:url(#svDg);fill-opacity:.4;stroke:none}
-.xt .sv-db{fill:url(#svDg);fill-opacity:.85;stroke:none}
-.xt .sv-dl{fill:none;stroke:url(#svDg);stroke-width:2.2;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.xt .sv-da{fill:url(#svDg);fill-opacity:.12;stroke:none}
+.xt .sv-db{fill:url(#svDg);fill-opacity:.35;stroke:none}
+.xt .sv-dl{fill:none;stroke:url(#svDg);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .xt .sv-dn{stroke:currentColor;stroke-opacity:.7;stroke-width:1.8;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
 .xt .sv-meter{display:flex;gap:5px;margin:10px 0 0}
 .xt .sv-meter i{flex:1;height:10px;border-radius:99px;background:currentColor;opacity:.12}
@@ -675,12 +675,28 @@ function anomInner(){
  const bar=(a,b,c)=>`<i class="${c}" style="left:${X(a)}%;width:${(X(b)-X(a)).toFixed(1)}%"></i>`;
  const lab=(v,txt,cls)=>`<span class="sv-rl ${cls} ${svAl(X(v))}" style="left:${X(v)}%">${txt}</span>`;
  // densidade de temperatura a partir dos 21 quantis (cada intervalo contém 5 % dos dias), alisada
- const dRaw=[];for(let i=0;i<20;i++)dRaw.push([(q[i]+q[i+1])/2,.05/Math.max(q[i+1]-q[i],.05)]);
- const dSm=dRaw.map((p,i)=>[p[0],(dRaw[Math.max(0,i-1)][1]+p[1]*2+dRaw[Math.min(19,i+1)][1])/4]);
- const dmax=Math.max(...dSm.map(p=>p[1])),dy=v=>100-Math.min(1,v/dmax)*88;
- const dpts=[[q[0],100]].concat(dSm.map(p=>[p[0],dy(p[1])]),[[q[20],100]]).map(p=>[X(p[0]),p[1]]);
- const dL=svPath(dpts),dA=dL+'L'+dpts[dpts.length-1][0]+',100L'+dpts[0][0]+',100Z';
- const bp=dpts.filter(p=>p[0]>=X(q[2])&&p[0]<=X(q[18])),dB=bp.length>1?svPath(bp)+'L'+bp[bp.length-1][0]+',100L'+bp[0][0]+',100Z':'';
+// densidade de temperatura a partir dos 21 quantis, com forte alisamento Gaussiano
+const dRaw=[];for(let i=0;i<20;i++)dRaw.push([(q[i]+q[i+1])/2,.05/Math.max(q[i+1]-q[i],.05)]);
+const dSm = dRaw.map((p, i) => {
+    let sum = 0, wsum = 0;
+    for (let j = -4; j <= 4; j++) {
+        const idx = i + j;
+        if (idx >= 0 && idx < dRaw.length) {
+            const w = Math.exp(-0.5 * Math.pow(j / 1.5, 2));
+            sum += dRaw[idx][1] * w;
+            wsum += w;
+        }
+    }
+    return [p[0], sum / wsum];
+});
+const dmax=Math.max(...dSm.map(p=>p[1])),dy=v=>100-Math.min(1,v/dmax)*85;
+
+// Adicionar pontos de "fantasma" nas pontas para uma transição suave até zero
+const ext = (q[20] - q[0]) * 0.1;
+const dpts = [[X(q[0] - ext), 100]].concat(dSm.map(p=>[X(p[0]),dy(p[1])])).concat([[X(q[20] + ext), 100]]);
+
+const dL=svPath(dpts), dA=dL+`L${dpts[dpts.length-1][0]},100L${dpts[0][0]},100Z`;
+const clipW = Math.max(0, X(q[18]) - X(q[2]));
  const yT=(()=>{let k=0;while(k<dpts.length-2&&dpts[k+1][0]<X(tm))k++;const p=dpts[k],r=dpts[k+1],f=r[0]>p[0]?Math.min(1,Math.max(0,(X(tm)-p[0])/(r[0]-p[0]))):0;return p[1]+(r[1]-p[1])*f})();
  const tcol=v=>typeof tempColor==='function'?tempColor(v):'#2f6db5';
  const gstops=q.map(v=>`<stop offset="${(X(v)/100).toFixed(3)}" style="stop-color:${tcol(v)}"/>`).join('');

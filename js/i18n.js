@@ -286,6 +286,7 @@ function setLang(l){
  LANG=l;lsSet('lang',l);document.documentElement.lang=l;
   setUnit(l=='pt'?'c':'f',true,true);   // o idioma define as unidades (o botão °C/°F continua a poder mudá-las)
  trTree(document.body);paintLang(true);
+ if(typeof updateAuthUI === 'function') updateAuthUI(); // <-- ADICIONAR ESTA LINHA
  if(data)render();else if(!place&&$('#hero')&&$('#hero').classList.contains('land'))landing();
 }
 $('#lng').onclick=()=>setLang(LANG=='pt'?'en':'pt');
