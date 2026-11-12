@@ -10,10 +10,10 @@ const RADAR_KINDS = [
 ];
 const OWM_KINDS={wind:{
  layer:'wind_new',
- note:'Wind speed (colours) and direction (moving particles) · OpenWeatherMap + NOAA GFS',
+ note:'Wind speed (colours) and direction (moving particles) · NOAA GFS',
  lo:()=>unit=='c'?'0 km/h':'0 kt',
- hi:()=>unit=='c'?'120+ km/h':'65+ kt',
- grad:'linear-gradient(90deg,#cfe6f5 0%,#aacbe6 15%,#b364bc 40%,#7a4cac 65%,#46009f 100%)'
+ hi:()=>unit=='c'?'100+ km/h':'54+ kt',
+ grad:'linear-gradient(90deg,#38b060 0%,#8cd050 12%,#f0e046 25%,#f6a63a 40%,#e8543a 60%,#aa1028 100%)'
 }};
 let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!still,radarKind='rain',radarMeta=null,radarMetaT=0,radarTok=0,leafletP;
 let radarScope = lsGet('radarScope') || 'pt';
@@ -56,11 +56,7 @@ async function tlField(name){
     try{
       const d=m[name],r=await fetch(`${WORKER}/gfs/f/${m.run}/${d.f}`,{signal:AbortSignal.timeout(45000)});
       if(!r.ok)throw new Error('HTTP '+r.status);
-      let buf=await r.arrayBuffer();
-      const h8=new Uint8Array(buf,0,Math.min(2,buf.byteLength));
-      if(h8[0]===0x1f&&h8[1]===0x8b)                                // ainda em gzip (cabeçalho Content-Encoding perdido pelo caminho): descomprime aqui
-        buf=await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
-      const q=new Uint16Array(buf),n=m.w*m.h;
+      const q=new Uint16Array(await r.arrayBuffer()),n=m.w*m.h;
       if(q.length!==n*d.planes)throw new Error('tamanho');
       const planes=[];
       for(let k=0;k<d.planes;k++){
@@ -103,9 +99,9 @@ async function tlPressureGrid(){
   return tlPG;
 }
 /* ===== Vento: partículas animadas (substitui as setas) ===== */
-let windTok=0,windT=0,windCv=null,windCx=null,windRaf=0,windLast=0,windGrid=null,windFld=null,windP=[];
+let windTok=0,windT=0,windColL=null,windColG=null,windCv=null,windCx=null,windRaf=0,windLast=0,windGrid=null,windFld=null,windP=[];
 // Change from {rows:6, cols:8} to:
-const WGR = { rows: 8, cols: 12 }, WSTEP = 6, WK = .045, WFADE = .045;const WBK=[[0,12,.38,1],[12,35,.58,1.2],[35,60,.78,1.5],[60,1e9,.92,1.8]];
+const WGR = { rows: 8, cols: 12 }, WSTEP = 6, WK = .016, WFADE = .03; const WBK=[[0,12,.38,1],[12,35,.58,1.2],[35,60,.78,1.5],[60,1e9,.92,1.8]];
 
 function windStopLoop(){cancelAnimationFrame(windRaf);windRaf=0}
 function windClear(){if(windCx&&windCv)windCx.clearRect(0,0,windCv.width,windCv.height)}
@@ -114,6 +110,7 @@ function windMoved(){clearTimeout(windT);windT=setTimeout(updateWindVectors,700)
 function windStop(){
   windTok++;windStopLoop();clearTimeout(windT);
   if(radarMap){try{radarMap.off('movestart zoomstart',windPause);radarMap.off('moveend resize',windMoved)}catch(e){}}
+  if(windColL){try{radarMap&&radarMap.removeLayer(windColL)}catch(e){}windColL=windColG=null}
   if(windCv)windCv.remove();
   windCv=windCx=windFld=null;windP=[];
 }
@@ -157,6 +154,40 @@ async function windFetchGrid(b){                                   // vento na m
   if(!have)throw new Error('no wind data');
   return{s:j0*st,n:j1*st,w:i0*st,e:i1*st,rows,cols,u,v,z:radarMap.getZoom(),t:Date.now()};
 }
+/* ===== Vento: camada de cor própria (verde → vermelho) a partir da grelha GFS, em vez dos tiles roxos do OpenWeatherMap ===== */
+const WCOL_LUT=(()=>{                                               // km/h inteiros de 0 a 100 → RGB
+  const st=[[0,56,176,96],[12,140,208,80],[25,240,224,70],[40,246,166,58],[60,232,84,58],[100,170,16,40]],t=new Uint8ClampedArray(101*3);
+  for(let s=0;s<=100;s++){
+    let i=0;while(i<st.length-2&&s>st[i+1][0])i++;
+    const a=st[i],b=st[i+1],f=(s-a[0])/(b[0]-a[0]);
+    for(let c=0;c<3;c++)t[s*3+c]=a[c+1]+(b[c+1]-a[c+1])*f;
+  }
+  return t;
+})();
+function windColour(){
+  if(!radarMap||!windGrid)return;
+  if(windColL){if(windColG!==windGrid){windColG=windGrid;windColL.redraw()}return}   // grelha nova → redesenha
+  windColG=windGrid;
+  const Col=L.GridLayer.extend({
+    createTile(co){
+      const N=64,c=document.createElement('canvas');c.width=c.height=N;
+      const g=windGrid,cx=c.getContext('2d');if(!g)return c;
+      const img=cx.createImageData(N,N),d=img.data,o=[0,0],sc=256/N,W=256*Math.pow(2,co.z),h=sc*.5;
+      for(let py=0;py<N;py++){
+        const wy=co.y*256+py*sc+h,lat=Math.atan(Math.sinh(Math.PI*(1-2*wy/W)))*180/Math.PI;
+        for(let px=0;px<N;px++){
+          const lng=(co.x*256+px*sc+h)/W*360-180;
+          windSample(g,lat,lng,o);
+          const s=Math.min(100,Math.hypot(o[0],o[1])),k=(py*N+px)*4,l=Math.round(s)*3;
+          d[k]=WCOL_LUT[l];d[k+1]=WCOL_LUT[l+1];d[k+2]=WCOL_LUT[l+2];d[k+3]=255;
+        }
+      }
+      cx.putImageData(img,0,0);return c;                             // o canvas de 64 px é esticado para 256 px → transição suave
+    }
+  });
+  windColL=new Col({pane:'radar',opacity:.62,className:'wcol',tileSize:256,updateWhenZooming:false,keepBuffer:2}).addTo(radarMap);
+}
+
 /* interpolação bilinear dos vetores (u,v) – nunca se interpolam ângulos */
 function windSample(g, lat, lng, o){
   if(g.global){                                                   // grelha global dos tiles: nó i na longitude w+i·st, linha 0 = sul
@@ -251,6 +282,7 @@ async function updateWindVectors(){
     }catch(err){console.warn('[Wind]',err.message);if(tok!==windTok)return;if(!windGrid){const n=$('#rnote');if(n)n.textContent='Wind particles unavailable right now.';return}}
   }
   const{W,H}=windEnsure();
+  windColour();
   windStopLoop();windClear();windBuild(W,H);
   if(still){for(let i=0;i<70;i++)windStep(1,false)}                // movimento reduzido: linhas de corrente estáticas
   else{windLast=0;windRaf=requestAnimationFrame(windFrame)}
@@ -836,20 +868,15 @@ async function ncToggle(){
 /* ---- Wind (OpenWeatherMap + ECMWF particles) ---- */
 async function loadWind(stale){
   const note=$('#rnote'),sl=$('#rsl'),pl=$('#rplay');
-  const ow=OWM_KINDS.wind;
+  const ow=OWM_KINDS.wind,isPT=radarScope==='pt';
   sl.disabled=true;pl.disabled=true;
-  note.textContent='Loading wind layer…';
-  let ok=false;
-  try{ok=(await fetch(`${WORKER}/owm/${ow.layer}/0/0/0.png`)).ok}catch(e){}
   if(stale())return;
-  const isPT=radarScope==='pt';
-  radarLayers=ok?[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,
-    {maxNativeZoom:6,maxZoom:isPT?11:9,className:'rlayer rcloud'})]:[];
+  radarLayers=[];                                                  // a cor do vento é desenhada por windColour() (sem tiles do OpenWeatherMap)
   radarFrames=[{}];sl.max=0;
-  note.textContent=ok?ow.note+(isPT?' · Portugal':' · Global'):'Wind particles · NOAA GFS 0.25° (colour layer needs OWM_KEY in the worker)';
+  note.textContent=ow.note+(isPT?' · Portugal':' · Global');
   $('#rtime').textContent='Current';
   $('#rleg').innerHTML=`<span>${ow.lo()}</span><i style="background:${ow.grad}"></i><span>${ow.hi()}</span><span style="margin-left:8px;font-size:10px;opacity:.7">NOAA GFS</span>`;
-  $('#rleg').hidden=!ok;
+  $('#rleg').hidden=false;
   radarShow(0);radarBtn();
   requestAnimationFrame(()=>requestAnimationFrame(updateWindVectors));
 }
@@ -1323,29 +1350,47 @@ function pgSample(la0,lo0,ds,nx,ny){
   }
   return F;
 }
-/* altas (A) e baixas (B) do planeta: extremos locais a ~7° com proeminência mínima, afinados no campo suave */
-function pgExtremes(G){
-  const w=G.w,h=G.h,p=G.p,R=Math.max(3,Math.round(7/G.st)),cand=[];
-  const at=(x,y)=>p[y*w+(((x%w)+w)%w)];
-  for(let y=R;y<h-R;y++){
-    const lat=G.lat0+y*G.st;if(Math.abs(lat)>78)continue;           // perto dos polos a redução ao nível do mar é pouco fiável
-    for(let x=0;x<w;x++){
-      const c=at(x,y);if(c!==c)continue;
-      let mx=true,mn=true,sum=0,cnt=0;
-      scan:for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){
-        if(!dx&&!dy)continue;const q=at(x+dx,y+dy);
-        if(q!==q){mx=mn=false;break scan}
-        if(q>c)mx=false;if(q<c)mn=false;
-        if(!mx&&!mn)break scan;
-        if(Math.max(Math.abs(dx),Math.abs(dy))===R){sum+=q;cnt++}
+/* altas (A) e baixas (B) do planeta, por PROEMINÊNCIA topográfica: um centro só conta se, para chegar a outro centro
+   mais forte, a pressão tiver de subir/descer pelo menos "prom" hPa (um colo). Assim desaparecem os máximos/mínimos
+   "de ruído" (baixas térmicas do Sara, cristas, etc.) e ficam só os sistemas reais. Ajusta os limites aqui: */
+const PG_EXT={hiProm:4,hiMin:1016,loProm:4,loMax:1008,sep:14};      // hPa · hPa mínimo da alta · hPa · hPa máximo da baixa · graus entre centros iguais
+function pgProminence(G,sign){                                      // sign=1 → altas, sign=-1 → baixas · devolve [{k,prom}]
+  const w=G.w,h=G.h,p=G.p,ord=[];
+  for(let k=0;k<w*h;k++)if(p[k]===p[k])ord.push(k);
+  ord.sort((a,b)=>sign*(p[b]-p[a])||a-b);                           // do pico mais forte para o mais fraco
+  const par=new Int32Array(w*h).fill(-1),top=new Int32Array(w*h),out=[];
+  const find=a=>{while(par[a]!==a){par[a]=par[par[a]];a=par[a]}return a};
+  for(const k of ord){
+    par[k]=k;top[k]=k;
+    const y=(k/w)|0,x=k-y*w;
+    for(let dy=-1;dy<=1;dy++){
+      const yy=y+dy;if(yy<0||yy>=h)continue;
+      for(let dx=-1;dx<=1;dx++){
+        if(!dx&&!dy)continue;
+        const q=yy*w+(((x+dx)%w)+w)%w;if(par[q]<0)continue;
+        const a=find(k),b=find(q);if(a===b)continue;
+        const pa=top[a],pb=top[b],aWins=sign*(p[pa]-p[pb])>0||(p[pa]===p[pb]&&pa<pb),win=aWins?a:b,lose=aWins?b:a;
+        out.push({k:top[lose],prom:sign*(p[top[lose]]-p[k])});        // o pico mais fraco "morre" neste colo
+        par[lose]=win;
       }
-      if(!mx&&!mn)continue;
-      const d=c-sum/Math.max(1,cnt);
-      if((mx&&d>=2)||(mn&&-d>=2))cand.push({hi:mx&&d>=2,p:c,d:Math.abs(d),lat,lng:G.lon0+x*G.st});
     }
   }
-  cand.sort((a,b)=>b.d-a.d);
-  const out=[],near=(a,b)=>{let dl=Math.abs(a.lng-b.lng)%360;if(dl>180)dl=360-dl;return Math.hypot(a.lat-b.lat,dl*Math.cos(a.lat*Math.PI/180))<2*R*G.st};
+  if(ord.length)out.push({k:top[find(ord[0])],prom:99});            // o máximo global nunca morre
+  return out;
+}
+function pgExtremes(G){
+  const cand=[],P=PG_EXT;
+  for(const sign of[1,-1]){
+    const hi=sign===1;
+    for(const c of pgProminence(G,sign)){
+      const y=(c.k/G.w)|0,x=c.k-y*G.w,lat=G.lat0+y*G.st,p=G.p[c.k];
+      if(Math.abs(lat)>78)continue;                                 // perto dos polos a redução ao nível do mar é pouco fiável
+      if(hi?(c.prom<P.hiProm||p<P.hiMin):(c.prom<P.loProm||p>P.loMax))continue;
+      cand.push({hi,p,prom:c.prom,lat,lng:G.lon0+x*G.st});
+    }
+  }
+  cand.sort((a,b)=>b.prom-a.prom);                                  // mais proeminentes primeiro (também é a prioridade ao desenhar)
+  const out=[],near=(a,b)=>{let dl=Math.abs(a.lng-b.lng)%360;if(dl>180)dl=360-dl;return Math.hypot(a.lat-b.lat,dl*Math.cos(a.lat*Math.PI/180))<P.sep};
   for(const e of cand){
     if(out.some(o=>o.hi===e.hi&&near(o,e)))continue;
     let bl=e.lat,bo=e.lng,bv=e.p;                                    // afina a posição e o valor no campo bicúbico (passos de ¼ de nó)
@@ -1353,7 +1398,7 @@ function pgExtremes(G){
       const la=e.lat+a*G.st/4,lo=e.lng+b*G.st/4,v=pgAt(la,lo);
       if(v===v&&(e.hi?v>bv:v<bv)){bv=v;bl=la;bo=lo}
     }
-    out.push({hi:e.hi,p:bv,lat:bl,lng:bo});
+    out.push({hi:e.hi,p:bv,lat:bl,lng:bo,prom:e.prom});
   }
   return out;
 }
@@ -1498,10 +1543,8 @@ function isoDraw(M){
   if(M){
     const multi=M.lines.flatMap(l=>l.chains),o={pane:'isobars',className:'isoln',interactive:false,lineCap:'round',lineJoin:'round',smoothFactor:.6};
     if(multi.length){
-      const maj=M.iv?M.lines.filter(l=>l.lv%20===0).flatMap(l=>l.chains):[],mnr=M.iv?M.lines.filter(l=>l.lv%20!==0).flatMap(l=>l.chains):multi;
       L.polyline(multi,{...o,color:'#ffffff',weight:M.iv&&M.iv<=2?3:3.6,opacity:.6}).addTo(nu);     // halo
-      if(mnr.length)L.polyline(mnr,{...o,color:'#14314f',weight:M.iv&&M.iv<=2?.95:1.4,opacity:.82}).addTo(nu);
-      if(maj.length)L.polyline(maj,{...o,color:'#0b2340',weight:1.9,opacity:.95}).addTo(nu);          // 1000, 1020, 1040… em destaque
+      L.polyline(multi,{...o,color:'#14314f',weight:M.iv&&M.iv<=2?.95:1.4,opacity:.82}).addTo(nu);   // todas as isóbaras iguais (sem linhas grossas)
     }
     /* etiquetas hPa: posição ligada à grelha do mundo (não ao ecrã) → não saltam ao arrastar */
     const cd=260*360/(256*Math.pow(2,tempZ())),best=new Map(),bd=radarMap.getBounds().pad(-.04);
@@ -1520,10 +1563,13 @@ function isoDraw(M){
       L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,icon:L.divIcon({className:'isolbl',html:`<span>${Math.round(c.lv)}</span>`,iconSize:[0,0]})}).addTo(nu);
     });
     /* A = alta pressão · B = baixa pressão */
-    const vb=radarMap.getBounds();
+    const vb=radarMap.getBounds(),abPx=[];
     M.ext.forEach(e=>{
       for(let k=Math.floor((vb.getWest()-e.lng)/360);k<=Math.ceil((vb.getEast()-e.lng)/360);k++){       // o campo é global: aparece em todas as cópias do mundo visíveis
         const ll=L.latLng(e.lat,e.lng+360*k);if(!vb.contains(ll))continue;
+        const apt=radarMap.latLngToContainerPoint(ll);
+        if(abPx.some(q=>Math.hypot(q.x-apt.x,q.y-apt.y)<110))continue;       // nunca dois A/B colados (os mais proeminentes têm prioridade)
+        abPx.push(apt);
         L.marker(ll,{pane:'isolab',interactive:false,keyboard:false,zIndexOffset:500,icon:L.divIcon({className:'isoax '+(e.hi?'hi':'lo'),html:`<b>${e.hi?'A':'B'}</b><small>${Math.round(e.p)}</small>`,iconSize:[0,0]})}).addTo(nu)}});
   }
   nu.addTo(radarMap);isoGrp=nu;                                    // o novo entra com fade; o antigo sai logo a seguir
