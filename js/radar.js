@@ -56,7 +56,11 @@ async function tlField(name){
     try{
       const d=m[name],r=await fetch(`${WORKER}/gfs/f/${m.run}/${d.f}`,{signal:AbortSignal.timeout(45000)});
       if(!r.ok)throw new Error('HTTP '+r.status);
-      const q=new Uint16Array(await r.arrayBuffer()),n=m.w*m.h;
+      let buf=await r.arrayBuffer();
+      const h8=new Uint8Array(buf,0,Math.min(2,buf.byteLength));
+      if(h8[0]===0x1f&&h8[1]===0x8b)                                // ainda em gzip (cabeçalho Content-Encoding perdido pelo caminho): descomprime aqui
+        buf=await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+      const q=new Uint16Array(buf),n=m.w*m.h;
       if(q.length!==n*d.planes)throw new Error('tamanho');
       const planes=[];
       for(let k=0;k<d.planes;k++){
