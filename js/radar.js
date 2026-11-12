@@ -10,7 +10,7 @@ const RADAR_KINDS = [
 ];
 const OWM_KINDS={wind:{
  layer:'wind_new',
- note:'Wind speed (colours) and direction (moving particles) · ECMWF + Open-Meteo',
+ note:'Wind speed (colours) and direction (moving particles) · OpenWeatherMap + NOAA GFS',
  lo:()=>unit=='c'?'0 km/h':'0 kt',
  hi:()=>unit=='c'?'120+ km/h':'65+ kt',
  grad:'linear-gradient(90deg,#cfe6f5 0%,#aacbe6 15%,#b364bc 40%,#7a4cac 65%,#46009f 100%)'
@@ -19,6 +19,85 @@ let radarMap,radarLayers=[],radarFrames=[],radarIdx=0,radarTimer,radarPlay=!stil
 let radarScope = lsGet('radarScope') || 'pt';
 let radarKT=0;
 const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+/* ============ Tiles GFS próprios (Cloudflare R2) · NOAA/NCEP GFS 0,25°, análise ============
+   O GitHub Actions (PYTHON/gfs_tiles.py) descodifica o GRIB2 de 6 em 6 h e guarda no R2 três ficheiros globais
+   (1440×721, uint16 + delta por linha + gzip): wind (u,v), temp, pmsl. O worker serve-os em /gfs/…
+   O cliente descarrega cada campo UMA vez por ciclo e amostra-o localmente: sem pedidos ao arrastar, sem 429.
+   Se os tiles faltarem ou estiverem com mais de 14 h, tudo cai no método antigo (Open-Meteo /grid e /pressure). */
+const TL_MAXAGE=14*3600e3;
+let tlMan=null,tlManAt=0,tlManP=null,tlFail=0,tlF={},tlFP={},tlWG=null,tlPG=null;
+const tlFresh=m=>!!m&&Date.now()-m.ts<TL_MAXAGE;
+async function tlManifest(){
+  if(tlMan&&Date.now()-tlManAt<6e5)return tlMan;
+  if(tlManP)return tlManP;
+  if(Date.now()<tlFail)return tlFresh(tlMan)?tlMan:null;
+  tlManP=(async()=>{
+    try{
+      const r=await fetch(WORKER+'/gfs/manifest',{signal:AbortSignal.timeout(10000)});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const m=await r.json();
+      if(!m||m.v!==1||!(m.w>=8)||!(m.h>=8)||!(m.st>0)||!/^\d{10}$/.test(m.run||'')||!m.wind||!m.temp||!m.pmsl)throw new Error('forma');
+      if(!tlFresh(m))throw new Error('desatualizado');
+      if(!tlMan||tlMan.run!==m.run){tlF={};tlFP={};tlWG=null;tlPG=null}
+      tlMan=m;tlManAt=Date.now();tlFail=0;return m;
+    }catch(e){console.warn('[Tiles]',e.message);tlFail=Date.now()+12e4;return tlFresh(tlMan)?tlMan:null}
+    finally{tlManP=null}
+  })();
+  return tlManP;
+}
+/* descarrega e descodifica um campo ('wind' | 'temp' | 'pmsl') → {run, planes:[Float32Array…]} (linha 0 = sul, coluna 0 = lon0) */
+async function tlField(name){
+  const m=await tlManifest();if(!m)return null;
+  const c=tlF[name];if(c&&c.run===m.run)return c;
+  if(tlFP[name]&&tlFP[name].run===m.run)return tlFP[name].p;
+  const slot={run:m.run};tlFP[name]=slot;
+  slot.p=(async()=>{
+    try{
+      const d=m[name],r=await fetch(`${WORKER}/gfs/f/${m.run}/${d.f}`,{signal:AbortSignal.timeout(45000)});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const q=new Uint16Array(await r.arrayBuffer()),n=m.w*m.h;
+      if(q.length!==n*d.planes)throw new Error('tamanho');
+      const planes=[];
+      for(let k=0;k<d.planes;k++){
+        const f=new Float32Array(n);
+        for(let y=0;y<m.h;y++){let prev=0;const o=k*n+y*m.w;for(let x=0;x<m.w;x++){prev=(prev+q[o+x])&65535;f[y*m.w+x]=prev/d.sc-d.off}}
+        planes.push(f);
+      }
+      const o={run:m.run,planes};
+      if(tlMan&&tlMan.run===m.run)tlF[name]=o;
+      return o;
+    }catch(e){console.warn('[Tiles]',name,e.message);return null}
+    finally{if(tlFP[name]===slot)delete tlFP[name]}
+  })();
+  return slot.p;
+}
+/* bilinear no campo global (a longitude dá a volta ao mundo) */
+function tlBil(m,f,lat,lon){
+  const w=m.w,h=m.h,st=m.st,la=Math.max(m.lat0,Math.min(m.lat0+(h-1)*st,lat)),fy=(la-m.lat0)/st,y0=Math.min(h-2,Math.floor(fy)),ty=fy-y0;
+  const fx=((((lon-m.lon0)%360)+360)%360)/st,xf=Math.floor(fx),tx=fx-xf,x0=xf%w,x1=(x0+1)%w,r0=y0*w,r1=r0+w;
+  return f[r0+x0]*(1-tx)*(1-ty)+f[r0+x1]*tx*(1-ty)+f[r1+x0]*(1-tx)*ty+f[r1+x1]*tx*ty;
+}
+const tlTempReady=()=>!!(tlMan&&tlF.temp&&tlF.temp.run===tlMan.run);
+function tlTempAt(lat,lon){return tlTempReady()?tlBil(tlMan,tlF.temp.planes[0],lat,lon):NaN}
+/* vento: grelha global em km/h, no formato que windSample/windBuild já usam (g.global) */
+async function tlWindGrid(){
+  const c=await tlField('wind'),m=tlMan;if(!c||!m||c.run!==m.run)return null;
+  if(tlWG&&tlWG.run===c.run){tlWG.t=Date.now();return tlWG}
+  const n=m.w*m.h,u=new Float32Array(n),v=new Float32Array(n),a=c.planes[0],b=c.planes[1];
+  for(let k=0;k<n;k++){u[k]=a[k]*3.6;v[k]=b[k]*3.6}                 // m/s → km/h
+  tlWG={global:true,run:c.run,s:m.lat0,n:m.lat0+(m.h-1)*m.st,w:m.lon0,e:m.lon0+360,rows:m.h,cols:m.w,st:m.st,u,v,z:99,t:Date.now()};
+  return tlWG;
+}
+/* pressão: 1 nó em cada 3 (0,75°) → mesmo formato do /pressure (hPa, linha 0 = sul) */
+async function tlPressureGrid(){
+  const c=await tlField('pmsl'),m=tlMan;if(!c||!m||c.run!==m.run)return null;
+  if(tlPG&&tlPG.rid===c.run){tlPG.at=Date.now();return tlPG}
+  const S=3,w=Math.floor(m.w/S),h=Math.floor((m.h-1)/S)+1,p=new Float32Array(w*h),f=c.planes[0];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)p[y*w+x]=f[y*S*m.w+x*S];
+  tlPG={rid:c.run,w,h,st:m.st*S,lat0:m.lat0,lon0:m.lon0,p,at:Date.now(),run:new Date(m.ts).toISOString(),src:m.src||'NOAA/NCEP GFS 0.25°',ext:[]};
+  return tlPG;
+}
 /* ===== Vento: partículas animadas (substitui as setas) ===== */
 let windTok=0,windT=0,windCv=null,windCx=null,windRaf=0,windLast=0,windGrid=null,windFld=null,windP=[];
 // Change from {rows:6, cols:8} to:
@@ -51,6 +130,7 @@ function windEnsure(){
 
 /* grelha de vento sobre a área visível (+35% de margem), numa só chamada à Open-Meteo */
 async function windFetchGrid(b){                                   // vento na mesma grelha (e cache) da temperatura
+  try{const tg=await tlWindGrid();if(tg)return tg}catch(e){console.warn('[Tiles] vento',e.message)}   // 1.º: tiles próprios (global, sem pedidos ao arrastar)
   const z=tempZ(),st=tempStepOf(z),N=Math.round(360/st),jm=Math.floor(84/st);
   const dl=b.getNorth()-b.getSouth(),dg=b.getEast()-b.getWest();
   const i0=Math.floor((b.getWest()-dg*.35)/st),i1=Math.ceil((b.getEast()+dg*.35)/st);
@@ -75,6 +155,14 @@ async function windFetchGrid(b){                                   // vento na m
 }
 /* interpolação bilinear dos vetores (u,v) – nunca se interpolam ângulos */
 function windSample(g, lat, lng, o){
+  if(g.global){                                                   // grelha global dos tiles: nó i na longitude w+i·st, linha 0 = sul
+    const w=g.cols,h=g.rows,st=g.st,la=Math.max(g.s,Math.min(g.n,lat)),fy=(la-g.s)/st,y0=Math.min(h-2,Math.floor(fy)),ty=fy-y0;
+    const fx=((((lng-g.w)%360)+360)%360)/st,xf=Math.floor(fx),tx=fx-xf,x0=xf%w,x1=(x0+1)%w,a=y0*w+x0,b=y0*w+x1,e=(y0+1)*w+x0,d=(y0+1)*w+x1;
+    const k0=(1-tx)*(1-ty),k1=tx*(1-ty),k2=(1-tx)*ty,k3=tx*ty;
+    o[0]=g.u[a]*k0+g.u[b]*k1+g.u[e]*k2+g.u[d]*k3;
+    o[1]=g.v[a]*k0+g.v[b]*k1+g.v[e]*k2+g.v[d]*k3;
+    return;
+  }
   const span = g.e - g.w;
   let x;
   // If global (full 360), wrap around; otherwise clamp to grid edges smoothly
@@ -150,7 +238,7 @@ async function updateWindVectors(){
   const tok=++windTok;
   if(!radarMap||radarKind!=='wind'){windStop();return}
   const b=radarMap.getBounds(),z=radarMap.getZoom(),g=windGrid;
-  const ok=g&&g.s<=b.getSouth()&&g.n>=b.getNorth()&&g.w<=b.getWest()&&g.e>=b.getEast()&&z-g.z<1&&Date.now()-g.t<9e5;
+  const ok=g&&(g.global||(g.s<=b.getSouth()&&g.n>=b.getNorth()&&g.w<=b.getWest()&&g.e>=b.getEast()&&z-g.z<1))&&Date.now()-g.t<9e5;
   if(!ok){
     try{
       const ng=await windFetchGrid(b);
@@ -405,7 +493,7 @@ const mapOpts = isPT
    : '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a> · rain <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> · wind/clouds <a href="https://openweathermap.org/">OpenWeatherMap</a> · sat <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>';
  radarMap.attributionControl.addAttribution(att);
   radarMap.attributionControl.addAttribution('temp <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (CC BY 4.0)');
-  radarMap.attributionControl.addAttribution('isobars <a href="https://www.nco.ncep.noaa.gov/pmb/products/gfs/" target="_blank" rel="noopener">NOAA/NCEP GFS</a>');
+  radarMap.attributionControl.addAttribution('wind, temp &amp; isobars <a href="https://www.nco.ncep.noaa.gov/pmb/products/gfs/" target="_blank" rel="noopener">NOAA/NCEP GFS</a>');
  L.marker([place.lat,place.lon],{keyboard:false,icon:L.divIcon({className:'rpin',html:'<i></i>',iconSize:[18,18]})}).addTo(radarMap);
  radarMap.on('click focus',()=>radarMap.scrollWheelZoom.enable());
  radarMap.on('mouseout',()=>radarMap.scrollWheelZoom.disable());
@@ -754,9 +842,9 @@ async function loadWind(stale){
   radarLayers=ok?[mkLayer(`${WORKER}/owm/${ow.layer}/{z}/{x}/{y}.png`,
     {maxNativeZoom:6,maxZoom:isPT?11:9,className:'rlayer rcloud'})]:[];
   radarFrames=[{}];sl.max=0;
-  note.textContent=ok?ow.note+(isPT?' · Portugal':' · Global'):'Wind particles · ECMWF + Open-Meteo (colour layer needs OWM_KEY in the worker)';
+  note.textContent=ok?ow.note+(isPT?' · Portugal':' · Global'):'Wind particles · NOAA GFS 0.25° (colour layer needs OWM_KEY in the worker)';
   $('#rtime').textContent='Current';
-  $('#rleg').innerHTML=`<span>${ow.lo()}</span><i style="background:${ow.grad}"></i><span>${ow.hi()}</span><span style="margin-left:8px;font-size:10px;opacity:.7">ECMWF/IFS</span>`;
+  $('#rleg').innerHTML=`<span>${ow.lo()}</span><i style="background:${ow.grad}"></i><span>${ow.hi()}</span><span style="margin-left:8px;font-size:10px;opacity:.7">NOAA GFS</span>`;
   $('#rleg').hidden=!ok;
   radarShow(0);radarBtn();
   requestAnimationFrame(()=>requestAnimationFrame(updateWindVectors));
@@ -875,6 +963,7 @@ function tempNode(L,i,j){
 /* interpolação bilinear; se faltar um nó, recorre ao nível mais grosseiro (zoom–1, –2…) */
 function tempAt(lat,lng,z){
   lat=Math.max(-80,Math.min(80,lat));lng=((lng+180)%360+360)%360-180;
+  {const tv=tlTempAt(lat,lng);if(tv===tv)return tv}                // tiles GFS próprios, se já carregados
   for(let L=z;L>=3;L--){
     const s=tempStepOf(L),fx=lng/s,fy=lat/s,i0=Math.floor(fx),j0=Math.min(Math.round(80/s)-1,Math.floor(fy));
     const tx=fx-i0,ty=fy-j0;
@@ -884,6 +973,7 @@ function tempAt(lat,lng,z){
   return NaN;
 }
 function tempNeeded(z,s,n,w,e){                                    // nós da caixa que faltam / expiraram
+  if(tlTempReady())return[];                                       // com tiles não há nada para pedir
   const st=tempStepOf(z),N=Math.round(360/st),jm=Math.round(80/st),m=tempCache[z]||new Map(),now=Date.now(),out=[],seen=new Set();
   const i0=Math.floor(w/st),i1=Math.ceil(e/st),j0=Math.max(-jm,Math.floor(s/st)),j1=Math.min(jm,Math.ceil(n/st));
   for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
@@ -980,7 +1070,7 @@ function tempRender(){
 
 function tempStatus(){
   const nt=$('#rnote'),tm=$('#rtime');
-  if(nt)nt.textContent=tr('Air temperature · Open-Meteo · hover for exact values');
+  if(nt)nt.textContent=tlTempReady()?tr('Air temperature · NOAA GFS 0.25° · hover for exact values'):tr('Air temperature · Open-Meteo · hover for exact values');
   if(tm)tm.textContent=tr('Current')+' · '+new Date(tempStamp||Date.now()).toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'});
 }
 function tempSchedule(){
@@ -989,6 +1079,9 @@ function tempSchedule(){
 }
 async function tempUpdate(){
   if(!radarMap||radarKind!=='temp')return;
+  await tlField('temp');                                            // tiles próprios; se falharem, o método antigo (/grid) trata de tudo
+  if(!radarMap||radarKind!=='temp')return;
+  if(tlTempReady())tempStamp=tlMan.ts;
   const gen=tempGen,z=tempZ(),box=b=>[Math.max(-85,b.se.lat),Math.min(85,b.nw.lat),b.nw.lng,b.se.lng];
   const need=tempNeeded(z,...box(tempBox())),core=tempNeeded(z,...box(tempBox(.12)));
   if(!core.length&&tempOv&&tempOv._z===z&&tempOv._b.contains(radarMap.getBounds())&&Date.now()-tempOv._at<TEMP_TTL)return tempSchedule();
@@ -1060,7 +1153,7 @@ async function tempExact(h){                                       // nome do s�
   try{
     const name=await tempName(lat,lon);
     let c=fresh?v.c:h.c,at=fresh?v.at:0;
-    if(h.click&&!fresh&&Date.now()>tempBlock){
+    if(h.click&&!fresh&&!tlTempReady()&&Date.now()>tempBlock){
       const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&current=temperature_2m&timeformat=unixtime`);
       if(r.status===429)tempBlock=Date.now()+3e5;
       if(!r.ok)throw new Error('HTTP '+r.status);
@@ -1185,6 +1278,8 @@ async function pgLoad(){
   if(Date.now()<PGfail)return PG;                                  // falhou há pouco: usa o que houver (ou null → método antigo)
   PGp=(async()=>{
     try{
+      const T=await tlPressureGrid();                                // 1.º: tiles próprios (0,75°)
+      if(T){PG=T;T.ext=pgExtremes(T);PGfail=0;return T}
       const r=await fetch(WORKER+'/pressure',{signal:AbortSignal.timeout(25000)});
       if(!r.ok)throw new Error('HTTP '+r.status);
       const j=await r.json();
