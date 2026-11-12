@@ -655,6 +655,9 @@ function ncTip(res){
  const bits=[T2('Rain nowcast: Lucas–Kanade optical flow, 60 min ahead','Nowcast de chuva: fluxo ótico Lucas–Kanade, 60 min à frente')];
  bits.push(res.damp<0.05?T2('motion not stable — field held','movimento instável — campo parado')
   :Math.round(res.speed)+' km/h '+ncCompass(res.bearing));
+ if(res.nObj>0)bits.push(res.nObj+' '+T2('cells','células'));
+ const g=res.objGF||0;
+ if(Math.abs(g)>0.004)bits.push(T2('area ','área ')+(g>0?'+':'')+Math.round((Math.exp(g*6)-1)*100)+'%/h');
  if(csi!=null)bits.push('CSI '+csi.toFixed(2)+(per!=null?' / '+per.toFixed(2):''));
  return bits.join(' · ');
 }

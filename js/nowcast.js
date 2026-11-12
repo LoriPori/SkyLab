@@ -243,6 +243,7 @@ async function build(o, key, stage) {
     speed: w.gmed ? Math.hypot(w.gmed[0] * 2 * kmPerPx, w.gmed[1] * 2 * kmPerPx) / (dtMin / 60) * damp : 0,
     bearing: w.gmed ? (Math.atan2(w.gmed[0], -w.gmed[1]) * 180 / Math.PI + 360) % 360 : 0,
     growth: w.growth || 0, growthN: w.growthN || 0,
+    model: w.model || 'object', nObj: w.nObj || 0, objGF: w.objGF || 0,
     steps, wet: wet / (S * S), max: frames[frames.length - 1].max,
     unknown: frames.reduce((a, f) => a + f.unknown, 0),
     raw: frames[frames.length - 1].rgba,
