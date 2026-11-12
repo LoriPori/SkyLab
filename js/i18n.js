@@ -133,6 +133,9 @@ const PT={
  'Forecast by':'Previsão do','based on':'baseada em',
 
  'Portugal':'Portugal','World':'Mundo','Scope':'Âmbito',
+
+ 'Wind, temperature, pressure & isobars by':'Vento, temperatura, pressão e isóbaras por',
+ 'Air temperature · NOAA GFS 0.25° · hover for exact values':'Temperatura do ar · NOAA GFS 0,25° · passa o rato para ver valores exatos',
 };
 const FACTS_PT=[
  ['Porque é que o céu é azul','As moléculas do ar dispersam muito mais os comprimentos de onda curtos da luz solar do que os longos (dispersão de Rayleigh). O violeta dispersa-se ainda mais, mas o Sol emite menos dele e os nossos olhos respondem-lhe pouco, por isso vemos azul.'],
