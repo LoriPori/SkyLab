@@ -188,7 +188,7 @@ function windColour(){
       cx.putImageData(img,0,0);return c;                             // o canvas de 64 px é esticado para 256 px → transição suave
     }
   });
-  windColL=new Col({pane:'radar',opacity:.62,className:'wcol',tileSize:256,updateWhenZooming:false,keepBuffer:2}).addTo(radarMap);
+  windColL=new Col({pane:'radar',opacity:.40,className:'wcol',tileSize:256,updateWhenZooming:false,keepBuffer:2}).addTo(radarMap);
 }
 
 /* interpolação bilinear dos vetores (u,v) – nunca se interpolam ângulos */
