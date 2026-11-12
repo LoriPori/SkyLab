@@ -56,7 +56,10 @@ async function tlField(name){
     try{
       const d=m[name],r=await fetch(`${WORKER}/gfs/f/${m.run}/${d.f}`,{signal:AbortSignal.timeout(45000)});
       if(!r.ok)throw new Error('HTTP '+r.status);
-      const q=new Uint16Array(await r.arrayBuffer()),n=m.w*m.h;
+      let ab=await r.arrayBuffer();
+      const hd=new Uint8Array(ab,0,2);
+      if(hd[0]===0x1f&&hd[1]===0x8b)ab=await new Response(new Blob([ab]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();   // gzip "cru" (worker sem Content-Encoding)
+      const q=new Uint16Array(ab),n=m.w*m.h;
       if(q.length!==n*d.planes)throw new Error('tamanho');
       const planes=[];
       for(let k=0;k<d.planes;k++){
