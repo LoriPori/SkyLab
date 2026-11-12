@@ -1,0 +1,40 @@
+# Skylab · gera os tiles GFS (vento, temperatura, pressão) e envia-os para o Supabase Storage.
+# O GFS demora ~3,5–5 h a publicar cada ciclo (00/06/12/18 UTC): tenta duas vezes por ciclo; o script é idempotente.
+# Nota: o GitHub desativa workflows agendados após 60 dias sem atividade no repositório (basta um commit ou "Run workflow").
+name: GFS tiles
+
+on:
+  schedule:
+    - cron: '25 4,5,10,11,16,17,22,23 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Reenviar mesmo que o ciclo já esteja guardado (1 = sim)'
+        required: false
+        default: '0'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gfs-tiles
+  cancel-in-progress: false
+
+jobs:
+  tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: PYTHON/requirements-gfs.txt
+      - run: pip install -r PYTHON/requirements-gfs.txt
+      - name: Build + upload
+        run: python PYTHON/gfs_tiles.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          FORCE: ${{ github.event.inputs.force == '1' && '1' || '0' }}
