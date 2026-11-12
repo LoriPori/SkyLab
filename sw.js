@@ -1,4 +1,4 @@
-const C='skylab-v16';   // sobe sempre que mudares index.html / styles.css / js/: apaga a cache antiga no 'activate'
+const C='skylab-v17';   // sobe sempre que mudares index.html / styles.css / js/: apaga a cache antiga no 'activate'
 /* A lista do 'install' tem de existir TODA, senão caches.addAll falha e o SW nunca activa (era o caso do app.js).
    Por isso: poucos ficheiros essenciais, cada um tolerante a falha; o resto entra na cache à medida que é usado. */
 const SHELL=['./','index.html','styles.css','early.js','js/nowcast.js','js/nowcast_worker.js'];
